@@ -2,14 +2,15 @@
 name: CI/CD Workflow
 on:
   push:
-    #branches:
-    #- develop
+    branches:
+    - develop
     paths:
       - 'src/**'
       - 'Version.xml'
   pull_request:
     paths:
       - 'src/**'
+      - 'Version.xml'
   release:
     types:
       - published
@@ -85,5 +86,4 @@ jobs:
           dotnet nuget push "**/*.nupkg" --api-key $env:LOCAL_NUGET_PAT --source github --skip-duplicate
       - name: Push to NuGet Feed
         run: |
-          dotnet nuget add source --username $env:NUGET_USER --password $env:NUGET_TOKEN --store-password-in-clear-text --name nuget "$env:NUGET_FEED" &&
           dotnet nuget push "**/*.nupkg" --api-key $env:NUGET_TOKEN --source nuget --skip-duplicate
