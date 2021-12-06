@@ -33,43 +33,28 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        #os: [ ubuntu-latest, windows-latest, macos-latest ]
-        #os: [ ubuntu-latest, windows-latest ]
         os: [ windows-latest ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      #- name: Setup .NET 5
-      #  uses: actions/setup-dotnet@v1
-      #  with:
-      #    dotnet-version: 5.0.403
       - name: Setup .NET 6
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 6.0.100
       - name: Restore
         run: dotnet restore BlazarTech.QueryableValues.sln
-      #- name: Test
-      #  run: dotnet test -c Test --no-restore
       - name: Test All
-        #if: matrix.os == 'windows-latest'
         run: dotnet test BlazarTech.QueryableValues.sln -c Test_All --no-restore
-        #run: sqlcmd -l 120 -S "(localdb)\MSSQLLocalDB" -Q "SELECT @@VERSION;"
-      #- name: Build
-      #  run: dotnet build -c Release --no-restore
       - name: Pack
-        #if: matrix.os == 'ubuntu-latest'
         run: dotnet build BlazarTech.QueryableValues.SqlServer.sln -c Release --no-restore --version-suffix=build.$env:GITHUB_RUN_NUMBER
       - name: Upload Artifacts
-        #if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v2
         with:
           name: nupkg
           path: ./src/QueryableValues.SqlServer.EFCore*/bin/Release/*.nupkg
   prerelease:
     needs: build
-    if: github.ref == 'refs/heads/develop-reorg'
-    #runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
     runs-on: windows-latest
     steps:
       - name: Download Artifact
