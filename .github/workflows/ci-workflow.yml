@@ -86,4 +86,4 @@ jobs:
           dotnet nuget push "**/*.nupkg" --api-key $env:LOCAL_NUGET_PAT --source github --skip-duplicate
       - name: Push to NuGet Feed
         run: |
-          dotnet nuget push "**/*.nupkg" --api-key $env:NUGET_TOKEN --source nuget --skip-duplicate
+          dotnet nuget push "**/*.nupkg" --api-key $env:NUGET_TOKEN --source $env:NUGET_FEED --skip-duplicate
