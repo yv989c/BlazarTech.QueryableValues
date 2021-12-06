@@ -1,5 +1,4 @@
 ﻿<Project>
-	<!--dummy5-->
 	<PropertyGroup>
 		<VersionEFCore3>3.0.0</VersionEFCore3>
 		<VersionEFCore5>5.0.0</VersionEFCore5>
