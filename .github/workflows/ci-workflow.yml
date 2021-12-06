@@ -21,13 +21,14 @@ env:
   # Project name to pack and publish
   PROJECT_NAME: BlazarTech.QueryableValues.SqlServer
   # GitHub Packages Feed settings
-  GITHUB_FEED: https://nuget.pkg.github.com/yv989c/
+  GITHUB_FEED: https://nuget.pkg.github.com/yv989c/index.json
   GITHUB_USER: yv989c
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LOCAL_NUGET_PAT: ${{ secrets.LOCAL_NUGET_PAT }}
   # Official NuGet Feed settings
   NUGET_FEED: https://api.nuget.org/v3/index.json
-  NUGET_KEY_DUMMY: ${{ secrets.NUGET_KEY }}
+  NUGET_USER: yv989c
+  NUGET_TOKEN: ${{ secrets.NUGET_KEY }}
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -45,8 +46,12 @@ jobs:
         run: dotnet restore BlazarTech.QueryableValues.sln
       - name: Test All
         run: dotnet test BlazarTech.QueryableValues.sln -c Test_All --no-restore
-      - name: Pack
+      - name: PreRelease-Pack
+        if: github.event_name != 'release'
         run: dotnet build BlazarTech.QueryableValues.SqlServer.sln -c Release --no-restore --version-suffix=build.$env:GITHUB_RUN_NUMBER
+      - name: Release-Pack
+        if: github.event_name == 'release'
+        run: dotnet build BlazarTech.QueryableValues.SqlServer.sln -c Release --no-restore
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -63,31 +68,22 @@ jobs:
           name: nupkg
       - name: Push to GitHub Feed
         run: |
-          dotnet nuget add source --username $env:GITHUB_USER --password $env:GITHUB_TOKEN --store-password-in-clear-text --name github "https://nuget.pkg.github.com/$env:GITHUB_USER/index.json" &&
-          dotnet nuget push "**/*.nupkg" --api-key $env:LOCAL_NUGET_PAT --source "github" --skip-duplicate
+          dotnet nuget add source --username $env:GITHUB_USER --password $env:GITHUB_TOKEN --store-password-in-clear-text --name github "$env:GITHUB_FEED" &&
+          dotnet nuget push "**/*.nupkg" --api-key $env:LOCAL_NUGET_PAT --source github --skip-duplicate
   deploy:
     needs: build
     if: github.event_name == 'release'
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+      - name: Download Artifact
+        uses: actions/download-artifact@v1
         with:
-          dotnet-version: 6.0.100
-      - name: Create Release NuGet package
-        run: |
-          arrTag=(${GITHUB_REF//\// })
-          VERSION="${arrTag[2]}"
-          echo Version: $VERSION
-          VERSION="${VERSION//v}"
-          echo Clean Version: $VERSION
-          dotnet pack -c Release -p:PackageVersion=$VERSION -o nupkg src/$PROJECT_NAME/$PROJECT_NAME.*proj
+          name: nupkg
       - name: Push to GitHub Feed
         run: |
-          for f in ./nupkg/*.nupkg
-          do
-            curl -vX PUT -u "$GITHUB_USER:$GITHUB_TOKEN" -F package=@$f $GITHUB_FEED
-          done
-      #- name: Push to NuGet Feed
-      #  run: dotnet nuget push ./nupkg/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY
+          dotnet nuget add source --username $env:GITHUB_USER --password $env:GITHUB_TOKEN --store-password-in-clear-text --name github "$env:GITHUB_FEED" &&
+          dotnet nuget push "**/*.nupkg" --api-key $env:LOCAL_NUGET_PAT --source github --skip-duplicate
+      - name: Push to NuGet Feed
+        run: |
+          dotnet nuget add source --username $env:NUGET_USER --password $env:NUGET_TOKEN --store-password-in-clear-text --name nuget "$env:NUGET_FEED" &&
+          dotnet nuget push "**/*.nupkg" --api-key $env:NUGET_TOKEN --source nuget --skip-duplicate
