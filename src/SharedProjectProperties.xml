@@ -1,0 +1,35 @@
+﻿<Project>
+	<PropertyGroup>
+		<RootNamespace>BlazarTech.QueryableValues</RootNamespace>
+		<AssemblyName>BlazarTech.QueryableValues.SqlServer</AssemblyName>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<RepositoryUrl>https://github.com/yv989c/BlazarTech.QueryableValues</RepositoryUrl>
+		<Authors>Carlos Villegas</Authors>
+		<Product>BlazarTech.QueryableValues</Product>
+		<PackageId>BlazarTech.QueryableValues.SqlServer</PackageId>
+		<Description>This library enhances the DbContext class by providing the AsQueryableValues extension method, which allows us to efficiently compose an IEnumerable&lt;T&gt; in our queries. It returns an IQueryable&lt;T&gt; that in the context of a query can be treated as any other entity in our DbContext.</Description>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/yv989c/BlazarTech.QueryableValues</PackageProjectUrl>
+		<PackageTags>Entity Framework Core entity-framework-core EF Data O/RM EntityFramework EntityFrameworkCore EFCore SQL Server IQueryable IEnumerable Queryable Values</PackageTags>
+		<PackageIcon>icon.png</PackageIcon>
+		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\docs\images\icon.png" Visible="false">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(Configuration)'!='Release'">
+		<InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore3" />
+		<InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore5" />
+		<InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore6" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="../SharedProjectProperties.xml" />
+	<Import Project="../../Version.xml" />
+	
+	<PropertyGroup>
+		<VersionPrefix>$(VersionEFCore6)</VersionPrefix>
+		<TargetFramework>net6.0</TargetFramework>
+		<Configurations>Debug;Release;Test</Configurations>
+		<DefineConstants>$(DefineConstants);EFCORE;EFCORE6</DefineConstants>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="..\QueryableValues.SqlServer\*.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0" />
+	</ItemGroup>
+</Project>

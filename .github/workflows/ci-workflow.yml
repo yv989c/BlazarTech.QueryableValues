@@ -1,0 +1,108 @@
+# Adapted from: https://github.com/giraffe-fsharp/Giraffe/blob/master/.github/workflows/build.yml
+name: CI/CD Workflow
+on:
+  push:
+    #branches:
+    #- develop
+    paths:
+      - 'src/**'
+      - 'Version.xml'
+  pull_request:
+    paths:
+      - 'src/**'
+  release:
+    types:
+      - published
+env:
+  # Stop wasting time caching packages
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Disable sending usage data to Microsoft
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # Project name to pack and publish
+  PROJECT_NAME: BlazarTech.QueryableValues.SqlServer
+  # GitHub Packages Feed settings
+  GITHUB_FEED: https://nuget.pkg.github.com/yv989c/
+  GITHUB_USER: yv989c
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  LOCAL_NUGET_PAT: ${{ secrets.LOCAL_NUGET_PAT }}
+  # Official NuGet Feed settings
+  NUGET_FEED: https://api.nuget.org/v3/index.json
+  NUGET_KEY_DUMMY: ${{ secrets.NUGET_KEY }}
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        #os: [ ubuntu-latest, windows-latest, macos-latest ]
+        #os: [ ubuntu-latest, windows-latest ]
+        os: [ windows-latest ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      #- name: Setup .NET 5
+      #  uses: actions/setup-dotnet@v1
+      #  with:
+      #    dotnet-version: 5.0.403
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.100
+      - name: Restore
+        run: dotnet restore BlazarTech.QueryableValues.sln
+      #- name: Test
+      #  run: dotnet test -c Test --no-restore
+      - name: Test All
+        #if: matrix.os == 'windows-latest'
+        run: dotnet test BlazarTech.QueryableValues.sln -c Test_All --no-restore
+        #run: sqlcmd -l 120 -S "(localdb)\MSSQLLocalDB" -Q "SELECT @@VERSION;"
+      #- name: Build
+      #  run: dotnet build -c Release --no-restore
+      - name: Pack
+        #if: matrix.os == 'ubuntu-latest'
+        run: dotnet build BlazarTech.QueryableValues.SqlServer.sln -c Release --no-restore --version-suffix=build.$env:GITHUB_RUN_NUMBER
+      - name: Upload Artifacts
+        #if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: nupkg
+          path: ./src/QueryableValues.SqlServer.EFCore*/bin/Release/*.nupkg
+  prerelease:
+    needs: build
+    if: github.ref == 'refs/heads/develop-reorg'
+    #runs-on: ubuntu-latest
+    runs-on: windows-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: nupkg
+      - name: Push to GitHub Feed
+        run: |
+          dotnet nuget add source --username $env:GITHUB_USER --password $env:GITHUB_TOKEN --store-password-in-clear-text --name github "https://nuget.pkg.github.com/$env:GITHUB_USER/index.json" &&
+          dotnet nuget push "**/*.nupkg" --api-key $env:LOCAL_NUGET_PAT --source "github" --skip-duplicate
+  deploy:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.100
+      - name: Create Release NuGet package
+        run: |
+          arrTag=(${GITHUB_REF//\// })
+          VERSION="${arrTag[2]}"
+          echo Version: $VERSION
+          VERSION="${VERSION//v}"
+          echo Clean Version: $VERSION
+          dotnet pack -c Release -p:PackageVersion=$VERSION -o nupkg src/$PROJECT_NAME/$PROJECT_NAME.*proj
+      - name: Push to GitHub Feed
+        run: |
+          for f in ./nupkg/*.nupkg
+          do
+            curl -vX PUT -u "$GITHUB_USER:$GITHUB_TOKEN" -F package=@$f $GITHUB_FEED
+          done
+      #- name: Push to NuGet Feed
+      #  run: dotnet nuget push ./nupkg/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY

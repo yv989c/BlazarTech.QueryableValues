@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<RootNamespace>BlazarTech.QueryableValues.SqlServer.Tests</RootNamespace>
+		<AssemblyName>BlazarTech.QueryableValues.SqlServer.Tests</AssemblyName>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<Configurations>Debug;Release;Test;Test_All</Configurations>
+	</PropertyGroup>
+
+</Project>

@@ -1,0 +1,17 @@
+﻿<Project>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<RootNamespace>BlazarTech.QueryableValues.SqlServer.Tests</RootNamespace>
+		<AssemblyName>BlazarTech.QueryableValues.SqlServer.Tests</AssemblyName>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<Configurations>Debug;Release;Test;Test_All</Configurations>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="..\QueryableValues.SqlServer.Tests\Integration\**\*.cs">
+			<Link>Integration\%(RecursiveDir)\%(FileName)%(Extension)</Link>
+		</Compile>
+		<Compile Include="..\QueryableValues.SqlServer.Tests\*.cs" />
+	</ItemGroup>
+</Project>
