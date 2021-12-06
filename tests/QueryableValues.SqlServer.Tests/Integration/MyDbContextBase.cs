@@ -23,7 +23,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             var databaseFilePath = Path.Combine(Path.GetTempPath(), $"{_databaseName}.mdf");
 
             optionsBuilder.UseSqlServer(
-                @$"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=120;Database={_databaseName};AttachDbFileName={databaseFilePath}",
+                @$"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=190;Database={_databaseName};AttachDbFileName={databaseFilePath}",
                 sqlServerOptionsBuilder =>
                 {
                     sqlServerOptionsBuilder.UseQueryableValues();
