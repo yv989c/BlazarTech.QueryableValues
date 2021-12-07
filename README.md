@@ -14,8 +14,6 @@ For a detailed explanation, please continue reading [here](#background-).
 ## When should I use it?
 The `AsQueryableValues` extension method is intended for queries that are dependent on a non-constant sequence of external values. In this case, the underline SQL query will be efficient on subsequent executions.
 
-If the values in your sequence are constant, then you don't need `AsQueryableValues`.
-
 ## Getting Started
 
 ### Installation
@@ -23,7 +21,7 @@ QueryableValues is distributed as a [NuGet package](https://www.nuget.org/packag
 ```
 PM> Install-Package BlazarTech.QueryableValues.SqlServer
 ```
-The major version number of this library is aligned with the version of [Entity Framework Core] that's supported by it, therefore, if you are using EF Core 5.x, then you must use version 5.x.
+The major version number of this library is aligned with the version of [Entity Framework Core] that's supported by it. For example, if you are using EF Core 5.x, then you must use the version 5.x of QueryableValues.
 
 ### Configuration
 Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method, as shown in the following simplified examples:
