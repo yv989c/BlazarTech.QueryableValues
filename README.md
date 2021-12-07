@@ -1,5 +1,8 @@
-﻿# QueryableValues
+﻿<p align="center">
+    <img src="https://github.com/yv989c/BlazarTech.QueryableValues/raw/develop/docs/images/icon.png" alt="Logo" style="width: 80px;">
+</p>
 
+# QueryableValues [![CI/CD Workflow](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml)
 This library improves the efficiency of some types of queries in [Entity Framework Core] when using the [SQL Server database provider].
 
 The provided `AsQueryableValues` extension method on the [DbContext] class allows us to efficiently compose an [IEnumerable\<T\>] in our queries when it consist of *non-constant* values. It returns an [IQueryable\<T\>] that in the context of a query can be treated as any other entity in our [DbContext]. Everything evaluated on the server.
@@ -9,7 +12,6 @@ The supported types for `T` are: `Int32`, `Int64`, `Decimal`, `Double`, `DateTim
 For a detailed explanation, please continue reading [here](#background-).
 
 ## When should I use it?
-
 The `AsQueryableValues` extension method is intended for queries that are dependent on a non-constant sequence of external values. In this case, the underline SQL query will be efficient on subsequent executions.
 
 If the values in your sequence are constant, then you don't need `AsQueryableValues`.
@@ -17,14 +19,13 @@ If the values in your sequence are constant, then you don't need `AsQueryableVal
 ## Getting Started
 
 ### Installation
-
 QueryableValues is distributed as a [NuGet package](https://www.nuget.org/packages/BlazarTech.QueryableValues.SqlServer/). Please use the following command to install it using the NuGet Package Manager Console window:
 ```
 PM> Install-Package BlazarTech.QueryableValues.SqlServer
 ```
+The major version number of this library is aligned with the version of [Entity Framework Core] that's supported by it, therefore, if you are using EF Core 5.x, then you must use version 5.x.
 
 ### Configuration
-
 Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method, as shown in the following simplified examples:
 
 When using the `OnConfiguring` method inside your [DbContext]:
@@ -187,7 +188,6 @@ WHERE [m].[MyEntityID] IN (1, 2, 3, 4) OR ([m].[PropB] = @__p_1)',N'@__p_1 bigin
 As we can see, a new SQL statement was generated just because we modified the list that's being used in our `Where` predicate. This has the detrimental effect that a previously cached execution plan cannot be reused, forcing SQL Server's query engine to compute a new execution plan *every time* it is provided with a SQL statement that it hasn't seen before, and increasing the likelihood of flushing other plans in the process.
 
 ## Enter AsQueryableValues 🙌
-
 ![Parameterize All the Things](/docs/images/parameterize-all-the-things.jpg)
 
 This library provides the `AsQueryableValues` extension method, made available on the [DbContext] class. It solves the problem explained above by allowing us to build a query that will generate a SQL statement for [sp_executesql] that will remain constant, execution after execution, allowing SQL Server to do its best every time by using a previously cached execution plan. This will speed up our query on subsequent executions, and conserve system resources.
@@ -243,7 +243,14 @@ As expected, none of the queries in the orange section hit the cache, on the oth
 
 Now, let's focus our attention to the first query of the green section. We can appreciate that there's a cost associated with this technique, but this cost can be offset in the long run, especially when our queries are not trivial like the ones that I am using in these examples.
 
-## One More Thing 🤓
+## What Makes this Work? 🤓
+I am making use of the XML parsing capabilities in SQL Server. The provided values are serialized as XML and embedded in the underline SQL query using a native XML parameter, then I use SQL Server's XML type methods to project the query in a way that can be mapped by Entity Framework on the fly.
+
+This is a technique that I have not seen being used by other popular libraries that aim to solve this problem. It is superior from a latency standpoint because it resolves the query with a single roundtrip to the database, while preserving the execution plan.
+
+Right now, `AsQueryableValues` is restricted to simple types, but I am planning to add the ability to map complex objects, which is a feature that you can find in other libraries.
+
+## One More Thing 👀
 The `AsQueryableValues` extension method also allows us to treat our sequence of values as we normally would if these were another entity in the [DbContext]. The type returned by the extension is a [IQueryable\<T\>] that can be composed with other entities in your query.
 
 For example, we can do one or more joins like this and it’s totally fine:
