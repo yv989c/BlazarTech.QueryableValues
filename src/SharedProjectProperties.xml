@@ -10,14 +10,19 @@
 		<Description>This library enhances the DbContext class by providing the AsQueryableValues extension method, which allows us to efficiently compose an IEnumerable&lt;T&gt; in our queries. It returns an IQueryable&lt;T&gt; that in the context of a query can be treated as any other entity in our DbContext.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/yv989c/BlazarTech.QueryableValues</PackageProjectUrl>
-		<PackageTags>Entity Framework Core entity-framework-core EF Data O/RM EntityFramework EntityFrameworkCore EFCore SQL Server IQueryable IEnumerable Queryable Values</PackageTags>
+		<PackageTags>Entity Framework Core entity-framework-core EF Data O/RM EntityFramework EntityFrameworkCore EFCore SQL Server IQueryable IEnumerable Queryable Values MemoryJoin BulkInsertTempTableAsync WhereBulkContains</PackageTags>
 		<PackageIcon>icon.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<None Include="..\..\docs\images\icon.png" Visible="false">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\..\docs\README.md" Visible="false">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>

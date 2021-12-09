@@ -1,27 +1,31 @@
 ﻿<p align="center">
-    <img src="https://github.com/yv989c/BlazarTech.QueryableValues/raw/develop/docs/images/icon.png" alt="Logo" style="width: 80px;">
+    <img src="https://raw.githubusercontent.com/yv989c/BlazarTech.QueryableValues/develop/docs/images/icon.png" alt="Logo" style="width: 80px;">
 </p>
 
 # QueryableValues [![CI/CD Workflow](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml)
-This library improves the efficiency of some types of queries in [Entity Framework Core] when using the [SQL Server database provider].
+This library improves the efficiency of some types of queries in [Entity Framework Core] when using the [SQL Server Database Provider].
 
-The provided `AsQueryableValues` extension method on the [DbContext] class allows us to efficiently compose an [IEnumerable\<T\>] in our queries when it consist of *non-constant* values. It returns an [IQueryable\<T\>] that in the context of a query can be treated as any other entity in our [DbContext]. Everything evaluated on the server.
+The provided `AsQueryableValues` extension method on the [DbContext] class allows us to efficiently compose an [IEnumerable\<T\>] in our queries when it consist of *non-constant* values. It returns an [IQueryable\<T\>] that in the context of a query can be treated as any other entity in our [DbContext]. Everything is evaluated on the server.
 
-The supported types for `T` are: `Int32`, `Int64`, `Decimal`, `Double`, `DateTime`, `DateTimeOffset`, and `String`.
+The supported types for `T` are: `Int32`, `Int64`, `Decimal`, `Double`, `DateTime`, `DateTimeOffset`, `Guid`, and `String`.
 
-For a detailed explanation, please continue reading [here](#background-).
+For a detailed explanation, please continue reading [here][readme-background].
 
-## When should I use it?
-The `AsQueryableValues` extension method is intended for queries that are dependent on a non-constant sequence of external values. In this case, the underline SQL query will be efficient on subsequent executions.
+## When Should I Use It?
+The `AsQueryableValues` extension method is intended for queries that are dependent on a *non-constant* sequence of external values. In this case, the underline SQL query will be efficient on subsequent executions.
 
 ## Getting Started
 
 ### Installation
-QueryableValues is distributed as a [NuGet package](https://www.nuget.org/packages/BlazarTech.QueryableValues.SqlServer/). Please use the following command to install it using the NuGet Package Manager Console window:
-```
-PM> Install-Package BlazarTech.QueryableValues.SqlServer
-```
-The major version number of this library is aligned with the version of [Entity Framework Core] that's supported by it. For example, if you are using EF Core 5.x, then you must use the version 5.x of QueryableValues.
+QueryableValues is distributed as a [NuGet Package]. The major version number of this library is aligned with the version of [Entity Framework Core] that's supported by it; for example, if you are using EF Core 5, then you must use version 5 of QueryableValues.
+
+Please choose the appropriate command below to install it using the NuGet Package Manager Console window in Visual Studio:
+
+EF Core | Command
+:---: | ---
+3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.1.0`
+5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.1.0`
+6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.1.0`
 
 ### Configuration
 Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method, as shown in the following simplified examples:
@@ -65,7 +69,7 @@ public class Startup
 }
 ```
 
-### How do I use it?
+### How Do I Use It?
 The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace, therefore, you must add the following `using` directive to your source code file in order for it to appear as a method of your [DbContext] instance.
 ```
 using BlazarTech.QueryableValues;
@@ -135,7 +139,7 @@ var myQuery2 =
 ---
 
 ## Background 📚
-When [Entity Framework Core] is set up to use the [SQL Server database provider], and it detects the use of variables in a query, in *most cases* it provides their values as parameters to an internal [SqlCommand] object that will end up executing the translated SQL statement. This is done efficiently by using the [sp_executesql] stored procedure behind the scenes, so if the same SQL statement is executed a second time, our SQL Server instance will likely have a computed execution plan in its cache, therefore, saving time and system resources.
+When [Entity Framework Core] is set up to use the [SQL Server Database Provider], and it detects the use of variables in a query, in *most cases* it provides their values as parameters to an internal [SqlCommand] object that will end up executing the translated SQL statement. This is done efficiently by using the [sp_executesql] stored procedure behind the scenes, so if the same SQL statement is executed a second time, our SQL Server instance will likely have a computed execution plan in its cache, therefore, saving time and system resources.
 
 ## The Problem 🤔
 We have been in the situation where we need to build a query that must return one or more items based on a sequence of values. The common pattern to do this makes use of the [Contains][ContainsEnumerable] LINQ extension method on the [IEnumerable\<T\>] interface, and then we pass the property of the entity that must match any of the values in the sequence. This way we can retrieve multiple items with a single roundtrip to the database, as shown in the following example:
@@ -152,7 +156,7 @@ var myQuery = dbContext.MyEntities
 ```
 The previous query will yield the expected results, but there's a catch. If the sequence of values in our list *is different* on every execution, the underline SQL query will be built in a way that's not optimal for SQL Server's query engine. Wasting system resources like CPU, memory, IO, and potentially affecting other queries in the instance.
 
-Let's take a look at the following query and the SQL that is generated by the [SQL Server database provider] as of version 5.0.11 when the query is materialized:
+Let's take a look at the following query and the SQL that is generated by the [SQL Server Database Provider] as of version 5.0.11 when the query is materialized:
 
 ```c#
 var listOfValues = new List<int> { 1, 2, 3 };
@@ -249,7 +253,7 @@ This is a technique that I have not seen being used by other popular libraries t
 Right now, `AsQueryableValues` is restricted to simple types, but I am planning to add the ability to map complex objects, which is a feature that you can find in other libraries.
 
 ## One More Thing 👀
-The `AsQueryableValues` extension method also allows us to treat our sequence of values as we normally would if these were another entity in the [DbContext]. The type returned by the extension is a [IQueryable\<T\>] that can be composed with other entities in your query.
+The `AsQueryableValues` extension method allows us to treat our sequence of values as we normally would if these were another entity in the [DbContext]. The type returned by the extension is a [IQueryable\<T\>] that can be composed with other entities in your query.
 
 For example, we can do one or more joins like this and it’s totally fine:
 ```c#
@@ -263,11 +267,11 @@ var myQuery =
         i.PropA
     };
 ```
-## Found a 🐛 or have an 💡?
+## Did You Find a 🐛 or Have an 💡?
 PRs are welcome! 🙂
 
 [Entity Framework Core]: https://docs.microsoft.com/en-us/ef/core/
-[SQL Server database provider]: https://docs.microsoft.com/en-us/ef/core/providers/sql-server/
+[SQL Server Database Provider]: https://docs.microsoft.com/en-us/ef/core/providers/sql-server/
 [DbContext]: https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext?view=efcore-5.0
 [ContainsEnumerable]: https://docs.microsoft.com/en-us/dotnet/api/system.linq.enumerable.contains
 [ContainsQueryable]: https://docs.microsoft.com/en-us/dotnet/api/system.linq.queryable.contains
@@ -277,3 +281,5 @@ PRs are welcome! 🙂
 [SqlCommand]: https://docs.microsoft.com/en-us/dotnet/api/microsoft.data.sqlclient.sqlcommand
 [IEnumerable\<T\>]: https://docs.microsoft.com/en-us/dotnet/api/system.collections.ienumerable
 [IQueryable\<T\>]: https://docs.microsoft.com/en-us/dotnet/api/system.linq.iqueryable-1
+[NuGet Package]: https://www.nuget.org/packages/BlazarTech.QueryableValues.SqlServer/
+[readme-background]: #background-
