@@ -4,7 +4,7 @@
 
 	<PropertyGroup>
 		<VersionPrefix>$(VersionEFCore3)</VersionPrefix>
-		<TargetFramework>netstandard2.1</TargetFramework>
+		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>9.0</LangVersion>
 		<Configurations>Debug;Release;Test</Configurations>
 		<DefineConstants>$(DefineConstants);EFCORE;EFCORE3</DefineConstants>
