@@ -202,6 +202,21 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task MustMatchSequenceOfGuid()
+        {
+            var expected = new[] {
+                Guid.Empty,
+                Guid.Parse("5a9354e2-ba25-4acc-a365-6a2594980879"),
+                Guid.Empty,
+                Guid.Parse("9816e5dc-56c1-44c5-88b8-3557c4fc55b7")
+            };
+
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public async Task QueryEntityInt32()
         {
             var values = new[] {
@@ -367,6 +382,28 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             var actual = await (
                 from i in _db.TestData
                 join v in _db.AsQueryableValues(values) on i.DateTimeOffsetValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+
+        [Fact]
+        public async Task QueryEntityGuid()
+        {
+            var values = new[] {
+                Guid.Empty,
+                Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6")
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.GuidValue equals v
                 orderby i.Id
                 select i.Id
                 )

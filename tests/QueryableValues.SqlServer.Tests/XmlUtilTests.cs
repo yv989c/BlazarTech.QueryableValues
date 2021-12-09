@@ -96,6 +96,18 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests
             var expected = "<R><V>0001-01-01T00:00:00Z</V><V>9999-12-31T23:59:59.9999999Z</V><V>2021-01-01T01:02:03.004Z</V><V>2021-01-01T01:02:03.004+05:30</V></R>";
             Assert.Equal(expected, xml);
         }
+
+        [Fact]
+        public void IsValidXmlForGuid()
+        {
+            var values = new[] { 
+                Guid.Empty,
+                Guid.Parse("b8f66b9f-a9ee-447a-bd10-6b6adb9bcfaf")
+            };
+            var xml = XmlUtil.GetXml(values);
+            var expected = "<R><V>00000000-0000-0000-0000-000000000000</V><V>b8f66b9f-a9ee-447a-bd10-6b6adb9bcfaf</V></R>";
+            Assert.Equal(expected, xml);
+        }
     }
 }
 #endif

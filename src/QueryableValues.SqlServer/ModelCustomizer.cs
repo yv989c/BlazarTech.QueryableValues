@@ -34,6 +34,7 @@ namespace BlazarTech.QueryableValues
             SetupEntity<DateTime>(modelBuilder);
             SetupEntity<DateTimeOffset>(modelBuilder);
             SetupEntity<string>(modelBuilder);
+            SetupEntity<Guid>(modelBuilder);
 
             _previousModelCustomizer.Customize(modelBuilder, context);
         }

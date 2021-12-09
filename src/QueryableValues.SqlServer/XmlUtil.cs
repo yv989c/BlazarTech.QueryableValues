@@ -36,6 +36,10 @@ namespace BlazarTech.QueryableValues
                     {
                         xmlWriter.WriteValue(DateTime.SpecifyKind(dateTime, DateTimeKind.Unspecified));
                     }
+                    else if (value is Guid guid)
+                    {
+                        xmlWriter.WriteValue(guid.ToString());
+                    }
                     else
                     {
                         xmlWriter.WriteValue(value);

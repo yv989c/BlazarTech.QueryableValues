@@ -41,7 +41,8 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     StringValue = "Hola!",
                     UnicodeStringValue = "👋",
                     DateTimeValue = DateTime.MinValue,
-                    DateTimeOffsetValue = DateTimeOffset.MinValue
+                    DateTimeOffsetValue = DateTimeOffset.MinValue,
+                    GuidValue = Guid.Empty
                 },
                 new TestDataEntity
                 {
@@ -52,7 +53,8 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     StringValue = "Hallo!",
                     UnicodeStringValue = "你好！",
                     DateTimeValue = dateTimeOffset.DateTime,
-                    DateTimeOffsetValue = dateTimeOffset
+                    DateTimeOffsetValue = dateTimeOffset,
+                    GuidValue = Guid.Parse("df2c9bfe-9d83-4331-97ce-2876d5dc6576")
                 },
                 new TestDataEntity
                 {
@@ -64,6 +66,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     UnicodeStringValue = "أهلا",
                     DateTimeValue = DateTime.MaxValue,
                     DateTimeOffsetValue = DateTimeOffset.MaxValue,
+                    GuidValue = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6")
                 }
             };
 

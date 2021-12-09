@@ -63,6 +63,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public string UnicodeStringValue { get; set; }
         public DateTime DateTimeValue { get; set; }
         public DateTimeOffset DateTimeOffsetValue { get; set; }
+        public Guid GuidValue { get; set; }
     }
 #nullable restore
 }

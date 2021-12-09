@@ -226,6 +226,21 @@ namespace BlazarTech.QueryableValues
 
             return GetQuery(dbContext, sql, values);
         }
+
+        /// <summary>
+        /// Allows an <see cref="IEnumerable{Guid}">IEnumerable&lt;Guid&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{Guid}">IQueryable&lt;Guid&gt;</see> that can be composed with other entities in the query.</returns>
+        public static IQueryable<Guid> AsQueryableValues(this DbContext dbContext, IEnumerable<Guid> values)
+        {
+            const string sql =
+                "SELECT I.value('. cast as xs:string?', 'uniqueidentifier') AS V " +
+                "FROM {0}.nodes('/R/V') N(I)";
+
+            return GetQuery(dbContext, sql, values);
+        }
     }
 }
 #endif

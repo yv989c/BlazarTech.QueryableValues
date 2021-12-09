@@ -1,7 +1,7 @@
 ﻿<Project>
 	<PropertyGroup>
-		<VersionEFCore3>3.0.0</VersionEFCore3>
-		<VersionEFCore5>5.0.0</VersionEFCore5>
-		<VersionEFCore6>6.0.0</VersionEFCore6>
+		<VersionEFCore3>3.1.0</VersionEFCore3>
+		<VersionEFCore5>5.1.0</VersionEFCore5>
+		<VersionEFCore6>6.1.0</VersionEFCore6>
 	</PropertyGroup>
 </Project>
