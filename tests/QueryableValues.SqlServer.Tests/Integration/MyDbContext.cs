@@ -1,4 +1,6 @@
 ﻿#if TESTS
+using Microsoft.EntityFrameworkCore;
+
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
 #if EFCORE3
@@ -17,5 +19,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public MyDbContext() : base("QueryableValuesTestsEFCore6") { }
     }
 #endif
+
+    public class MyBadDbContext : MyDbContext
+    {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer("BadConnectionString");
+        }
+    }
 }
 #endif
