@@ -1,49 +1,37 @@
-﻿#if EFCORE
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml;
 
 namespace BlazarTech.QueryableValues
 {
     internal static class XmlUtil
     {
-        public static string GetXml<T>(IEnumerable<T> values)
-            where T : notnull
+        private static string GetXml<T>(IEnumerable<T> values, Action<XmlWriter, T> writeValue, Func<T, bool>? mustSkipValue = null)
         {
             var sb = new StringBuilder();
 
             using (var stringWriter = new System.IO.StringWriter(sb))
             {
-                var settings = new System.Xml.XmlWriterSettings
+                var settings = new XmlWriterSettings
                 {
-                    ConformanceLevel = System.Xml.ConformanceLevel.Fragment
+                    ConformanceLevel = ConformanceLevel.Fragment
                 };
 
-                using var xmlWriter = System.Xml.XmlWriter.Create(stringWriter, settings);
+                using var xmlWriter = XmlWriter.Create(stringWriter, settings);
 
                 xmlWriter.WriteStartElement("R");
 
                 foreach (var value in values)
                 {
-                    if (value is null)
+                    if (mustSkipValue?.Invoke(value) == true)
                     {
                         continue;
                     }
 
                     xmlWriter.WriteStartElement("V");
 
-                    if (value is DateTime dateTime)
-                    {
-                        xmlWriter.WriteValue(DateTime.SpecifyKind(dateTime, DateTimeKind.Unspecified));
-                    }
-                    else if (value is Guid guid)
-                    {
-                        xmlWriter.WriteValue(guid.ToString());
-                    }
-                    else
-                    {
-                        xmlWriter.WriteValue(value);
-                    }
+                    writeValue(xmlWriter, value);
 
                     xmlWriter.WriteEndElement();
                 }
@@ -53,6 +41,54 @@ namespace BlazarTech.QueryableValues
 
             return sb.ToString();
         }
+
+        public static string GetXml(IEnumerable<int> values)
+        {
+            static void writeValue(XmlWriter writer, int v) => writer.WriteValue(v);
+            return GetXml(values, writeValue);
+        }
+
+        public static string GetXml(IEnumerable<long> values)
+        {
+            static void writeValue(XmlWriter writer, long v) => writer.WriteValue(v);
+            return GetXml(values, writeValue);
+        }
+
+        public static string GetXml(IEnumerable<decimal> values)
+        {
+            static void writeValue(XmlWriter writer, decimal v) => writer.WriteValue(v);
+            return GetXml(values, writeValue);
+        }
+
+        public static string GetXml(IEnumerable<double> values)
+        {
+            static void writeValue(XmlWriter writer, double v) => writer.WriteValue(v);
+            return GetXml(values, writeValue);
+        }
+
+        public static string GetXml(IEnumerable<DateTime> values)
+        {
+            static void writeValue(XmlWriter writer, DateTime v) => writer.WriteValue(DateTime.SpecifyKind(v, DateTimeKind.Unspecified));
+            return GetXml(values, writeValue);
+        }
+
+        public static string GetXml(IEnumerable<DateTimeOffset> values)
+        {
+            static void writeValue(XmlWriter writer, DateTimeOffset v) => writer.WriteValue(v);
+            return GetXml(values, writeValue);
+        }
+
+        public static string GetXml(IEnumerable<Guid> values)
+        {
+            static void writeValue(XmlWriter writer, Guid v) => writer.WriteValue(v.ToString());
+            return GetXml(values, writeValue);
+        }
+
+        public static string GetXml(IEnumerable<string> values)
+        {
+            static bool mustSkipValue(string v) => v is null;
+            static void writeValue(XmlWriter writer, string v) => writer.WriteValue(v);
+            return GetXml(values, writeValue, mustSkipValue);
+        }
     }
 }
-#endif

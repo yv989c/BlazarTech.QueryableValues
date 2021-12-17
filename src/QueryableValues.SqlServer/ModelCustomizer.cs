@@ -21,7 +21,17 @@ namespace BlazarTech.QueryableValues
                 .Entity<QueryableValuesEntity<T>>()
                 // By mapping to a fake view, we stop EF from including these entities during
                 // SQL generation in migrations and by the Create and Drop apis in DbContext.Database.
-                .ToView($"QueryableValuesEntity{typeof(T).Name}")
+                .ToView($"{nameof(QueryableValuesEntity)}{typeof(T).Name}")
+                .HasNoKey();
+        }
+
+        private static void SetupEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder
+                .Entity<QueryableValuesEntity>()
+                // By mapping to a fake view, we stop EF from including these entities during
+                // SQL generation in migrations and by the Create and Drop apis in DbContext.Database.
+                .ToView(nameof(QueryableValuesEntity))
                 .HasNoKey();
         }
 
@@ -35,6 +45,8 @@ namespace BlazarTech.QueryableValues
             SetupEntity<DateTimeOffset>(modelBuilder);
             SetupEntity<string>(modelBuilder);
             SetupEntity<Guid>(modelBuilder);
+
+            SetupEntity(modelBuilder);
 
             _previousModelCustomizer.Customize(modelBuilder, context);
         }

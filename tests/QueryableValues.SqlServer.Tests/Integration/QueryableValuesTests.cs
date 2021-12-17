@@ -411,6 +411,31 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             Assert.Equal(expected, actual);
         }
+
+        [Fact]
+        public async Task ComplexTypeTest()
+        {
+            var input = new []
+            {
+                new TestEntity{ Id = 1 }
+            };
+
+            var asd =
+                from i in _db.TestData
+                join e in _db.AsQueryableValuesTest(input) on i.Int32Value equals e.Id
+                select i.GuidValue;
+
+            for (int i = 0; i < 10; i++)
+            {
+                _ = await asd.ToListAsync();
+            }
+
+            var output = await _db.AsQueryableValuesTest(input).ToListAsync();
+
+            var expected = System.Text.Json.JsonSerializer.Serialize(input);
+            var actual = System.Text.Json.JsonSerializer.Serialize(output);
+            Assert.Equal(expected, actual);
+        }
     }
 }
 #endif

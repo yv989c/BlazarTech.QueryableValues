@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 
 namespace BlazarTech.QueryableValues
 {
@@ -14,40 +15,7 @@ namespace BlazarTech.QueryableValues
     /// </summary>
     public static class QueryableValuesDbContextExtensions
     {
-        private static readonly Dictionary<int, string> QueryDecimalCache = new Dictionary<int, string>();
-
-        private struct DeferredValues<T> : IConvertible
-            where T : notnull
-        {
-            private readonly IEnumerable<T> _values;
-
-            public DeferredValues(IEnumerable<T> values)
-            {
-                _values = values;
-            }
-
-            public string ToString(IFormatProvider? provider)
-            {
-                return XmlUtil.GetXml(_values);
-            }
-
-            public TypeCode GetTypeCode() => throw new NotImplementedException();
-            public bool ToBoolean(IFormatProvider? provider) => throw new NotImplementedException();
-            public byte ToByte(IFormatProvider? provider) => throw new NotImplementedException();
-            public char ToChar(IFormatProvider? provider) => throw new NotImplementedException();
-            public DateTime ToDateTime(IFormatProvider? provider) => throw new NotImplementedException();
-            public decimal ToDecimal(IFormatProvider? provider) => throw new NotImplementedException();
-            public double ToDouble(IFormatProvider? provider) => throw new NotImplementedException();
-            public short ToInt16(IFormatProvider? provider) => throw new NotImplementedException();
-            public int ToInt32(IFormatProvider? provider) => throw new NotImplementedException();
-            public long ToInt64(IFormatProvider? provider) => throw new NotImplementedException();
-            public sbyte ToSByte(IFormatProvider? provider) => throw new NotImplementedException();
-            public float ToSingle(IFormatProvider? provider) => throw new NotImplementedException();
-            public object ToType(Type conversionType, IFormatProvider? provider) => throw new NotImplementedException();
-            public ushort ToUInt16(IFormatProvider? provider) => throw new NotImplementedException();
-            public uint ToUInt32(IFormatProvider? provider) => throw new NotImplementedException();
-            public ulong ToUInt64(IFormatProvider? provider) => throw new NotImplementedException();
-        }
+        private static readonly Dictionary<int, string> QueryDecimalCache = new();
 
         private static void EnsureConfigured(DbContext dbContext)
         {
@@ -63,7 +31,7 @@ namespace BlazarTech.QueryableValues
             }
         }
 
-        private static IQueryable<TValue> GetQuery<TValue>(DbContext dbContext, string sql, IEnumerable<TValue> values)
+        private static IQueryable<TValue> GetQuery<TValue>(DbContext dbContext, string sql, DeferredValues<TValue> deferredValues)
             where TValue : notnull
         {
             EnsureConfigured(dbContext);
@@ -72,7 +40,7 @@ namespace BlazarTech.QueryableValues
             var xmlParameter = new SqlParameter(null, SqlDbType.Xml)
             {
                 // DeferredValues allows us to defer the enumeration of values until the query is materialized.
-                Value = new DeferredValues<TValue>(values)
+                Value = deferredValues
             };
 
             var queryableValues = dbContext
@@ -94,7 +62,7 @@ namespace BlazarTech.QueryableValues
                 "SELECT I.value('. cast as xs:integer?', 'int') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
 
-            return GetQuery(dbContext, sql, values);
+            return GetQuery(dbContext, sql, new DeferredInt32Values(values));
         }
 
         /// <summary>
@@ -109,7 +77,7 @@ namespace BlazarTech.QueryableValues
                 "SELECT I.value('. cast as xs:integer?', 'bigint') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
 
-            return GetQuery(dbContext, sql, values);
+            return GetQuery(dbContext, sql, new DeferredInt64Values(values));
         }
 
         /// <summary>
@@ -146,7 +114,7 @@ namespace BlazarTech.QueryableValues
                 }
             }
 
-            return GetQuery(dbContext, sql, values);
+            return GetQuery(dbContext, sql, new DeferredDecimalValues(values));
         }
 
         /// <summary>
@@ -161,7 +129,7 @@ namespace BlazarTech.QueryableValues
                 "SELECT I.value('. cast as xs:double?', 'float') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
 
-            return GetQuery(dbContext, sql, values);
+            return GetQuery(dbContext, sql, new DeferredDoubleValues(values));
         }
 
         /// <summary>
@@ -176,7 +144,7 @@ namespace BlazarTech.QueryableValues
                 "SELECT I.value('. cast as xs:dateTime?', 'datetime2') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
 
-            return GetQuery(dbContext, sql, values);
+            return GetQuery(dbContext, sql, new DeferredDateTimeValues(values));
         }
 
         /// <summary>
@@ -191,7 +159,7 @@ namespace BlazarTech.QueryableValues
                 "SELECT I.value('. cast as xs:dateTime?', 'datetimeoffset') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
 
-            return GetQuery(dbContext, sql, values);
+            return GetQuery(dbContext, sql, new DeferredDateTimeOffsetValues(values));
         }
 
         /// <summary>
@@ -224,7 +192,7 @@ namespace BlazarTech.QueryableValues
                     "FROM {0}.nodes('/R/V') N(I)";
             }
 
-            return GetQuery(dbContext, sql, values);
+            return GetQuery(dbContext, sql, new DeferredStringValues(values));
         }
 
         /// <summary>
@@ -239,7 +207,90 @@ namespace BlazarTech.QueryableValues
                 "SELECT I.value('. cast as xs:string?', 'uniqueidentifier') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
 
-            return GetQuery(dbContext, sql, values);
+            return GetQuery(dbContext, sql, new DeferredGuidValues(values));
+        }
+
+
+        private class PropertyMapping
+        {
+            public PropertyInfo? Source { get; set; }
+            public PropertyInfo? Target { get; set; }
+        }
+
+        private static IEnumerable<PropertyMapping> GetPropertyMappings<T>()
+        {
+            var sourceProperties = typeof(T).GetProperties();
+
+            var targetPropertiesByType = (
+                from i in typeof(QueryableValuesEntity).GetProperties()
+                group i by normalizeType(i.PropertyType) into g
+                select g
+                )
+                .ToDictionary(k => k.Key, v => new Queue<PropertyInfo>(v));
+
+            foreach (var sourceProperty in sourceProperties)
+            {
+                var propertyType = normalizeType(sourceProperty.PropertyType);
+
+                if (targetPropertiesByType.TryGetValue(propertyType, out Queue<PropertyInfo>? targetProperties))
+                {
+                    yield return new PropertyMapping
+                    {
+                        Source = sourceProperty,
+                        Target = targetProperties.Dequeue()
+                    };
+                }
+            }
+
+            static Type normalizeType(Type type) => Nullable.GetUnderlyingType(type) ?? type;
+        }
+
+        // todos:
+        // - Add DateOnly for Core 6 (think about TimeOnly).
+        // - Add Test case for Database Script/Migrations apis. Ensure that the internal entity is not leaked.
+        // - Fix documentation (remove ef-core5 reference in the url)
+
+        public static IQueryable<TestEntity> AsQueryableValuesTest(this DbContext dbContext, IEnumerable<TestEntity> values)
+        {
+            var testType = new { Asd = 1, asd2 = "Hi", asd3 = 123 };
+
+            static void ha<T>(T o)
+            {
+                var mappings1 = GetPropertyMappings<T>().ToList();
+            }
+
+            ha(testType);
+
+            var mappings2 = GetPropertyMappings<TestEntity>().ToList();
+
+
+            // todo: Use properties instead of elements? how do I express null? lack of the property? may be.... this way, only non-null properties are going to be rendered in the XML.
+            var xml = "<R><V><Int1>1</Int1></V></R>";
+
+            const string sql =
+                "SELECT I.value('. cast as xs:integer?', 'int') AS Int1 " +
+                "FROM {0}.nodes('/R/V/Int1') N(I)";
+
+            EnsureConfigured(dbContext);
+
+            // Parameter name not provided so EF can auto generate one.
+            var xmlParameter = new SqlParameter(null, SqlDbType.Xml)
+            {
+                // DeferredValues allows us to defer the enumeration of values until the query is materialized.
+                //Value = new DeferredValues<TValue>(values)
+                Value = xml
+            };
+
+            var queryableValues = dbContext
+                .Set<QueryableValuesEntity>()
+                .FromSqlRaw(sql, xmlParameter);
+
+            var result = queryableValues
+                .Select(i => new { i.Int1 })
+                // todo: always convert to the target's type.
+                .Select(i => new TestEntity { Id = (int)i.Int1 });
+
+            return result;
         }
     }
 }
