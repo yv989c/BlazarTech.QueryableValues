@@ -272,7 +272,7 @@ PRs are welcome! 🙂
 
 [Entity Framework Core]: https://docs.microsoft.com/en-us/ef/core/
 [SQL Server Database Provider]: https://docs.microsoft.com/en-us/ef/core/providers/sql-server/
-[DbContext]: https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext?view=efcore-5.0
+[DbContext]: https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext
 [ContainsEnumerable]: https://docs.microsoft.com/en-us/dotnet/api/system.linq.enumerable.contains
 [ContainsQueryable]: https://docs.microsoft.com/en-us/dotnet/api/system.linq.queryable.contains
 [Join]: https://docs.microsoft.com/en-us/dotnet/api/system.linq.queryable.join

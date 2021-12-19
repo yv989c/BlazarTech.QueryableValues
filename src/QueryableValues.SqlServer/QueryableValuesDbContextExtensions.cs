@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Reflection;
 
 namespace BlazarTech.QueryableValues
 {
@@ -210,58 +209,29 @@ namespace BlazarTech.QueryableValues
             return GetQuery(dbContext, sql, new DeferredGuidValues(values));
         }
 
-
-        private class PropertyMapping
-        {
-            public PropertyInfo? Source { get; set; }
-            public PropertyInfo? Target { get; set; }
-        }
-
-        private static IEnumerable<PropertyMapping> GetPropertyMappings<T>()
-        {
-            var sourceProperties = typeof(T).GetProperties();
-
-            var targetPropertiesByType = (
-                from i in typeof(QueryableValuesEntity).GetProperties()
-                group i by normalizeType(i.PropertyType) into g
-                select g
-                )
-                .ToDictionary(k => k.Key, v => new Queue<PropertyInfo>(v));
-
-            foreach (var sourceProperty in sourceProperties)
-            {
-                var propertyType = normalizeType(sourceProperty.PropertyType);
-
-                if (targetPropertiesByType.TryGetValue(propertyType, out Queue<PropertyInfo>? targetProperties))
-                {
-                    yield return new PropertyMapping
-                    {
-                        Source = sourceProperty,
-                        Target = targetProperties.Dequeue()
-                    };
-                }
-            }
-
-            static Type normalizeType(Type type) => Nullable.GetUnderlyingType(type) ?? type;
-        }
-
         // todos:
         // - Add DateOnly for Core 6 (think about TimeOnly).
         // - Add Test case for Database Script/Migrations apis. Ensure that the internal entity is not leaked.
-        // - Fix documentation (remove ef-core5 reference in the url)
 
         public static IQueryable<TestEntity> AsQueryableValuesTest(this DbContext dbContext, IEnumerable<TestEntity> values)
         {
             var testType = new { Asd = 1, asd2 = "Hi", asd3 = 123 };
+            var testTypeValues = new[] { testType };
 
-            static void ha<T>(T o)
+            void ha<T>(T o)
             {
-                var mappings1 = GetPropertyMappings<T>().ToList();
+                var mappings1 = EntityPropertyMapping.GetMappings<T>().ToArray();
+                var testXml = XmlUtil.GetXml(testTypeValues, mappings1);
             }
+
+            //var testType2 = new QueryableValuesEntity { Int0 = 1, String0 = "Hi", Int1 = 123 };
+            //var testTypeValues2 = new [] { testType2 };
+            //var testXml2 = XmlUtil.GetXml(testTypeValues2);
+
 
             ha(testType);
 
-            var mappings2 = GetPropertyMappings<TestEntity>().ToList();
+            var mappings2 = EntityPropertyMapping.GetMappings<TestEntity>().ToList();
 
 
             // todo: Use properties instead of elements? how do I express null? lack of the property? may be.... this way, only non-null properties are going to be rendered in the XML.
@@ -292,6 +262,13 @@ namespace BlazarTech.QueryableValues
 
             return result;
         }
+    }
+
+    public class TestEntity
+    {
+        public int Id { get; set; }
+        public int? OtherId { get; set; }
+        public int AnotherId { get; set; }
     }
 }
 #endif
