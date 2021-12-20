@@ -81,4 +81,17 @@ namespace BlazarTech.QueryableValues
 
         public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
     }
+
+    internal sealed class DeferredEntityValues<T> : DeferredValues<T>
+        where T : notnull
+    {
+        private readonly IReadOnlyList<EntityPropertyMapping> _mappings;
+
+        public DeferredEntityValues(IEnumerable<T> values, IReadOnlyList<EntityPropertyMapping> mappings)
+            : base(values)
+        {
+            _mappings = mappings;
+        }
+        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values, _mappings);
+    }
 }

@@ -415,26 +415,53 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         [Fact]
         public async Task ComplexTypeTest()
         {
-            var input = new []
+            //var input = new[]
+            //{
+            //    new TestEntity{ Id = 1, AnotherId = 2, Greeting = "Hello" },
+            //    new TestEntity{ Id = 1, OtherId = 123, AnotherId = 2 }
+            //};
+
+            var input = new[]
             {
-                new TestEntity{ Id = 1 }
+                new { Id = 1, AnotherId = 2, Greeting = "Hello 1" },
+                new { Id = 3, AnotherId = 4, Greeting = "Hello 2" }
             };
+
+            // Tupples not supported.
+            //var input = new[]
+            //{
+            //    (Id: 1, AnotherId: 2, Greeting: "Hello 1"),
+            //    (Id: 3, AnotherId: 4, Greeting: "Hello 2")
+            //};
+
+            //var asd2 =
+            //    from i in _db.TestData
+            //    select Tuple.Create(i.GuidValue, i.Id);
+
+            //var asd2 = _db.TestData.Select(i => (A: i.GuidValue, B: i.Id));
+
+            //_ = await asd2.ToListAsync();
 
             var asd =
                 from i in _db.TestData
-                join e in _db.AsQueryableValuesTest(input) on i.Int32Value equals e.Id
+                //join e in _db.AsQueryableValuesTest(input) on i.Int32Value equals e.Id
+                //join e in _db.AsQueryableValuesTest(input) on new { A = i.Id, B = i.Id } equals new { A = e.Id, B = e.AnotherId }
+                join e in _db.AsQueryableValuesTest(input) on i.Id equals e.Id
                 select i.GuidValue;
+
+            _ = await asd.ToListAsync();
+
 
             for (int i = 0; i < 10; i++)
             {
                 _ = await asd.ToListAsync();
             }
 
-            var output = await _db.AsQueryableValuesTest(input).ToListAsync();
+            //var output = await _db.AsQueryableValuesTest(input).ToListAsync();
 
-            var expected = System.Text.Json.JsonSerializer.Serialize(input);
-            var actual = System.Text.Json.JsonSerializer.Serialize(output);
-            Assert.Equal(expected, actual);
+            //var expected = System.Text.Json.JsonSerializer.Serialize(input);
+            //var actual = System.Text.Json.JsonSerializer.Serialize(output);
+            //Assert.Equal(expected, actual);
         }
     }
 }

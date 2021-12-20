@@ -42,14 +42,24 @@ namespace BlazarTech.QueryableValues
             return sb.ToString();
         }
 
-        private static void WriteValue(XmlWriter writer, int v) => writer.WriteValue(v);
-        private static void WriteValue(XmlWriter writer, long v) => writer.WriteValue(v);
-        private static void WriteValue(XmlWriter writer, decimal v) => writer.WriteValue(v);
-        private static void WriteValue(XmlWriter writer, double v) => writer.WriteValue(v);
-        private static void WriteValue(XmlWriter writer, DateTime v) => writer.WriteValue(DateTime.SpecifyKind(v, DateTimeKind.Unspecified));
-        private static void WriteValue(XmlWriter writer, DateTimeOffset v) => writer.WriteValue(v);
-        private static void WriteValue(XmlWriter writer, Guid v) => writer.WriteValue(v.ToString());
-        private static void WriteValue(XmlWriter writer, string v) => writer.WriteValue(v);
+        private static void WriteValue(XmlWriter writer, int value) => writer.WriteValue(value);
+        private static void WriteValue(XmlWriter writer, long value) => writer.WriteValue(value);
+        private static void WriteValue(XmlWriter writer, decimal value) => writer.WriteValue(value);
+        private static void WriteValue(XmlWriter writer, double value) => writer.WriteValue(value);
+        private static void WriteValue(XmlWriter writer, DateTime value)
+        {
+            if (value.Kind != DateTimeKind.Unspecified)
+            {
+                writer.WriteValue(DateTime.SpecifyKind(value, DateTimeKind.Unspecified));
+            }
+            else
+            {
+                writer.WriteValue(value);
+            }
+        }
+        private static void WriteValue(XmlWriter writer, DateTimeOffset value) => writer.WriteValue(value);
+        private static void WriteValue(XmlWriter writer, Guid value) => writer.WriteValue(value.ToString());
+        private static void WriteValue(XmlWriter writer, string value) => writer.WriteValue(value);
 
         public static string GetXml(IEnumerable<int> values)
         {
@@ -92,10 +102,10 @@ namespace BlazarTech.QueryableValues
             return GetXml(values, WriteValue, mustSkipValue);
         }
 
-        public static string GetXml<T>(IEnumerable<T> values, EntityPropertyMapping[] propertyMappings)
+        public static string GetXml<T>(IEnumerable<T> values, IReadOnlyList<EntityPropertyMapping> propertyMappings)
             where T : notnull
         {
-            var properties = new PropertyWriter[propertyMappings.Length];
+            var properties = new PropertyWriter[propertyMappings.Count];
 
             for (int i = 0; i < properties.Length; i++)
             {
@@ -117,15 +127,6 @@ namespace BlazarTech.QueryableValues
 
         private sealed class PropertyWriter
         {
-            private static readonly Type IntType = typeof(int);
-            private static readonly Type LongType = typeof(long);
-            private static readonly Type DecimalType = typeof(decimal);
-            private static readonly Type DoubleType = typeof(double);
-            private static readonly Type DateTimeType = typeof(DateTime);
-            private static readonly Type DateTimeOffsetType = typeof(DateTimeOffset);
-            private static readonly Type GuidType = typeof(Guid);
-            private static readonly Type StringType = typeof(string);
-
             private readonly string _targetName;
             private readonly Action<XmlWriter, object>? _writeValue;
 
@@ -137,44 +138,18 @@ namespace BlazarTech.QueryableValues
 
                 _targetName = mapping.Target.Name;
 
-                var type = mapping.NormalizedType;
-
-                if (type == IntType)
+                _writeValue = mapping.TypeName switch
                 {
-                    _writeValue = (writer, value) => WriteAttribute(writer, (int?)value, XmlUtil.WriteValue);
-                }
-                else if (type == LongType)
-                {
-                    _writeValue = (writer, value) => WriteAttribute(writer, (long?)value, XmlUtil.WriteValue);
-                }
-                else if (type == DecimalType)
-                {
-                    _writeValue = (writer, value) => WriteAttribute(writer, (decimal?)value, XmlUtil.WriteValue);
-                }
-                else if (type == DoubleType)
-                {
-                    _writeValue = (writer, value) => WriteAttribute(writer, (double?)value, XmlUtil.WriteValue);
-                }
-                else if (type == DateTimeType)
-                {
-                    _writeValue = (writer, value) => WriteAttribute(writer, (DateTime?)value, XmlUtil.WriteValue);
-                }
-                else if (type == DateTimeOffsetType)
-                {
-                    _writeValue = (writer, value) => WriteAttribute(writer, (DateTimeOffset?)value, XmlUtil.WriteValue);
-                }
-                else if (type == GuidType)
-                {
-                    _writeValue = (writer, value) => WriteAttribute(writer, (Guid?)value, XmlUtil.WriteValue);
-                }
-                else if (type == StringType)
-                {
-                    _writeValue = (writer, value) => WriteStringAttribute(writer, (string?)value);
-                }
-                else
-                {
-                    throw new NotSupportedException($"{mapping.Source.PropertyType.FullName} is not supported.");
-                }
+                    EntityPropertyTypeName.Int => (writer, value) => WriteAttribute(writer, (int?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Long => (writer, value) => WriteAttribute(writer, (long?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Decimal => (writer, value) => WriteAttribute(writer, (decimal?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Double => (writer, value) => WriteAttribute(writer, (double?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.DateTime => (writer, value) => WriteAttribute(writer, (DateTime?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.DateTimeOffset => (writer, value) => WriteAttribute(writer, (DateTimeOffset?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Guid => (writer, value) => WriteAttribute(writer, (Guid?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.String => (writer, value) => WriteStringAttribute(writer, (string?)value),
+                    _ => throw new NotImplementedException(mapping.TypeName.ToString()),
+                };
             }
 
             private void WriteAttribute<TValue>(XmlWriter writer, TValue? value, Action<XmlWriter, TValue> writeValue)

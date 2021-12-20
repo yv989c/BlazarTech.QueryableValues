@@ -6,6 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Text;
 
 namespace BlazarTech.QueryableValues
 {
@@ -210,57 +213,168 @@ namespace BlazarTech.QueryableValues
         }
 
         // todos:
-        // - Add DateOnly for Core 6 (think about TimeOnly).
+        // - Add DateOnly for Core 6 (think about TimeOnly). DateOnly is NOT supported yet as of EF6.
         // - Add Test case for Database Script/Migrations apis. Ensure that the internal entity is not leaked.
 
-        public static IQueryable<TestEntity> AsQueryableValuesTest(this DbContext dbContext, IEnumerable<TestEntity> values)
+        public static IQueryable<T> AsQueryableValuesTest<T>(this DbContext dbContext, IEnumerable<T> values)
+            where T : notnull
         {
-            var testType = new { Asd = 1, asd2 = "Hi", asd3 = 123 };
-            var testTypeValues = new[] { testType };
-
-            void ha<T>(T o)
-            {
-                var mappings1 = EntityPropertyMapping.GetMappings<T>().ToArray();
-                var testXml = XmlUtil.GetXml(testTypeValues, mappings1);
-            }
-
-            //var testType2 = new QueryableValuesEntity { Int0 = 1, String0 = "Hi", Int1 = 123 };
-            //var testTypeValues2 = new [] { testType2 };
-            //var testXml2 = XmlUtil.GetXml(testTypeValues2);
-
-
-            ha(testType);
-
-            var mappings2 = EntityPropertyMapping.GetMappings<TestEntity>().ToList();
-
-
-            // todo: Use properties instead of elements? how do I express null? lack of the property? may be.... this way, only non-null properties are going to be rendered in the XML.
-            var xml = "<R><V><Int1>1</Int1></V></R>";
-
-            const string sql =
-                "SELECT I.value('. cast as xs:integer?', 'int') AS Int1 " +
-                "FROM {0}.nodes('/R/V/Int1') N(I)";
-
             EnsureConfigured(dbContext);
+
+            var mappings = EntityPropertyMapping.GetMappings<T>();
+
+            var sql = getSql(mappings);
 
             // Parameter name not provided so EF can auto generate one.
             var xmlParameter = new SqlParameter(null, SqlDbType.Xml)
             {
-                // DeferredValues allows us to defer the enumeration of values until the query is materialized.
-                //Value = new DeferredValues<TValue>(values)
-                Value = xml
+                // DeferredEntityValues allows us to defer the enumeration of values until the query is materialized.
+                Value = new DeferredEntityValues<T>(values, mappings)
             };
 
-            var queryableValues = dbContext
+            var source = dbContext
                 .Set<QueryableValuesEntity>()
                 .FromSqlRaw(sql, xmlParameter);
 
-            var result = queryableValues
-                .Select(i => new { i.Int1 })
-                // todo: always convert to the target's type.
-                .Select(i => new TestEntity { Id = (int)i.Int1 });
+            var projected = projectQueryable(source, mappings);
 
-            return result;
+            return projected;
+
+            static string getSql(IReadOnlyList<EntityPropertyMapping> mappings)
+            {
+                var sb = new StringBuilder(500);
+
+                sb.Append("SELECT ").AppendLine();
+
+                for (int i = 0; i < mappings.Count; i++)
+                {
+                    var mapping = mappings[i];
+
+                    if (i > 0)
+                    {
+                        sb.Append(',').AppendLine();
+                    }
+
+                    var targetName = mapping.Target.Name;
+
+                    sb.Append("\tI.value('@").Append(targetName).Append("[1] cast as ");
+
+                    switch (mapping.TypeName)
+                    {
+                        case EntityPropertyTypeName.Int:
+                            sb.Append("xs:integer?', 'int'");
+                            break;
+                        case EntityPropertyTypeName.Long:
+                            sb.Append("xs:integer?', 'bigint'");
+                            break;
+                        case EntityPropertyTypeName.Decimal:
+                            sb.Append("xs:decimal?', 'decimal(38, 6)'");
+                            break;
+                        case EntityPropertyTypeName.Double:
+                            sb.Append("xs:double?', 'float'");
+                            break;
+                        case EntityPropertyTypeName.DateTime:
+                            sb.Append("xs:dateTime?', 'datetime2'");
+                            break;
+                        case EntityPropertyTypeName.DateTimeOffset:
+                            sb.Append("xs:dateTime?', 'datetimeoffset'");
+                            break;
+                        case EntityPropertyTypeName.Guid:
+                            sb.Append("xs:string?', 'uniqueidentifier'");
+                            break;
+                        case EntityPropertyTypeName.String:
+                            sb.Append("xs:string?', 'nvarchar(max)'");
+                            break;
+                        default:
+                            throw new NotImplementedException(mapping.TypeName.ToString());
+                    }
+
+                    sb.Append(") AS [").Append(targetName).Append(']');
+                }
+
+                sb.AppendLine();
+                sb.Append("FROM {0}.nodes('/R/V') N(I)");
+
+                return sb.ToString();
+            }
+
+            static IQueryable<T> projectQueryable(IQueryable<QueryableValuesEntity> source, IReadOnlyList<EntityPropertyMapping> mappings)
+            {
+                ParameterExpression parameterExpression = Expression.Parameter(typeof(QueryableValuesEntity), "i");
+
+                var bodyParameteters = new[]
+                {
+                    parameterExpression
+                };
+
+                Type sourceType = typeof(T);
+
+                var useConstructor = !mappings.All(i => i.Source.CanWrite);
+
+                // For anonymous types.
+                if (useConstructor)
+                {
+                    var constructor = sourceType.GetConstructors().FirstOrDefault();
+
+                    if (constructor == null)
+                    {
+                        throw new InvalidOperationException($"Cannot find a suitable constructor in {sourceType.FullName}.");
+                    }
+
+                    var arguments = new Expression[mappings.Count];
+                    var members = new MemberInfo[mappings.Count];
+
+                    for (int i = 0; i < mappings.Count; i++)
+                    {
+                        var mapping = mappings[i];
+
+                        arguments[i] = Expression.Convert(Expression.Property(parameterExpression, mapping.Target.Name), mapping.Source.PropertyType);
+
+                        var methodInfo = mapping.Source.GetGetMethod(true);
+
+                        if (methodInfo == null)
+                        {
+                            throw new InvalidOperationException();
+                        }
+
+                        members[i] = methodInfo;
+                    }
+
+                    var body = Expression.New(constructor, arguments, members);
+
+                    var queryable = Queryable.Select(source, Expression.Lambda<Func<QueryableValuesEntity, T>>(body, bodyParameteters));
+
+                    return queryable;
+                }
+                else
+                {
+                    var newExpression = Expression.New(sourceType);
+                    var bindings = new MemberBinding[mappings.Count];
+
+                    for (int i = 0; i < mappings.Count; i++)
+                    {
+                        var mapping = mappings[i];
+
+                        var methodInfo = mapping.Source.GetSetMethod();
+
+                        if (methodInfo == null)
+                        {
+                            throw new InvalidOperationException();
+                        }
+
+                        bindings[i] = Expression.Bind(
+                            methodInfo,
+                            Expression.Convert(Expression.Property(parameterExpression, mapping.Target.Name), mapping.Source.PropertyType)
+                            );
+                    }
+
+                    var body = Expression.MemberInit(newExpression, bindings);
+
+                    var queryable = Queryable.Select(source, Expression.Lambda<Func<QueryableValuesEntity, T>>(body, bodyParameteters));
+
+                    return queryable;
+                }
+            }
         }
     }
 
@@ -269,6 +383,7 @@ namespace BlazarTech.QueryableValues
         public int Id { get; set; }
         public int? OtherId { get; set; }
         public int AnotherId { get; set; }
+        public string Greeting { get; set; }
     }
 }
 #endif

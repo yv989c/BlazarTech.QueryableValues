@@ -33,6 +33,8 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasDefaultSchema("dbo");
+
             modelBuilder.Entity<TestDataEntity>(entity =>
             {
 #if EFCORE3
