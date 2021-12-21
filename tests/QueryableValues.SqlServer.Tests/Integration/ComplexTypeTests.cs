@@ -9,11 +9,11 @@ using Xunit;
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
     [Collection("DbContext")]
-    public class QueryableValuesTests
+    public class ComplexTypeTests
     {
         private readonly MyDbContext _db;
 
-        public QueryableValuesTests(DbContextFixture contextFixture)
+        public ComplexTypeTests(DbContextFixture contextFixture)
         {
             _db = contextFixture.Db;
         }
@@ -34,66 +34,23 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(expected, actual);
         }
 
-        private static IEnumerable<decimal> GetSequenceOfDecimals(int numberOfDecimals)
-        {
-            var fractions = new List<decimal>() { 0 };
-
-            var v = 1M;
-
-            for (int i = 0; i < numberOfDecimals; i++)
-            {
-                fractions.Add(1 / (v *= 10));
-            }
-
-            yield return truncate(-123456.123456M);
-            yield return truncate(123456.123456M);
-            yield return truncate(-999_999_999_999.999999M);
-            yield return truncate(999_999_999_999.999999M);
-
-            for (decimal i = 0; i <= 1_000_000; i *= 10)
-            {
-                foreach (var f in fractions)
-                {
-                    var n = i + f;
-
-                    yield return n; ;
-
-                    if (n > 0)
-                    {
-                        yield return -n;
-                    }
-                }
-
-                if (i == 0)
-                {
-                    i = 1;
-                }
-            }
-
-            decimal truncate(decimal value)
-            {
-                var step = (decimal)Math.Pow(10, numberOfDecimals);
-                return Math.Truncate(step * value) / step;
-            }
-        }
-
         [Fact]
         public async Task MustMatchSequenceOfDecimal()
         {
             {
-                var expected = GetSequenceOfDecimals(0).ToList();
+                var expected = TestUtil.GetSequenceOfDecimals(0).ToList();
                 var actual = await _db.AsQueryableValues(expected, 0).ToListAsync();
                 Assert.Equal(expected, actual);
             }
 
             {
-                var expected = GetSequenceOfDecimals(2).ToList();
+                var expected = TestUtil.GetSequenceOfDecimals(2).ToList();
                 var actual = await _db.AsQueryableValues(expected, 2).ToListAsync();
                 Assert.Equal(expected, actual);
             }
 
             {
-                var expected = GetSequenceOfDecimals(6).ToList();
+                var expected = TestUtil.GetSequenceOfDecimals(6).ToList();
                 var actual = await _db.AsQueryableValues(expected, 6).ToListAsync();
                 Assert.Equal(expected, actual);
             }
@@ -118,19 +75,19 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public async Task MustMatchSequenceOfDouble()
         {
             {
-                var expected = GetSequenceOfDecimals(0).Select(i => (double)i).ToList();
+                var expected = TestUtil.GetSequenceOfDecimals(0).Select(i => (double)i).ToList();
                 var actual = await _db.AsQueryableValues(expected).ToListAsync();
                 Assert.Equal(expected, actual);
             }
 
             {
-                var expected = GetSequenceOfDecimals(2).Select(i => (double)i).ToList();
+                var expected = TestUtil.GetSequenceOfDecimals(2).Select(i => (double)i).ToList();
                 var actual = await _db.AsQueryableValues(expected).ToListAsync();
                 Assert.Equal(expected, actual);
             }
 
             {
-                var expected = GetSequenceOfDecimals(6).Select(i => (double)i).ToList();
+                var expected = TestUtil.GetSequenceOfDecimals(6).Select(i => (double)i).ToList();
                 var actual = await _db.AsQueryableValues(expected).ToListAsync();
                 Assert.Equal(expected, actual);
             }
@@ -423,9 +380,15 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var input = new[]
             {
-                new { Id = 1, AnotherId = 2, Greeting = "Hello 1" },
-                new { Id = 3, AnotherId = 4, Greeting = "Hello 2" }
+                new TestEntity2{ Id = 1, AnotherId = 2, Greeting = "Hello" },
+                new TestEntity2{ Id = 1, OtherId = 123, AnotherId = 2 }
             };
+
+            //var input = new[]
+            //{
+            //    new { Id = 1, AnotherId = 2, Greeting = "Hello 1" },
+            //    new { Id = 3, AnotherId = 4, Greeting = "Hello 2" }
+            //};
 
             // Tupples not supported.
             //var input = new[]
@@ -442,11 +405,18 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             //_ = await asd2.ToListAsync();
 
+            var asdasdQuery = _db.AsQueryableValues(input, options =>
+            {
+                options.Property(p => p.Id).NumberOfDecimals(6);
+                options.Property(p => p.Greeting).IsUnicode();
+            });
+            var asdasd = await asdasdQuery.ToListAsync();
+
             var asd =
                 from i in _db.TestData
-                //join e in _db.AsQueryableValuesTest(input) on i.Int32Value equals e.Id
-                //join e in _db.AsQueryableValuesTest(input) on new { A = i.Id, B = i.Id } equals new { A = e.Id, B = e.AnotherId }
-                join e in _db.AsQueryableValuesTest(input) on i.Id equals e.Id
+                    //join e in _db.AsQueryableValuesTest(input) on i.Int32Value equals e.Id
+                    //join e in _db.AsQueryableValuesTest(input) on new { A = i.Id, B = i.Id } equals new { A = e.Id, B = e.AnotherId }
+                join e in _db.AsQueryableValues(input) on i.Id equals e.Id
                 select i.GuidValue;
 
             _ = await asd.ToListAsync();
@@ -462,6 +432,22 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             //var expected = System.Text.Json.JsonSerializer.Serialize(input);
             //var actual = System.Text.Json.JsonSerializer.Serialize(output);
             //Assert.Equal(expected, actual);
+        }
+
+        public class TestEntity
+        {
+            public int Id { get; set; }
+            public int? OtherId { get; set; }
+            public int AnotherId { get; set; }
+            public string Greeting { get; set; }
+        }
+
+        public struct TestEntity2
+        {
+            public int Id { get; set; }
+            public int? OtherId { get; set; }
+            public int AnotherId { get; set; }
+            public string Greeting { get; set; }
         }
     }
 }

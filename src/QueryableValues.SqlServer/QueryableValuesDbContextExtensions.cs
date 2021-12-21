@@ -215,15 +215,27 @@ namespace BlazarTech.QueryableValues
         // todos:
         // - Add DateOnly for Core 6 (think about TimeOnly). DateOnly is NOT supported yet as of EF6.
         // - Add Test case for Database Script/Migrations apis. Ensure that the internal entity is not leaked.
+        // - Add test cases for AsQueryableValues<T>.
+        // - Update docs.
+        // - Update benchmark the use of Expression.
+        // - Is any caching needed? on mappings and Expressions?
+        // - Support for System.Single (float)
 
-        public static IQueryable<T> AsQueryableValuesTest<T>(this DbContext dbContext, IEnumerable<T> values)
+        /// <summary>
+        /// Allows an <see cref="IEnumerable{T}"/> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <param name="configure">Performs configuration.</param>
+        /// <returns>An <see cref="IQueryable{T}"/> that can be composed with other entities in the query.</returns>
+        public static IQueryable<T> AsQueryableValues<T>(this DbContext dbContext, IEnumerable<T> values, Action<EntityOptions<T>>? configure = null)
             where T : notnull
         {
             EnsureConfigured(dbContext);
 
             var mappings = EntityPropertyMapping.GetMappings<T>();
 
-            var sql = getSql(mappings);
+            var sql = getSql(mappings, configure);
 
             // Parameter name not provided so EF can auto generate one.
             var xmlParameter = new SqlParameter(null, SqlDbType.Xml)
@@ -240,8 +252,12 @@ namespace BlazarTech.QueryableValues
 
             return projected;
 
-            static string getSql(IReadOnlyList<EntityPropertyMapping> mappings)
+            static string getSql(IReadOnlyList<EntityPropertyMapping> mappings, Action<EntityOptions<T>>? configure)
             {
+                var entityOptions = new EntityOptions<T>();
+
+                configure?.Invoke(entityOptions);
+
                 var sb = new StringBuilder(500);
 
                 sb.Append("SELECT ").AppendLine();
@@ -249,6 +265,7 @@ namespace BlazarTech.QueryableValues
                 for (int i = 0; i < mappings.Count; i++)
                 {
                     var mapping = mappings[i];
+                    var propertyOptions = entityOptions.GetPropertyOptions(mapping.Source);
 
                     if (i > 0)
                     {
@@ -268,7 +285,10 @@ namespace BlazarTech.QueryableValues
                             sb.Append("xs:integer?', 'bigint'");
                             break;
                         case EntityPropertyTypeName.Decimal:
-                            sb.Append("xs:decimal?', 'decimal(38, 6)'");
+                            {
+                                var numberOfDecimals = propertyOptions?.GetNumberOfDecimals() ?? entityOptions.GetDefaultForNumberOfDecimals();
+                                sb.Append("xs:decimal?', 'decimal(38, ").Append(numberOfDecimals).Append(")'");
+                            }
                             break;
                         case EntityPropertyTypeName.Double:
                             sb.Append("xs:double?', 'float'");
@@ -283,7 +303,14 @@ namespace BlazarTech.QueryableValues
                             sb.Append("xs:string?', 'uniqueidentifier'");
                             break;
                         case EntityPropertyTypeName.String:
-                            sb.Append("xs:string?', 'nvarchar(max)'");
+                            if ((propertyOptions?.GetIsUnicode() ?? entityOptions.GetDefaultForIsUnicode()) == true)
+                            {
+                                sb.Append("xs:string?', 'nvarchar(max)'");
+                            }
+                            else
+                            {
+                                sb.Append("xs:string?', 'varchar(max)'");
+                            }
                             break;
                         default:
                             throw new NotImplementedException(mapping.TypeName.ToString());
@@ -328,12 +355,13 @@ namespace BlazarTech.QueryableValues
                     {
                         var mapping = mappings[i];
 
-                        arguments[i] = Expression.Convert(Expression.Property(parameterExpression, mapping.Target.Name), mapping.Source.PropertyType);
+                        arguments[i] = getTargetPropertyExpression(parameterExpression, mapping);
 
                         var methodInfo = mapping.Source.GetGetMethod(true);
 
                         if (methodInfo == null)
                         {
+                            // todo: Message
                             throw new InvalidOperationException();
                         }
 
@@ -359,12 +387,13 @@ namespace BlazarTech.QueryableValues
 
                         if (methodInfo == null)
                         {
+                            // todo: Message
                             throw new InvalidOperationException();
                         }
 
                         bindings[i] = Expression.Bind(
                             methodInfo,
-                            Expression.Convert(Expression.Property(parameterExpression, mapping.Target.Name), mapping.Source.PropertyType)
+                            getTargetPropertyExpression(parameterExpression, mapping)
                             );
                     }
 
@@ -374,16 +403,87 @@ namespace BlazarTech.QueryableValues
 
                     return queryable;
                 }
+
+                static Expression getTargetPropertyExpression(ParameterExpression parameterExpression, EntityPropertyMapping mapping)
+                {
+                    var propertyExpression = Expression.Property(parameterExpression, mapping.Target.Name);
+
+                    if (mapping.Source.PropertyType == mapping.Target.PropertyType)
+                    {
+                        return propertyExpression;
+                    }
+                    else
+                    {
+                        return Expression.Convert(propertyExpression, mapping.Source.PropertyType);
+                    }
+                }
             }
         }
     }
 
-    public class TestEntity
+    // todo: use properties and add Option suffix?
+    public sealed class EntityOptions<T>
     {
-        public int Id { get; set; }
-        public int? OtherId { get; set; }
-        public int AnotherId { get; set; }
-        public string Greeting { get; set; }
+        private readonly Dictionary<MemberInfo, PropertyOptions> _properties = new();
+
+        private bool _defaultForIsUnicode = false;
+        private int _defaultForNumberOfDecimals = 4;
+
+        internal bool GetDefaultForIsUnicode() => _defaultForIsUnicode;
+        internal int GetDefaultForNumberOfDecimals() => _defaultForNumberOfDecimals;
+
+        internal PropertyOptions? GetPropertyOptions(MemberInfo memberInfo)
+        {
+            return _properties.TryGetValue(memberInfo, out PropertyOptions? propertyOptions) ? propertyOptions : null;
+        }
+
+        public PropertyOptions Property<TProperty>(Expression<Func<T, TProperty>> propertyExpression)
+        {
+            var property = (MemberExpression)propertyExpression.Body;
+
+            if (!_properties.TryGetValue(property.Member, out PropertyOptions? propertyOptions))
+            {
+                propertyOptions = new PropertyOptions();
+                _properties.Add(property.Member, propertyOptions);
+            }
+
+            return propertyOptions;
+        }
+
+        public EntityOptions<T> DefaultForIsUnicode(bool isUnicode)
+        {
+            _defaultForIsUnicode = isUnicode;
+            return this;
+        }
+
+        public EntityOptions<T> DefaultForNumberOfDecimals(int numberOfDecimals)
+        {
+            _defaultForNumberOfDecimals = numberOfDecimals;
+            return this;
+        }
+    }
+
+    // todo: use properties and add Option suffix?
+    public sealed class PropertyOptions
+    {
+        private bool _isUnicode;
+        private int _numberOfDecimals;
+
+        internal bool GetIsUnicode() => _isUnicode;
+        internal int GetNumberOfDecimals() => _numberOfDecimals;
+
+        public PropertyOptions IsUnicode(bool isUnicode = true)
+        {
+            _isUnicode = isUnicode;
+            return this;
+        }
+
+        // todo: consider using HasPrecision instead. With defaults for both parameters.
+        public PropertyOptions NumberOfDecimals(int numberOfDecimals)
+        {
+            _numberOfDecimals = numberOfDecimals;
+            return this;
+        }
     }
 }
 #endif
