@@ -8,9 +8,15 @@ namespace BlazarTech.QueryableValues
     {
         protected readonly IEnumerable<T> _values;
 
+        public bool HasCount { get; }
+
         public DeferredValues(IEnumerable<T> values)
         {
             _values = values;
+
+#if !EFCORE3
+            HasCount = values.TryGetNonEnumeratedCount(out _);
+#endif
         }
 
         public abstract string ToString(IFormatProvider? provider);
@@ -23,7 +29,22 @@ namespace BlazarTech.QueryableValues
         public decimal ToDecimal(IFormatProvider? provider) => throw new NotImplementedException();
         public double ToDouble(IFormatProvider? provider) => throw new NotImplementedException();
         public short ToInt16(IFormatProvider? provider) => throw new NotImplementedException();
+
+#if EFCORE3
         public int ToInt32(IFormatProvider? provider) => throw new NotImplementedException();
+#else
+        public int ToInt32(IFormatProvider? provider)
+        {
+            if (_values.TryGetNonEnumeratedCount(out int count))
+            {
+                return count;
+            }
+            else
+            {
+                throw new InvalidOperationException("Count not available.");
+            }
+        }
+#endif
         public long ToInt64(IFormatProvider? provider) => throw new NotImplementedException();
         public sbyte ToSByte(IFormatProvider? provider) => throw new NotImplementedException();
         public float ToSingle(IFormatProvider? provider) => throw new NotImplementedException();

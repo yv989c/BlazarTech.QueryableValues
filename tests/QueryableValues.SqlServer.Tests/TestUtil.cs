@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Xunit;
 
 namespace BlazarTech.QueryableValues.SqlServer.Tests
 {
@@ -46,6 +47,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests
                 var step = (decimal)Math.Pow(10, numberOfDecimals);
                 return Math.Truncate(step * value) / step;
             }
+        }
+
+        public static void EqualShape<TExpected, TActual>(TExpected expected, TActual actual)
+        {
+            var expectedJson = System.Text.Json.JsonSerializer.Serialize(expected);
+            var actualJson = System.Text.Json.JsonSerializer.Serialize(actual);
+            Assert.Equal(expectedJson, actualJson);
         }
     }
 }

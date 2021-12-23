@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 
@@ -8,6 +9,7 @@ namespace BlazarTech.QueryableValues
     internal sealed class EntityPropertyMapping
     {
         private static readonly PropertyInfo[] EntityProperties = typeof(QueryableValuesEntity).GetProperties();
+        private static readonly ConcurrentDictionary<Type, IReadOnlyList<EntityPropertyMapping>> MappingCache = new ConcurrentDictionary<Type, IReadOnlyList<EntityPropertyMapping>>();
 
         private static readonly Type IntType = typeof(int);
         private static readonly Type LongType = typeof(long);
@@ -69,6 +71,11 @@ namespace BlazarTech.QueryableValues
 
         public static IReadOnlyList<EntityPropertyMapping> GetMappings(Type sourceType)
         {
+            if (MappingCache.TryGetValue(sourceType, out IReadOnlyList<EntityPropertyMapping> mappingsFromCache))
+            {
+                return mappingsFromCache;
+            }
+
             var sourceProperties = sourceType.GetProperties();
             var mappings = new List<EntityPropertyMapping>(sourceProperties.Length);
 
@@ -98,6 +105,8 @@ namespace BlazarTech.QueryableValues
                     throw new NotSupportedException($"{sourceProperty.PropertyType.FullName} is not supported.");
                 }
             }
+
+            MappingCache.TryAdd(sourceType, mappings);
 
             return mappings;
 

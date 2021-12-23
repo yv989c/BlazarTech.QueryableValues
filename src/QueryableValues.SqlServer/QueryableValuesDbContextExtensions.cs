@@ -1,4 +1,5 @@
 ﻿#if EFCORE
+using BlazarTech.QueryableValues.Builders;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -17,6 +18,9 @@ namespace BlazarTech.QueryableValues
     /// </summary>
     public static class QueryableValuesDbContextExtensions
     {
+        private const string SqlSelect = "SELECT ";
+        private const string SqlSelectTop = "SELECT TOP({1}) ";
+
         private static readonly Dictionary<int, string> QueryDecimalCache = new();
 
         private static void EnsureConfigured(DbContext dbContext)
@@ -33,23 +37,67 @@ namespace BlazarTech.QueryableValues
             }
         }
 
-        private static IQueryable<TValue> GetQuery<TValue>(DbContext dbContext, string sql, DeferredValues<TValue> deferredValues)
-            where TValue : notnull
+        private static SqlParameter[] GetSqlParameters<T>(DeferredValues<T> deferredValues, bool tryToUseCount = true)
+            where T : notnull
         {
-            EnsureConfigured(dbContext);
+            SqlParameter[] sqlParameters;
 
-            // Parameter name not provided so EF can auto generate one.
+            // Missing parameter names are auto-generated (p0, p1, etc.) by FromSqlRaw based on its position in sqlParameters.
             var xmlParameter = new SqlParameter(null, SqlDbType.Xml)
             {
                 // DeferredValues allows us to defer the enumeration of values until the query is materialized.
                 Value = deferredValues
             };
 
+#if EFCORE3
+            var hasCount = false;
+
+            sqlParameters = new[] { xmlParameter };
+#else
+            // todo: Expose API to turn this behavior off by the user.
+            if (deferredValues.HasCount)
+            {
+                var countParameter = new SqlParameter(null, SqlDbType.Int)
+                {
+                    Value = deferredValues
+                };
+
+                sqlParameters = new[] { xmlParameter, countParameter };
+            }
+            else
+            {
+                sqlParameters = new[] { xmlParameter };
+            }
+#endif
+
+            return sqlParameters;
+        }
+
+        private static IQueryable<TValue> GetQuery<TValue>(DbContext dbContext, string sql, DeferredValues<TValue> deferredValues)
+            where TValue : notnull
+        {
+            EnsureConfigured(dbContext);
+
+            var sqlParameters = GetSqlParameters(deferredValues, tryToUseCount: false);
+
             var queryableValues = dbContext
                 .Set<QueryableValuesEntity<TValue>>()
-                .FromSqlRaw(sql, xmlParameter);
+                .FromSqlRaw(sql, sqlParameters);
 
             return queryableValues.Select(i => i.V);
+        }
+
+        private static void ValidateParameters<T>(DbContext dbContext, IEnumerable<T> values)
+        {
+            if (dbContext == null)
+            {
+                throw new ArgumentNullException(nameof(dbContext));
+            }
+
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values));
+            }
         }
 
         /// <summary>
@@ -58,8 +106,12 @@ namespace BlazarTech.QueryableValues
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
         /// <param name="values">The sequence of values to compose.</param>
         /// <returns>An <see cref="IQueryable{Int32}">IQueryable&lt;int&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<int> AsQueryableValues(this DbContext dbContext, IEnumerable<int> values)
         {
+            ValidateParameters(dbContext, values);
+
             const string sql =
                 "SELECT I.value('. cast as xs:integer?', 'int') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
@@ -73,8 +125,12 @@ namespace BlazarTech.QueryableValues
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
         /// <param name="values">The sequence of values to compose.</param>
         /// <returns>An <see cref="IQueryable{Int64}">IQueryable&lt;long&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<long> AsQueryableValues(this DbContext dbContext, IEnumerable<long> values)
         {
+            ValidateParameters(dbContext, values);
+
             const string sql =
                 "SELECT I.value('. cast as xs:integer?', 'bigint') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
@@ -89,8 +145,13 @@ namespace BlazarTech.QueryableValues
         /// <param name="values">The sequence of values to compose.</param>
         /// <param name="numberOfDecimals">Number of decimals (scale in SQL Server) to use when composing the <paramref name="values"/>.</param>
         /// <returns>An <see cref="IQueryable{Decimal}">IQueryable&lt;decimal&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<decimal> AsQueryableValues(this DbContext dbContext, IEnumerable<decimal> values, int numberOfDecimals)
         {
+            ValidateParameters(dbContext, values);
+
             if (numberOfDecimals < 0)
             {
                 throw new ArgumentException("Cannot be negative.", nameof(numberOfDecimals));
@@ -125,8 +186,12 @@ namespace BlazarTech.QueryableValues
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
         /// <param name="values">The sequence of values to compose.</param>
         /// <returns>An <see cref="IQueryable{Double}">IQueryable&lt;double&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<double> AsQueryableValues(this DbContext dbContext, IEnumerable<double> values)
         {
+            ValidateParameters(dbContext, values);
+
             const string sql =
                 "SELECT I.value('. cast as xs:double?', 'float') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
@@ -140,8 +205,12 @@ namespace BlazarTech.QueryableValues
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
         /// <param name="values">The sequence of values to compose.</param>
         /// <returns>An <see cref="IQueryable{DateTime}">IQueryable&lt;DateTime&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<DateTime> AsQueryableValues(this DbContext dbContext, IEnumerable<DateTime> values)
         {
+            ValidateParameters(dbContext, values);
+
             const string sql =
                 "SELECT I.value('. cast as xs:dateTime?', 'datetime2') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
@@ -155,8 +224,12 @@ namespace BlazarTech.QueryableValues
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
         /// <param name="values">The sequence of values to compose.</param>
         /// <returns>An <see cref="IQueryable{DateTimeOffset}">IQueryable&lt;DateTimeOffset&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<DateTimeOffset> AsQueryableValues(this DbContext dbContext, IEnumerable<DateTimeOffset> values)
         {
+            ValidateParameters(dbContext, values);
+
             const string sql =
                 "SELECT I.value('. cast as xs:dateTime?', 'datetimeoffset') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
@@ -177,8 +250,12 @@ namespace BlazarTech.QueryableValues
         /// Failing to do this may force SQL Server's query engine to do an implicit casting, which results 
         /// in a scan instead of an index seek (assuming there's a covering index).
         /// </remarks>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<string> AsQueryableValues(this DbContext dbContext, IEnumerable<string> values, bool isUnicode = false)
         {
+            ValidateParameters(dbContext, values);
+
             string sql;
 
             if (isUnicode)
@@ -203,8 +280,12 @@ namespace BlazarTech.QueryableValues
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
         /// <param name="values">The sequence of values to compose.</param>
         /// <returns>An <see cref="IQueryable{Guid}">IQueryable&lt;Guid&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<Guid> AsQueryableValues(this DbContext dbContext, IEnumerable<Guid> values)
         {
+            ValidateParameters(dbContext, values);
+
             const string sql =
                 "SELECT I.value('. cast as xs:string?', 'uniqueidentifier') AS V " +
                 "FROM {0}.nodes('/R/V') N(I)";
@@ -217,7 +298,6 @@ namespace BlazarTech.QueryableValues
         // - Add Test case for Database Script/Migrations apis. Ensure that the internal entity is not leaked.
         // - Add test cases for AsQueryableValues<T>.
         // - Update docs.
-        // - Update benchmark the use of Expression.
         // - Is any caching needed? on mappings and Expressions?
         // - Support for System.Single (float)
 
@@ -228,39 +308,54 @@ namespace BlazarTech.QueryableValues
         /// <param name="values">The sequence of values to compose.</param>
         /// <param name="configure">Performs configuration.</param>
         /// <returns>An <see cref="IQueryable{T}"/> that can be composed with other entities in the query.</returns>
-        public static IQueryable<T> AsQueryableValues<T>(this DbContext dbContext, IEnumerable<T> values, Action<EntityOptions<T>>? configure = null)
-            where T : notnull
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<TSource> AsQueryableValues<TSource>(this DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure = null)
+            where TSource : notnull
         {
+            ValidateParameters(dbContext, values);
             EnsureConfigured(dbContext);
 
-            var mappings = EntityPropertyMapping.GetMappings<T>();
-
-            var sql = getSql(mappings, configure);
-
-            // Parameter name not provided so EF can auto generate one.
-            var xmlParameter = new SqlParameter(null, SqlDbType.Xml)
-            {
-                // DeferredEntityValues allows us to defer the enumeration of values until the query is materialized.
-                Value = new DeferredEntityValues<T>(values, mappings)
-            };
+            var mappings = EntityPropertyMapping.GetMappings<TSource>();
+            var deferredValues = new DeferredEntityValues<TSource>(values, mappings);
+            var sql = getSql(mappings, configure, deferredValues.HasCount);
+            var sqlParameters = GetSqlParameters(deferredValues, tryToUseCount: false);
 
             var source = dbContext
                 .Set<QueryableValuesEntity>()
-                .FromSqlRaw(sql, xmlParameter);
+                .FromSqlRaw(sql, sqlParameters);
 
             var projected = projectQueryable(source, mappings);
 
             return projected;
 
-            static string getSql(IReadOnlyList<EntityPropertyMapping> mappings, Action<EntityOptions<T>>? configure)
+            static string getSql(IReadOnlyList<EntityPropertyMapping> mappings, Action<EntityOptionsBuilder<TSource>>? configure, bool hasCount)
             {
-                var entityOptions = new EntityOptions<T>();
+                IEntityOptionsBuilder entityOptions;
 
-                configure?.Invoke(entityOptions);
+                if (configure != null)
+                {
+                    var entityOptionsHelper = new EntityOptionsBuilder<TSource>();
+                    configure?.Invoke(entityOptionsHelper);
+                    entityOptions = entityOptionsHelper;
+                }
+                else
+                {
+                    entityOptions = new EntityOptionsBuilder<TSource>();
+                }
 
                 var sb = new StringBuilder(500);
 
-                sb.Append("SELECT ").AppendLine();
+                if (hasCount)
+                {
+                    sb.Append(SqlSelectTop);
+                }
+                else
+                {
+                    sb.Append(SqlSelect);
+                }
+
+                sb.AppendLine();
 
                 for (int i = 0; i < mappings.Count; i++)
                 {
@@ -286,7 +381,7 @@ namespace BlazarTech.QueryableValues
                             break;
                         case EntityPropertyTypeName.Decimal:
                             {
-                                var numberOfDecimals = propertyOptions?.GetNumberOfDecimals() ?? entityOptions.GetDefaultForNumberOfDecimals();
+                                var numberOfDecimals = propertyOptions?.NumberOfDecimals ?? entityOptions.DefaultForNumberOfDecimals;
                                 sb.Append("xs:decimal?', 'decimal(38, ").Append(numberOfDecimals).Append(")'");
                             }
                             break;
@@ -303,7 +398,7 @@ namespace BlazarTech.QueryableValues
                             sb.Append("xs:string?', 'uniqueidentifier'");
                             break;
                         case EntityPropertyTypeName.String:
-                            if ((propertyOptions?.GetIsUnicode() ?? entityOptions.GetDefaultForIsUnicode()) == true)
+                            if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
                             {
                                 sb.Append("xs:string?', 'nvarchar(max)'");
                             }
@@ -325,20 +420,15 @@ namespace BlazarTech.QueryableValues
                 return sb.ToString();
             }
 
-            static IQueryable<T> projectQueryable(IQueryable<QueryableValuesEntity> source, IReadOnlyList<EntityPropertyMapping> mappings)
+            static IQueryable<TSource> projectQueryable(IQueryable<QueryableValuesEntity> source, IReadOnlyList<EntityPropertyMapping> mappings)
             {
-                ParameterExpression parameterExpression = Expression.Parameter(typeof(QueryableValuesEntity), "i");
-
-                var bodyParameteters = new[]
-                {
-                    parameterExpression
-                };
-
-                Type sourceType = typeof(T);
+                Expression body;
+                var parameterExpression = Expression.Parameter(typeof(QueryableValuesEntity), "i");
+                Type sourceType = typeof(TSource);
 
                 var useConstructor = !mappings.All(i => i.Source.CanWrite);
 
-                // For anonymous types.
+                // Mainly for anonymous types.
                 if (useConstructor)
                 {
                     var constructor = sourceType.GetConstructors().FirstOrDefault();
@@ -361,22 +451,16 @@ namespace BlazarTech.QueryableValues
 
                         if (methodInfo == null)
                         {
-                            // todo: Message
-                            throw new InvalidOperationException();
+                            throw new InvalidOperationException($"Property {mapping.Source.Name} must have a Get accessor.");
                         }
 
                         members[i] = methodInfo;
                     }
 
-                    var body = Expression.New(constructor, arguments, members);
-
-                    var queryable = Queryable.Select(source, Expression.Lambda<Func<QueryableValuesEntity, T>>(body, bodyParameteters));
-
-                    return queryable;
+                    body = Expression.New(constructor, arguments, members);
                 }
                 else
                 {
-                    var newExpression = Expression.New(sourceType);
                     var bindings = new MemberBinding[mappings.Count];
 
                     for (int i = 0; i < mappings.Count; i++)
@@ -387,8 +471,7 @@ namespace BlazarTech.QueryableValues
 
                         if (methodInfo == null)
                         {
-                            // todo: Message
-                            throw new InvalidOperationException();
+                            throw new InvalidOperationException($"Property {mapping.Source.Name} must have a Set accessor.");
                         }
 
                         bindings[i] = Expression.Bind(
@@ -397,12 +480,19 @@ namespace BlazarTech.QueryableValues
                             );
                     }
 
-                    var body = Expression.MemberInit(newExpression, bindings);
-
-                    var queryable = Queryable.Select(source, Expression.Lambda<Func<QueryableValuesEntity, T>>(body, bodyParameteters));
-
-                    return queryable;
+                    var newExpression = Expression.New(sourceType);
+                    body = Expression.MemberInit(newExpression, bindings);
                 }
+
+                var bodyParameteters = new[]
+                {
+                    parameterExpression
+                };
+
+                var queryable = Queryable.Select(source, Expression.Lambda<Func<QueryableValuesEntity, TSource>>(body, bodyParameteters));
+
+                return queryable;
+
 
                 static Expression getTargetPropertyExpression(ParameterExpression parameterExpression, EntityPropertyMapping mapping)
                 {
@@ -418,71 +508,6 @@ namespace BlazarTech.QueryableValues
                     }
                 }
             }
-        }
-    }
-
-    // todo: use properties and add Option suffix?
-    public sealed class EntityOptions<T>
-    {
-        private readonly Dictionary<MemberInfo, PropertyOptions> _properties = new();
-
-        private bool _defaultForIsUnicode = false;
-        private int _defaultForNumberOfDecimals = 4;
-
-        internal bool GetDefaultForIsUnicode() => _defaultForIsUnicode;
-        internal int GetDefaultForNumberOfDecimals() => _defaultForNumberOfDecimals;
-
-        internal PropertyOptions? GetPropertyOptions(MemberInfo memberInfo)
-        {
-            return _properties.TryGetValue(memberInfo, out PropertyOptions? propertyOptions) ? propertyOptions : null;
-        }
-
-        public PropertyOptions Property<TProperty>(Expression<Func<T, TProperty>> propertyExpression)
-        {
-            var property = (MemberExpression)propertyExpression.Body;
-
-            if (!_properties.TryGetValue(property.Member, out PropertyOptions? propertyOptions))
-            {
-                propertyOptions = new PropertyOptions();
-                _properties.Add(property.Member, propertyOptions);
-            }
-
-            return propertyOptions;
-        }
-
-        public EntityOptions<T> DefaultForIsUnicode(bool isUnicode)
-        {
-            _defaultForIsUnicode = isUnicode;
-            return this;
-        }
-
-        public EntityOptions<T> DefaultForNumberOfDecimals(int numberOfDecimals)
-        {
-            _defaultForNumberOfDecimals = numberOfDecimals;
-            return this;
-        }
-    }
-
-    // todo: use properties and add Option suffix?
-    public sealed class PropertyOptions
-    {
-        private bool _isUnicode;
-        private int _numberOfDecimals;
-
-        internal bool GetIsUnicode() => _isUnicode;
-        internal int GetNumberOfDecimals() => _numberOfDecimals;
-
-        public PropertyOptions IsUnicode(bool isUnicode = true)
-        {
-            _isUnicode = isUnicode;
-            return this;
-        }
-
-        // todo: consider using HasPrecision instead. With defaults for both parameters.
-        public PropertyOptions NumberOfDecimals(int numberOfDecimals)
-        {
-            _numberOfDecimals = numberOfDecimals;
-            return this;
         }
     }
 }

@@ -32,6 +32,13 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<Compile Include="..\QueryableValues.SqlServer\*.cs" />
+		<Compile Include="..\QueryableValues.SqlServer\Builders\*.cs">
+			<Link>Builders\%(RecursiveDir)\%(FileName)%(Extension)</Link>
+		</Compile>
+	</ItemGroup>
+
 	<ItemGroup Condition="'$(Configuration)'!='Release'">
 		<InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore3" />
 		<InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore5" />
