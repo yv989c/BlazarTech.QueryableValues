@@ -8,15 +8,30 @@ namespace BlazarTech.QueryableValues
     {
         protected readonly IEnumerable<T> _values;
 
-        public bool HasCount { get; }
+        // todo: Expose API to turn this behavior off by the user.
+        public bool HasCount
+        {
+            get
+            {
+#if EFCORE3
+                // In my EF Core 3 tests, it seems that on the first execution of the query,
+                // it is caching the values from the parameters provided to the FromSqlRaw method.
+                // This imposes a problem when trying to optimize the SQL using the HasCount property in this class.
+                // It is critical to know the exact number of elements behind "values" at execution time,
+                // this is because the number of items behind "values" can change between executions of the query,
+                // therefore, this optimization cannot be done in a reliable way under EF Core 3.
+                //
+                // Under EF Core 5 and 6 this is not an issue. The parameters are always evaluated on each execution.
+                return false;
+#else
+                return _values.TryGetNonEnumeratedCount(out _);
+#endif
+            }
+        }
 
         public DeferredValues(IEnumerable<T> values)
         {
             _values = values;
-
-#if !EFCORE3
-            HasCount = values.TryGetNonEnumeratedCount(out _);
-#endif
         }
 
         public abstract string ToString(IFormatProvider? provider);
@@ -41,7 +56,7 @@ namespace BlazarTech.QueryableValues
             }
             else
             {
-                throw new InvalidOperationException("Count not available.");
+                throw new InvalidOperationException("Count not available. (how did this happen?)");
             }
         }
 #endif

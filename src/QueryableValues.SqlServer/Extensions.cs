@@ -4,8 +4,9 @@ using System.Collections.Generic;
 
 namespace BlazarTech.QueryableValues
 {
-    internal static class InternalExtensions
+    internal static class Extensions
     {
+        // Mostly from: https://github.com/dotnet/runtime/blob/57bfe474518ab5b7cfe6bf7424a79ce3af9d6657/src/libraries/System.Linq/src/System/Linq/Count.cs#L95
         public static bool TryGetNonEnumeratedCount<TSource>(this IEnumerable<TSource> source, out int count)
         {
             if (source == null)
@@ -13,7 +14,7 @@ namespace BlazarTech.QueryableValues
                 throw new ArgumentNullException(nameof(source));
             }
 
-            // TODO: Target multiple runtimes and check for NET6 instead of EFCORE6.
+            // todo: Target multiple runtimes and check for NET6 instead of EFCORE6.
 #if EFCORE6
             if (System.Linq.Enumerable.TryGetNonEnumeratedCount(source, out count))
             {
@@ -32,7 +33,8 @@ namespace BlazarTech.QueryableValues
                 return true;
             }
 #endif
-
+            // I added this... may be there's a reason why the official TryGetNonEnumeratedCount method does not do this.
+            // todo: research.
             if (source is IReadOnlyCollection<TSource> readOnlyCollection)
             {
                 count = readOnlyCollection.Count;

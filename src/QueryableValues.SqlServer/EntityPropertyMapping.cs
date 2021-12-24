@@ -71,7 +71,7 @@ namespace BlazarTech.QueryableValues
 
         public static IReadOnlyList<EntityPropertyMapping> GetMappings(Type sourceType)
         {
-            if (MappingCache.TryGetValue(sourceType, out IReadOnlyList<EntityPropertyMapping> mappingsFromCache))
+            if (MappingCache.TryGetValue(sourceType, out IReadOnlyList<EntityPropertyMapping>? mappingsFromCache))
             {
                 return mappingsFromCache;
             }

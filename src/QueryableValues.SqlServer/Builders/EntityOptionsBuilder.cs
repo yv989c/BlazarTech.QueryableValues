@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -9,9 +10,10 @@ namespace BlazarTech.QueryableValues.Builders
     /// Provides APIs for configuring the behavior of <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type to be projected.</typeparam>
-    public sealed class EntityOptionsBuilder<T> : IEntityOptionsBuilder
+    public sealed class EntityOptionsBuilder<T> : IEquatable<EntityOptionsBuilder<T>>, IEntityOptionsBuilder
     {
         private readonly Dictionary<MemberInfo, IPropertyOptionsBuilder> _properties = new Dictionary<MemberInfo, IPropertyOptionsBuilder>();
+        private readonly Type _type;
 
         private bool _defaultForIsUnicode = false;
         private int _defaultForNumberOfDecimals = 4;
@@ -20,7 +22,10 @@ namespace BlazarTech.QueryableValues.Builders
         int IEntityOptionsBuilder.DefaultForNumberOfDecimals => _defaultForNumberOfDecimals;
         IPropertyOptionsBuilder? IEntityOptionsBuilder.GetPropertyOptions(MemberInfo memberInfo) => GetPropertyOptions(memberInfo);
 
-        internal EntityOptionsBuilder() { }
+        internal EntityOptionsBuilder()
+        {
+            _type = typeof(T);
+        }
 
         internal IPropertyOptionsBuilder? GetPropertyOptions(MemberInfo memberInfo)
         {
@@ -39,7 +44,7 @@ namespace BlazarTech.QueryableValues.Builders
 
             if (!_properties.TryGetValue(property.Member, out IPropertyOptionsBuilder? propertyOptions))
             {
-                propertyOptions = new PropertyOptionsBuilder<TProperty>();
+                propertyOptions = new PropertyOptionsBuilder<TProperty>(property.Member);
                 _properties.Add(property.Member, propertyOptions);
             }
 
@@ -68,28 +73,38 @@ namespace BlazarTech.QueryableValues.Builders
             return this;
         }
 
-        //internal string GetHash()
-        //{
-        //    var data = new List<byte>();
-            
-        //    data.AddRange(BitConverter.GetBytes(_defaultForIsUnicode));
-        //    data.AddRange(BitConverter.GetBytes(_defaultForNumberOfDecimals));
+#pragma warning disable CS1591
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(_type);
+            hash.Add(_defaultForIsUnicode);
+            hash.Add(_defaultForNumberOfDecimals);
 
-        //    foreach (var property in _properties)
-        //    {
-        //        data.AddRange(BitConverter.GetBytes(property.Key.Name.GetHashCode()));
-        //        data.Add(byte.MinValue);
-        //        data.AddRange(BitConverter.GetBytes(property.Value.IsUnicode));
-        //        data.AddRange(BitConverter.GetBytes(property.Value.NumberOfDecimals));
-        //        data.Add(byte.MinValue);
-        //    }
+            foreach (var value in _properties.Values)
+            {
+                hash.Add(value);
+            }
 
-        //    using var md5 = System.Security.Cryptography.MD5.Create();
+            return hash.ToHashCode();
+        }
 
-        //    var hashBytes = md5.ComputeHash(data.ToArray());
+        public bool Equals(EntityOptionsBuilder<T>? other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
 
-        //    return System.Text.Encoding.ASCII.GetString(hashBytes);
-        //}
+            return
+                _type == other._type &&
+                _defaultForIsUnicode == other._defaultForIsUnicode &&
+                _defaultForNumberOfDecimals == other._defaultForNumberOfDecimals &&
+                _properties.Values.SequenceEqual(other._properties.Values);
+        }
+
+        public override bool Equals(object? obj) => Equals(obj as EntityOptionsBuilder<T>);
+#pragma warning restore CS1591
     }
 
     internal interface IEntityOptionsBuilder

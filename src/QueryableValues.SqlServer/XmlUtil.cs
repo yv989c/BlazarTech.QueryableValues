@@ -128,7 +128,7 @@ namespace BlazarTech.QueryableValues
         private sealed class PropertyWriter
         {
             private readonly string _targetName;
-            private readonly Action<XmlWriter, object>? _writeValue;
+            private readonly Action<XmlWriter, object?>? _writeValue;
 
             public EntityPropertyMapping Mapping { get; }
 

@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -18,10 +19,11 @@ namespace BlazarTech.QueryableValues
     /// </summary>
     public static class QueryableValuesDbContextExtensions
     {
-        private const string SqlSelect = "SELECT ";
-        private const string SqlSelectTop = "SELECT TOP({1}) ";
+        private const string SqlSelect = "SELECT";
+        private const string SqlSelectTop = "SELECT TOP({1})";
 
-        private static readonly Dictionary<int, string> QueryDecimalCache = new();
+        private static readonly ConcurrentDictionary<object, string> SqlCache = new();
+        private static readonly ConcurrentDictionary<Type, object> SelectorExpressionCache = new();
 
         private static void EnsureConfigured(DbContext dbContext)
         {
@@ -37,28 +39,24 @@ namespace BlazarTech.QueryableValues
             }
         }
 
-        private static SqlParameter[] GetSqlParameters<T>(DeferredValues<T> deferredValues, bool tryToUseCount = true)
+        private static SqlParameter[] GetSqlParameters<T>(DeferredValues<T> deferredValues)
             where T : notnull
         {
             SqlParameter[] sqlParameters;
 
-            // Missing parameter names are auto-generated (p0, p1, etc.) by FromSqlRaw based on its position in sqlParameters.
+            // Missing parameter names are auto-generated (p0, p1, etc.) by FromSqlRaw based on its position in the array.
             var xmlParameter = new SqlParameter(null, SqlDbType.Xml)
             {
                 // DeferredValues allows us to defer the enumeration of values until the query is materialized.
+                // Uses deferredValues.ToString() at evaluation time.
                 Value = deferredValues
             };
 
-#if EFCORE3
-            var hasCount = false;
-
-            sqlParameters = new[] { xmlParameter };
-#else
-            // todo: Expose API to turn this behavior off by the user.
             if (deferredValues.HasCount)
             {
                 var countParameter = new SqlParameter(null, SqlDbType.Int)
                 {
+                    // Uses deferredValues.ToInt32() at evaluation time.
                     Value = deferredValues
                 };
 
@@ -68,7 +66,6 @@ namespace BlazarTech.QueryableValues
             {
                 sqlParameters = new[] { xmlParameter };
             }
-#endif
 
             return sqlParameters;
         }
@@ -78,13 +75,41 @@ namespace BlazarTech.QueryableValues
         {
             EnsureConfigured(dbContext);
 
-            var sqlParameters = GetSqlParameters(deferredValues, tryToUseCount: false);
+            var sqlParameters = GetSqlParameters(deferredValues);
 
             var queryableValues = dbContext
                 .Set<QueryableValuesEntity<TValue>>()
                 .FromSqlRaw(sql, sqlParameters);
 
             return queryableValues.Select(i => i.V);
+        }
+
+        private static string GetSqlForSimpleTypes<T>(string xmlType, string sqlType, DeferredValues<T> deferredValues, (int Precision, int Scale)? precisionScale = null)
+            where T : notnull
+        {
+            var cacheKey = new
+            {
+                XmlType = xmlType,
+                SqlType = sqlType,
+                deferredValues.HasCount,
+                PrecisionScale = precisionScale
+            };
+
+            if (SqlCache.TryGetValue(cacheKey, out string? sql))
+            {
+                return sql;
+            }
+
+            var sqlPrefix = deferredValues.HasCount ? SqlSelectTop : SqlSelect;
+            var sqlTypeArguments = precisionScale.HasValue ? $"({precisionScale.Value.Precision},{precisionScale.Value.Scale})" : null;
+
+            sql =
+                $"{sqlPrefix} I.value('. cast as xs:{xmlType}?', '{sqlType}{sqlTypeArguments}') AS V " +
+                "FROM {0}.nodes('/R/V') N(I)";
+
+            SqlCache.TryAdd(cacheKey, sql);
+
+            return sql;
         }
 
         private static void ValidateParameters<T>(DbContext dbContext, IEnumerable<T> values)
@@ -112,11 +137,10 @@ namespace BlazarTech.QueryableValues
         {
             ValidateParameters(dbContext, values);
 
-            const string sql =
-                "SELECT I.value('. cast as xs:integer?', 'int') AS V " +
-                "FROM {0}.nodes('/R/V') N(I)";
+            var deferredValues = new DeferredInt32Values(values);
+            var sql = GetSqlForSimpleTypes("integer", "int", deferredValues);
 
-            return GetQuery(dbContext, sql, new DeferredInt32Values(values));
+            return GetQuery(dbContext, sql, deferredValues);
         }
 
         /// <summary>
@@ -131,11 +155,10 @@ namespace BlazarTech.QueryableValues
         {
             ValidateParameters(dbContext, values);
 
-            const string sql =
-                "SELECT I.value('. cast as xs:integer?', 'bigint') AS V " +
-                "FROM {0}.nodes('/R/V') N(I)";
+            var deferredValues = new DeferredInt64Values(values);
+            var sql = GetSqlForSimpleTypes("integer", "bigint", deferredValues);
 
-            return GetQuery(dbContext, sql, new DeferredInt64Values(values));
+            return GetQuery(dbContext, sql, deferredValues);
         }
 
         /// <summary>
@@ -162,22 +185,11 @@ namespace BlazarTech.QueryableValues
                 throw new ArgumentException("Cannot be greater than 38.", nameof(numberOfDecimals));
             }
 
-            if (!QueryDecimalCache.TryGetValue(numberOfDecimals, out string? sql))
-            {
-                lock (QueryDecimalCache)
-                {
-                    if (!QueryDecimalCache.TryGetValue(numberOfDecimals, out sql))
-                    {
-                        sql =
-                            $"SELECT I.value('. cast as xs:decimal?', 'decimal(38, {numberOfDecimals})') AS V " +
-                            "FROM {0}.nodes('/R/V') N(I)";
+            var deferredValues = new DeferredDecimalValues(values);
+            var precisionScale = (38, numberOfDecimals);
+            var sql = GetSqlForSimpleTypes("decimal", "decimal", deferredValues, precisionScale: precisionScale);
 
-                        QueryDecimalCache.Add(numberOfDecimals, sql);
-                    }
-                }
-            }
-
-            return GetQuery(dbContext, sql, new DeferredDecimalValues(values));
+            return GetQuery(dbContext, sql, deferredValues);
         }
 
         /// <summary>
@@ -192,11 +204,10 @@ namespace BlazarTech.QueryableValues
         {
             ValidateParameters(dbContext, values);
 
-            const string sql =
-                "SELECT I.value('. cast as xs:double?', 'float') AS V " +
-                "FROM {0}.nodes('/R/V') N(I)";
+            var deferredValues = new DeferredDoubleValues(values);
+            var sql = GetSqlForSimpleTypes("double", "float", deferredValues);
 
-            return GetQuery(dbContext, sql, new DeferredDoubleValues(values));
+            return GetQuery(dbContext, sql, deferredValues);
         }
 
         /// <summary>
@@ -211,11 +222,10 @@ namespace BlazarTech.QueryableValues
         {
             ValidateParameters(dbContext, values);
 
-            const string sql =
-                "SELECT I.value('. cast as xs:dateTime?', 'datetime2') AS V " +
-                "FROM {0}.nodes('/R/V') N(I)";
+            var deferredValues = new DeferredDateTimeValues(values);
+            var sql = GetSqlForSimpleTypes("dateTime", "datetime2", deferredValues);
 
-            return GetQuery(dbContext, sql, new DeferredDateTimeValues(values));
+            return GetQuery(dbContext, sql, deferredValues);
         }
 
         /// <summary>
@@ -230,11 +240,10 @@ namespace BlazarTech.QueryableValues
         {
             ValidateParameters(dbContext, values);
 
-            const string sql =
-                "SELECT I.value('. cast as xs:dateTime?', 'datetimeoffset') AS V " +
-                "FROM {0}.nodes('/R/V') N(I)";
+            var deferredValues = new DeferredDateTimeOffsetValues(values);
+            var sql = GetSqlForSimpleTypes("dateTime", "datetimeoffset", deferredValues);
 
-            return GetQuery(dbContext, sql, new DeferredDateTimeOffsetValues(values));
+            return GetQuery(dbContext, sql, deferredValues);
         }
 
         /// <summary>
@@ -257,21 +266,18 @@ namespace BlazarTech.QueryableValues
             ValidateParameters(dbContext, values);
 
             string sql;
+            var deferredValues = new DeferredStringValues(values);
 
             if (isUnicode)
             {
-                sql =
-                    "SELECT I.value('. cast as xs:string?', 'nvarchar(max)') AS V " +
-                    "FROM {0}.nodes('/R/V') N(I)";
+                sql = GetSqlForSimpleTypes("string", "nvarchar(max)", deferredValues);
             }
             else
             {
-                sql =
-                    "SELECT I.value('. cast as xs:string?', 'varchar(max)') AS V " +
-                    "FROM {0}.nodes('/R/V') N(I)";
+                sql = GetSqlForSimpleTypes("string", "varchar(max)", deferredValues);
             }
 
-            return GetQuery(dbContext, sql, new DeferredStringValues(values));
+            return GetQuery(dbContext, sql, deferredValues);
         }
 
         /// <summary>
@@ -286,19 +292,16 @@ namespace BlazarTech.QueryableValues
         {
             ValidateParameters(dbContext, values);
 
-            const string sql =
-                "SELECT I.value('. cast as xs:string?', 'uniqueidentifier') AS V " +
-                "FROM {0}.nodes('/R/V') N(I)";
+            var deferredValues = new DeferredGuidValues(values);
+            var sql = GetSqlForSimpleTypes("string", "uniqueidentifier", deferredValues);
 
-            return GetQuery(dbContext, sql, new DeferredGuidValues(values));
+            return GetQuery(dbContext, sql, deferredValues);
         }
 
         // todos:
-        // - Add DateOnly for Core 6 (think about TimeOnly). DateOnly is NOT supported yet as of EF6.
         // - Add Test case for Database Script/Migrations apis. Ensure that the internal entity is not leaked.
         // - Add test cases for AsQueryableValues<T>.
         // - Update docs.
-        // - Is any caching needed? on mappings and Expressions?
         // - Support for System.Single (float)
 
         /// <summary>
@@ -319,7 +322,7 @@ namespace BlazarTech.QueryableValues
             var mappings = EntityPropertyMapping.GetMappings<TSource>();
             var deferredValues = new DeferredEntityValues<TSource>(values, mappings);
             var sql = getSql(mappings, configure, deferredValues.HasCount);
-            var sqlParameters = GetSqlParameters(deferredValues, tryToUseCount: false);
+            var sqlParameters = GetSqlParameters(deferredValues);
 
             var source = dbContext
                 .Set<QueryableValuesEntity>()
@@ -342,6 +345,17 @@ namespace BlazarTech.QueryableValues
                 else
                 {
                     entityOptions = new EntityOptionsBuilder<TSource>();
+                }
+
+                var cacheKey = new
+                {
+                    Options = entityOptions,
+                    HasCount = hasCount
+                };
+
+                if (SqlCache.TryGetValue(cacheKey, out string? sqlFromCache))
+                {
+                    return sqlFromCache;
                 }
 
                 var sb = new StringBuilder(500);
@@ -417,14 +431,25 @@ namespace BlazarTech.QueryableValues
                 sb.AppendLine();
                 sb.Append("FROM {0}.nodes('/R/V') N(I)");
 
-                return sb.ToString();
+                var sql = sb.ToString();
+
+                SqlCache.TryAdd(cacheKey, sql);
+
+                return sql;
             }
 
             static IQueryable<TSource> projectQueryable(IQueryable<QueryableValuesEntity> source, IReadOnlyList<EntityPropertyMapping> mappings)
             {
+                Type sourceType = typeof(TSource);
+
+                var queryable = getFromCache(sourceType, source);
+                if (queryable != null)
+                {
+                    return queryable;
+                }
+
                 Expression body;
                 var parameterExpression = Expression.Parameter(typeof(QueryableValuesEntity), "i");
-                Type sourceType = typeof(TSource);
 
                 var useConstructor = !mappings.All(i => i.Source.CanWrite);
 
@@ -489,10 +514,15 @@ namespace BlazarTech.QueryableValues
                     parameterExpression
                 };
 
-                var queryable = Queryable.Select(source, Expression.Lambda<Func<QueryableValuesEntity, TSource>>(body, bodyParameteters));
+                var selector = Expression.Lambda<Func<QueryableValuesEntity, TSource>>(body, bodyParameteters);
+
+                SelectorExpressionCache.TryAdd(sourceType, selector);
+
+                queryable = Queryable.Select(source, selector);
 
                 return queryable;
 
+                #region Helpers
 
                 static Expression getTargetPropertyExpression(ParameterExpression parameterExpression, EntityPropertyMapping mapping)
                 {
@@ -507,6 +537,22 @@ namespace BlazarTech.QueryableValues
                         return Expression.Convert(propertyExpression, mapping.Source.PropertyType);
                     }
                 }
+
+                static IQueryable<TSource>? getFromCache(Type sourceType, IQueryable< QueryableValuesEntity> source)
+                {
+                    if (SelectorExpressionCache.TryGetValue(sourceType, out object? selectorFromCache))
+                    {
+                        var selector = (Expression<Func<QueryableValuesEntity, TSource>>)selectorFromCache;
+                        var queryable = Queryable.Select(source, selector);
+                        return queryable;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+
+                #endregion
             }
         }
     }

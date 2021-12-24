@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 
 namespace BlazarTech.QueryableValues.Builders
 {
@@ -6,15 +7,20 @@ namespace BlazarTech.QueryableValues.Builders
     /// Provides APIs for configuring the behavior of a property.
     /// </summary>
     /// <typeparam name="TProperty">The property's type.</typeparam>
-    public sealed class PropertyOptionsBuilder<TProperty> : IPropertyOptionsBuilder
+    public sealed class PropertyOptionsBuilder<TProperty> : IEquatable<PropertyOptionsBuilder<TProperty>>, IPropertyOptionsBuilder
     {
+        private readonly MemberInfo _memberInfo;
+
         private bool _isUnicode;
         private int _numberOfDecimals;
 
         bool IPropertyOptionsBuilder.IsUnicode => _isUnicode;
         int IPropertyOptionsBuilder.NumberOfDecimals => _numberOfDecimals;
 
-        internal PropertyOptionsBuilder() { }
+        internal PropertyOptionsBuilder(MemberInfo memberInfo)
+        {
+            _memberInfo = memberInfo;
+        }
 
         /// <summary>
         /// Configures the property as capable of handling unicode characters. Can only be set on <see cref="string"/> properties.
@@ -28,9 +34,9 @@ namespace BlazarTech.QueryableValues.Builders
             {
                 throw new InvalidOperationException("This method can only be used on String properties.");
             }
-            
+
             _isUnicode = isUnicode;
-            
+
             return this;
         }
 
@@ -50,9 +56,31 @@ namespace BlazarTech.QueryableValues.Builders
             }
 
             _numberOfDecimals = numberOfDecimals;
-            
+
             return this;
         }
+
+#pragma warning disable CS1591
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(_memberInfo, _numberOfDecimals, _numberOfDecimals);
+        }
+
+        public bool Equals(PropertyOptionsBuilder<TProperty>? other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            return
+                _memberInfo == other._memberInfo &&
+                _isUnicode == other._isUnicode &&
+                _numberOfDecimals == other._numberOfDecimals;
+        }
+
+        public override bool Equals(object? obj) => Equals(obj as PropertyOptionsBuilder<TProperty>);
+#pragma warning restore CS1591
     }
 
     internal interface IPropertyOptionsBuilder
