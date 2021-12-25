@@ -48,11 +48,12 @@ namespace BlazarTech.QueryableValues
         public decimal ToDecimal(IFormatProvider? provider) => throw new NotImplementedException();
         public double ToDouble(IFormatProvider? provider) => throw new NotImplementedException();
         public short ToInt16(IFormatProvider? provider) => throw new NotImplementedException();
+        public int ToInt32(IFormatProvider? provider) => throw new NotImplementedException();
 
 #if EFCORE3
-        public int ToInt32(IFormatProvider? provider) => throw new NotImplementedException();
+        public long ToInt64(IFormatProvider? provider) => throw new NotImplementedException();
 #else
-        public int ToInt32(IFormatProvider? provider)
+        public long ToInt64(IFormatProvider? provider)
         {
             if (_values.TryGetNonEnumeratedCount(out int count))
             {
@@ -64,7 +65,7 @@ namespace BlazarTech.QueryableValues
             }
         }
 #endif
-        public long ToInt64(IFormatProvider? provider) => throw new NotImplementedException();
+
         public sbyte ToSByte(IFormatProvider? provider) => throw new NotImplementedException();
         public float ToSingle(IFormatProvider? provider) => throw new NotImplementedException();
         public object ToType(Type conversionType, IFormatProvider? provider) => throw new NotImplementedException();

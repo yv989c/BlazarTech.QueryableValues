@@ -54,9 +54,10 @@ namespace BlazarTech.QueryableValues
 
             if (deferredValues.HasCount)
             {
-                var countParameter = new SqlParameter(null, SqlDbType.Int)
+                // bigint to avoid implicit casting by the TOP operation (observed in the execution plan).
+                var countParameter = new SqlParameter(null, SqlDbType.BigInt)
                 {
-                    // Uses deferredValues.ToInt32() at evaluation time.
+                    // Uses deferredValues.ToInt64() at evaluation time.
                     Value = deferredValues
                 };
 
@@ -288,11 +289,6 @@ namespace BlazarTech.QueryableValues
 
             return GetQuery(dbContext, sql, deferredValues);
         }
-
-        // todos:
-        // - Add test cases for AsQueryableValues<T>.
-        // - Update docs.
-        // - Support for System.Single (float)
 
         /// <summary>
         /// Allows an <see cref="IEnumerable{T}"/> to be composed in an Entity Framework query.

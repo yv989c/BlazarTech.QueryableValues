@@ -91,6 +91,64 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task MustSeeAllItemsFromCollection()
+        {
+            var expected = new[] { new { Id = 0 } }.Take(0).ToList();
+
+            var query = _db.AsQueryableValues(expected);
+
+            var actual = await query.ToListAsync();
+            TestUtil.EqualShape(expected, actual);
+
+            for (int i = 0; i <= 3; i++)
+            {
+                expected.Add(new { Id = i });
+
+                actual = await query.ToListAsync();
+#if EFCORE3
+                // EF Core 3 do NOT support this.
+                // Keep to check if this behavior changes.
+                TestUtil.NotEqualShape(expected, actual);
+#else
+                TestUtil.EqualShape(expected, actual);
+#endif
+            }
+        }
+
+        [Fact]
+        public async Task MustSeeAllItemsFromNonCollection()
+        {
+            var count = 0;
+
+            IEnumerable<int> getIds()
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    yield return i;
+                }
+            }
+
+            var expected = getIds().Select(i => new { Id = i });
+            var query = _db.AsQueryableValues(expected);
+
+            var actual = await query.ToListAsync();
+            TestUtil.EqualShape(expected, actual);
+
+            for (int i = 0; i < 3; i++)
+            {
+                count++;
+                actual = await query.ToListAsync();
+#if EFCORE3
+                // EF Core 3 do NOT support this.
+                // Keep to check if this behavior changes.
+                TestUtil.NotEqualShape(expected, actual);
+#else
+                TestUtil.EqualShape(expected, actual);
+#endif
+            }
+        }
+
+        [Fact]
         public async Task MustMatchSequenceOfTestTypeUsesDefaults()
         {
             var expected = new[]
@@ -368,304 +426,129 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             TestUtil.EqualShape(expected, actual);
         }
 
+        [Fact]
+        public async Task JoinWithDateTime()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = DateTime.MinValue },
+                new { Id = 3, Value = DateTime.MaxValue }
+            };
 
-        //[Fact]
-        //public async Task JoinWithString()
-        //{
-        //    var values = new[]
-        //    {
-        //        new { Id = 1, Value = -1234567.890123D },
-        //        new { Id = 3, Value = 1234567.890123D }
-        //    };
+            var expected = new[] { 1, 3 };
 
-        //    var expected = new[] { 1, 3 };
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.DateTimeValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
 
-        //    var query =
-        //        from td in _db.TestData
-        //        join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.DoubleValue } equals new { v.Id, v.Value }
-        //        orderby td.Id
-        //        select td.Id;
+            var actual = await query.ToListAsync();
 
-        //    var actual = await query.ToListAsync();
+            TestUtil.EqualShape(expected, actual);
+        }
 
-        //    TestUtil.EqualShape(expected, actual);
-        //}
+        [Fact]
+        public async Task JoinWithDateTimeOffset()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = DateTimeOffset.MinValue },
+                new { Id = 2, Value = new DateTimeOffset(1999, 12, 31, 23, 59, 59, TimeSpan.FromHours(5)) }
+            };
 
-        //[Fact]
-        //public async Task MustMatchSequenceOfString()
-        //{
-        //    var values = new[] { "Test 1", "Test <2>", "Test &3", "😀", "ᴭ", "" };
+            var expected = new[] { 1, 2 };
 
-        //    {
-        //        var expected = new[] { "Test 1", "Test <2>", "Test &3", "??", "?", "" };
-        //        var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
-        //        Assert.Equal(expected, actual);
-        //    }
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.DateTimeOffsetValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
 
-        //    {
-        //        var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
-        //        Assert.Equal(values, actual);
-        //    }
+            var actual = await query.ToListAsync();
 
-        //    {
-        //        var actual = await _db.AsQueryableValues(Array.Empty<string>()).ToListAsync();
-        //        Assert.Empty(actual);
-        //    }
-        //}
+            TestUtil.EqualShape(expected, actual);
+        }
 
-        //[Fact]
-        //public async Task MustMatchSequenceOfDateTime()
-        //{
-        //    var now = DateTime.Now;
+        [Fact]
+        public async Task JoinWithGuid()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = Guid.Empty },
+                new { Id = 3, Value = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6") }
+            };
 
-        //    now = new DateTime(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond), now.Kind)
-        //        .AddMilliseconds(123);
+            var expected = new[] { 1, 3 };
 
-        //    var utcNow = DateTime.UtcNow;
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.GuidValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
 
-        //    utcNow = new DateTime(utcNow.Ticks - (utcNow.Ticks % TimeSpan.TicksPerSecond), utcNow.Kind)
-        //        .AddMilliseconds(123);
+            var actual = await query.ToListAsync();
 
-        //    var values = new[] {
-        //        DateTime.MinValue,
-        //        DateTime.MaxValue,
-        //        DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Local),
-        //        DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Local),
-        //        DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc),
-        //        DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc),
-        //        now,
-        //        utcNow
-        //    };
+            TestUtil.EqualShape(expected, actual);
+        }
 
-        //    var actual = await _db.AsQueryableValues(values).ToListAsync();
-        //    Assert.Equal(values, actual);
-        //}
+        [Fact]
+        public async Task JoinWithString()
+        {
+            {
+                var values = new[]
+                {
+                    new { Id = 1, Value = "Hola!" },
+                    new { Id = 3, Value = "Hi!" }
+                };
 
-        //[Fact]
-        //public async Task MustMatchSequenceOfDateTimeOffset()
-        //{
-        //    var values = new[] {
-        //        DateTimeOffset.MinValue,
-        //        DateTimeOffset.MaxValue,
-        //        new DateTimeOffset(2021, 1, 1, 1, 2, 3, 4, TimeSpan.FromHours(0)),
-        //        new DateTimeOffset(2021, 1, 1, 1, 2, 3, 4, TimeSpan.FromHours(5.5))
-        //    };
+                var expected = new[] { 1, 3 };
 
-        //    var actual = await _db.AsQueryableValues(values).ToListAsync();
+                {
+                    var query =
+                        from td in _db.TestData
+                        join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.StringValue } equals new { v.Id, v.Value }
+                        orderby td.Id
+                        select td.Id;
 
-        //    Assert.Equal(values, actual);
-        //}
+                    var actual = await query.ToListAsync();
 
-        //[Fact]
-        //public async Task MustMatchSequenceOfGuid()
-        //{
-        //    var expected = new[] {
-        //        Guid.Empty,
-        //        Guid.Parse("5a9354e2-ba25-4acc-a365-6a2594980879"),
-        //        Guid.Empty,
-        //        Guid.Parse("9816e5dc-56c1-44c5-88b8-3557c4fc55b7")
-        //    };
+                    TestUtil.EqualShape(expected, actual);
+                }
 
-        //    var actual = await _db.AsQueryableValues(expected).ToListAsync();
+                {
+                    var query =
+                        from td in _db.TestData
+                        join v in _db.AsQueryableValues(values, c => c.Property(p => p.Value).IsUnicode(true)) on new { td.Id, Value = td.StringValue } equals new { v.Id, v.Value }
+                        orderby td.Id
+                        select td.Id;
 
-        //    Assert.Equal(expected, actual);
-        //}
+                    var actual = await query.ToListAsync();
 
-        //[Fact]
-        //public async Task QueryEntityInt32()
-        //{
-        //    var values = new[] {
-        //        0,
-        //        int.MaxValue,
-        //        int.MaxValue
-        //    };
+                    TestUtil.EqualShape(expected, actual);
+                }
+            }
 
-        //    var expected = new[] { 2, 3, 3 };
+            {
+                var values = new[]
+                {
+                    new { Id = 1, Value = "👋" },
+                    new { Id = 2, Value = "你好！" }
+                };
 
-        //    var actual = await (
-        //        from i in _db.TestData
-        //        join v in _db.AsQueryableValues(values) on i.Int32Value equals v
-        //        orderby i.Id
-        //        select i.Id
-        //        )
-        //        .ToArrayAsync();
+                var expected = new[] { 1, 2 };
 
-        //    Assert.Equal(expected, actual);
-        //}
+                var query =
+                    from td in _db.TestData
+                    join v in _db.AsQueryableValues(values, c => c.DefaultForIsUnicode(true)) on new { td.Id, Value = td.UnicodeStringValue } equals new { v.Id, v.Value }
+                    orderby td.Id
+                    select td.Id;
 
-        //[Fact]
-        //public async Task QueryEntityInt64()
-        //{
-        //    var values = new[] {
-        //        long.MinValue,
-        //        long.MaxValue
-        //    };
+                var actual = await query.ToListAsync();
 
-        //    var expected = new[] { 1, 3 };
-
-        //    var actual = await (
-        //        from i in _db.TestData
-        //        join v in _db.AsQueryableValues(values) on i.Int64Value equals v
-        //        orderby i.Id
-        //        select i.Id
-        //        )
-        //        .ToArrayAsync();
-
-        //    Assert.Equal(expected, actual);
-        //}
-
-        //[Fact]
-        //public async Task QueryEntityDecimal()
-        //{
-        //    var values = new[] {
-        //        -1234567.890123M,
-        //        1234567.890123M
-        //    };
-
-        //    var expected = new[] { 1, 3 };
-
-        //    var actual = await (
-        //        from i in _db.TestData
-        //        join v in _db.AsQueryableValues(values, numberOfDecimals: 6) on i.DecimalValue equals v
-        //        orderby i.Id
-        //        select i.Id
-        //        )
-        //        .ToArrayAsync();
-
-        //    Assert.Equal(expected, actual);
-        //}
-
-        //[Fact]
-        //public async Task QueryEntityDouble()
-        //{
-        //    var values = new[] {
-        //        -1234567.890123D,
-        //        1234567.890123D
-        //    };
-
-        //    var expected = new[] { 1, 3 };
-
-        //    var actual = await (
-        //        from i in _db.TestData
-        //        join v in _db.AsQueryableValues(values) on i.DoubleValue equals v
-        //        orderby i.Id
-        //        select i.Id
-        //        )
-        //        .ToArrayAsync();
-
-        //    Assert.Equal(expected, actual);
-        //}
-
-        //[Fact]
-        //public async Task QueryEntityString()
-        //{
-        //    var values = new[] {
-        //        "Hi!",
-        //        "Hola!"
-        //    };
-
-        //    var expected = new[] { 1, 3 };
-
-        //    var actual = await (
-        //        from i in _db.TestData
-        //        join v in _db.AsQueryableValues(values) on i.StringValue equals v
-        //        orderby i.Id
-        //        select i.Id
-        //        )
-        //        .ToArrayAsync();
-
-        //    Assert.Equal(expected, actual);
-        //}
-
-        //[Fact]
-        //public async Task QueryEntityUnicodeString()
-        //{
-        //    var values = new[] {
-        //        "👋",
-        //        "你好！"
-        //    };
-
-        //    var expected = new[] { 1, 2 };
-
-        //    var actual = await (
-        //        from i in _db.TestData
-        //        join v in _db.AsQueryableValues(values, isUnicode: true) on i.UnicodeStringValue equals v
-        //        orderby i.Id
-        //        select i.Id
-        //        )
-        //        .ToArrayAsync();
-
-        //    Assert.Equal(expected, actual);
-        //}
-
-        //[Fact]
-        //public async Task QueryEntityDateTime()
-        //{
-        //    var dateTimeOffset = new DateTimeOffset(1999, 12, 31, 23, 59, 59, 0, TimeSpan.FromHours(5));
-
-        //    var values = new[] {
-        //        DateTime.MinValue,
-        //        dateTimeOffset.DateTime
-        //    };
-
-        //    var expected = new[] { 1, 2 };
-
-        //    var actual = await (
-        //        from i in _db.TestData
-        //        join v in _db.AsQueryableValues(values) on i.DateTimeValue equals v
-        //        orderby i.Id
-        //        select i.Id
-        //        )
-        //        .ToArrayAsync();
-
-        //    Assert.Equal(expected, actual);
-        //}
-
-
-        //[Fact]
-        //public async Task QueryEntityDateTimeOffset()
-        //{
-        //    var dateTimeOffset = new DateTimeOffset(1999, 12, 31, 23, 59, 59, 0, TimeSpan.FromHours(5));
-
-        //    var values = new[] {
-        //        DateTimeOffset.MinValue,
-        //        dateTimeOffset
-        //    };
-
-        //    var expected = new[] { 1, 2 };
-
-        //    var actual = await (
-        //        from i in _db.TestData
-        //        join v in _db.AsQueryableValues(values) on i.DateTimeOffsetValue equals v
-        //        orderby i.Id
-        //        select i.Id
-        //        )
-        //        .ToArrayAsync();
-
-        //    Assert.Equal(expected, actual);
-        //}
-
-
-        //[Fact]
-        //public async Task QueryEntityGuid()
-        //{
-        //    var values = new[] {
-        //        Guid.Empty,
-        //        Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6")
-        //    };
-
-        //    var expected = new[] { 1, 3 };
-
-        //    var actual = await (
-        //        from i in _db.TestData
-        //        join v in _db.AsQueryableValues(values) on i.GuidValue equals v
-        //        orderby i.Id
-        //        select i.Id
-        //        )
-        //        .ToArrayAsync();
-
-        //    Assert.Equal(expected, actual);
-        //}
+                TestUtil.EqualShape(expected, actual);
+            }
+        }
 
         [Fact]
         public void MustFailPropertyConfigurationOnNonString()
@@ -680,67 +563,46 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
-        public async Task ComplexTypeTest()
+        public async Task ComplexyQueryCase()
         {
-            //var input = new[]
-            //{
-            //    new TestEntity{ Id = 1, AnotherId = 2, Greeting = "Hello" },
-            //    new TestEntity{ Id = 1, OtherId = 123, AnotherId = 2 }
-            //};
-
-            var input = new[]
+            static IEnumerable<int> getIds()
             {
-                new TestEntityStruct{ Id = 1, AnotherId = 2, Greeting = "Hello" },
-                new TestEntityStruct{ Id = 1, OtherId = 123, AnotherId = 2 }
-            };
-
-            //var input = new[]
-            //{
-            //    new { Id = 1, AnotherId = 2, Greeting = "Hello 1" },
-            //    new { Id = 3, AnotherId = 4, Greeting = "Hello 2" }
-            //};
-
-            // Tupples not supported.
-            //var input = new[]
-            //{
-            //    (Id: 1, AnotherId: 2, Greeting: "Hello 1"),
-            //    (Id: 3, AnotherId: 4, Greeting: "Hello 2")
-            //};
-
-            //var asd2 =
-            //    from i in _db.TestData
-            //    select Tuple.Create(i.GuidValue, i.Id);
-
-            //var asd2 = _db.TestData.Select(i => (A: i.GuidValue, B: i.Id));
-
-            //_ = await asd2.ToListAsync();
-
-            var asdasdQuery = _db.AsQueryableValues(input, options =>
-            {
-                //options.Property(p => p.Id).NumberOfDecimals(6);
-                //options.Property(p => p.Greeting).IsUnicode();
-            });
-            var asdasd = await asdasdQuery.ToListAsync();
-
-            var asd =
-                from i in _db.TestData
-                    //join e in _db.AsQueryableValuesTest(input) on i.Int32Value equals e.Id
-                    //join e in _db.AsQueryableValuesTest(input) on new { A = i.Id, B = i.Id } equals new { A = e.Id, B = e.AnotherId }
-                join e in _db.AsQueryableValues(input) on i.Id equals e.Id
-                select i.GuidValue;
-
-            _ = await asd.ToListAsync();
-
-            for (int i = 0; i < 10; i++)
-            {
-                _ = await asd.ToListAsync();
+                for (int i = 1; i <= 3; i++)
+                {
+                    yield return i;
+                }
             }
 
-            //var output = await _db.AsQueryableValuesTest(input).ToListAsync();
+            var data1 = getIds()
+                .Select(i => new { Id = i });
 
-            //var expected = System.Text.Json.JsonSerializer.Serialize(input);
-            //var actual = System.Text.Json.JsonSerializer.Serialize(output);
-            //Assert.Equal(expected, actual);
+            var data2 = new[]
+            {
+                new { Greeting = "你好！" },
+                new { Greeting = "Hola!" },
+                new { Greeting = "Buongiorno!" }
+            };
+
+            var data3 = new[]
+            {
+                new { Guid = (Guid?)null },
+                new { Guid = (Guid?)Guid.Parse("df2c9bfe-9d83-4331-97ce-2876d5dc6576") } ,
+                new { Guid = (Guid?)Guid.Empty }
+            };
+
+            var guidsQuery = _db.AsQueryableValues(data3);
+
+            var query =
+                from td in _db.TestData
+                join id in _db.AsQueryableValues(data1) on td.Id equals id.Id
+                join greeting in _db.AsQueryableValues(data2, c => c.DefaultForIsUnicode(true)) on td.UnicodeStringValue equals greeting.Greeting
+                where guidsQuery.Select(i => i.Guid).Contains(td.GuidValue)
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+            var expected = new[] { 2 };
+
+            Assert.Equal(expected, actual);
         }
     }
 }

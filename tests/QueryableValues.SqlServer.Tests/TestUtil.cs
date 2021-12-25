@@ -55,5 +55,12 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests
             var actualJson = System.Text.Json.JsonSerializer.Serialize(actual);
             Assert.Equal(expectedJson, actualJson);
         }
+
+        public static void NotEqualShape<TExpected, TActual>(TExpected expected, TActual actual)
+        {
+            var expectedJson = System.Text.Json.JsonSerializer.Serialize(expected);
+            var actualJson = System.Text.Json.JsonSerializer.Serialize(actual);
+            Assert.NotEqual(expectedJson, actualJson);
+        }
     }
 }
