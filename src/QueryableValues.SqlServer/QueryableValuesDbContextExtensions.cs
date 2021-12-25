@@ -174,16 +174,7 @@ namespace BlazarTech.QueryableValues
         public static IQueryable<decimal> AsQueryableValues(this DbContext dbContext, IEnumerable<decimal> values, int numberOfDecimals)
         {
             ValidateParameters(dbContext, values);
-
-            if (numberOfDecimals < 0)
-            {
-                throw new ArgumentException("Cannot be negative.", nameof(numberOfDecimals));
-            }
-
-            if (numberOfDecimals > 38)
-            {
-                throw new ArgumentException("Cannot be greater than 38.", nameof(numberOfDecimals));
-            }
+            Validations.ValidateNumberOfDecimals(numberOfDecimals);
 
             var deferredValues = new DeferredDecimalValues(values);
             var precisionScale = (38, numberOfDecimals);
@@ -299,7 +290,6 @@ namespace BlazarTech.QueryableValues
         }
 
         // todos:
-        // - Add Test case for Database Script/Migrations apis. Ensure that the internal entity is not leaked.
         // - Add test cases for AsQueryableValues<T>.
         // - Update docs.
         // - Support for System.Single (float)

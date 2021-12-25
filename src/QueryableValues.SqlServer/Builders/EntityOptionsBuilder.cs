@@ -67,8 +67,10 @@ namespace BlazarTech.QueryableValues.Builders
         /// </summary>
         /// <param name="numberOfDecimals">A value indicating the number of decimals supported by default.</param>
         /// <returns>The same builder instance so that multiple configuration calls can be chained.</returns>
+        /// <exception cref="ArgumentException"></exception>
         public EntityOptionsBuilder<T> DefaultForNumberOfDecimals(int numberOfDecimals)
         {
+            Validations.ValidateNumberOfDecimals(numberOfDecimals);
             _defaultForNumberOfDecimals = numberOfDecimals;
             return this;
         }

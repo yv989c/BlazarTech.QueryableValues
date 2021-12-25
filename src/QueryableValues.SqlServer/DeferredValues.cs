@@ -9,6 +9,10 @@ namespace BlazarTech.QueryableValues
         protected readonly IEnumerable<T> _values;
 
         // todo: Expose API to turn this behavior off by the user.
+        /// <summary>
+        /// Used to optimize the generated SQL by providing a TOP(n) on the SELECT statement.
+        /// In my tests, I observed improved memory grant estimation by SQL Server's query engine.
+        /// </summary>
         public bool HasCount
         {
             get

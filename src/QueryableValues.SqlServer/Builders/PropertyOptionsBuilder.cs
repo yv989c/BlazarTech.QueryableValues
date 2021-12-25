@@ -48,12 +48,15 @@ namespace BlazarTech.QueryableValues.Builders
         /// <param name="numberOfDecimals">The number of decimals supported by the property</param>
         /// <returns>The same builder instance so that multiple configuration calls can be chained.</returns>
         /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public PropertyOptionsBuilder<TProperty> NumberOfDecimals(int numberOfDecimals)
         {
             if (typeof(TProperty) != typeof(decimal))
             {
                 throw new InvalidOperationException("This method can only be used on Decimal properties.");
             }
+
+            Validations.ValidateNumberOfDecimals(numberOfDecimals);
 
             _numberOfDecimals = numberOfDecimals;
 

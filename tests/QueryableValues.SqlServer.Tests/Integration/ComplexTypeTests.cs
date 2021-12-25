@@ -242,7 +242,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
                 var query =
                     from td in _db.TestData
-                    join v in _db.AsQueryableValues(values) on new { td.Id, td.Int32Value } equals new { v.Id, Int32Value = v.Value }
+                    join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.Int32Value } equals new { v.Id, v.Value }
                     orderby td.Id
                     select td.Id;
 
@@ -252,63 +252,143 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             }
         }
 
+        [Fact]
+        public async Task JoinWithInt64()
+        {
+            var values = new[]
+            {
+                    new { Id = 1, Value = long.MinValue},
+                    new { Id = 3, Value = long.MaxValue }
+                };
+
+            var expected = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.Int64Value } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            TestUtil.EqualShape(expected, actual);
+        }
+
+        [Fact]
+        public async Task JoinWithDecimal()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = -1234567.890123M },
+                new { Id = 3, Value = 1234567.890123M }
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var queryableValues = _db.AsQueryableValues(
+                values,
+                c => c.Property(p => p.Value).NumberOfDecimals(6)
+                );
+
+            var query =
+                from td in _db.TestData
+                join v in queryableValues on new { td.Id, Value = td.DecimalValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            TestUtil.EqualShape(expected, actual);
+        }
+
+        [Fact]
+        public void MustPassPropertyConfigurationOnDecimal()
+        {
+            var values = Enumerable.Range(0, 10)
+                .Select(id => new { Id = (decimal)id });
+
+            for (int numberOfDecimals = 0; numberOfDecimals <= 38; numberOfDecimals++)
+            {
+                _ = _db.AsQueryableValues(values, c => c.DefaultForNumberOfDecimals(numberOfDecimals));
+                _ = _db.AsQueryableValues(values, c => c.Property(p => p.Id).NumberOfDecimals(numberOfDecimals));
+            }
+        }
+
+        [Theory]
+        [InlineData(-1)]
+        [InlineData(39)]
+        public void MustFailPropertyConfigurationOnDecimal(int numberOfDecimals)
+        {
+            var values = Enumerable.Range(0, 10)
+                .Select(id => new { Id = (decimal)id });
+
+            Assert.Throws<ArgumentException>(nameof(numberOfDecimals), () =>
+            {
+                _ = _db.AsQueryableValues(values, c => c.DefaultForNumberOfDecimals(numberOfDecimals));
+            });
+
+            Assert.Throws<ArgumentException>(nameof(numberOfDecimals), () =>
+            {
+                _ = _db.AsQueryableValues(values, c => c.Property(p => p.Id).NumberOfDecimals(numberOfDecimals));
+            });
+        }
+
+        [Fact]
+        public void MustFailPropertyConfigurationOnNonDecimal()
+        {
+            var values = Enumerable.Range(0, 10)
+                .Select(id => new { Id = id });
+
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                _ = _db.AsQueryableValues(values, c => c.Property(p => p.Id).NumberOfDecimals(4));
+            });
+        }
+
+
+        [Fact]
+        public async Task JoinWithDouble()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = -1234567.890123D },
+                new { Id = 3, Value = 1234567.890123D }
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.DoubleValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            TestUtil.EqualShape(expected, actual);
+        }
+
+
         //[Fact]
-        //public async Task MustMatchSequenceOfDecimal()
+        //public async Task JoinWithString()
         //{
+        //    var values = new[]
         //    {
-        //        var expected = TestUtil.GetSequenceOfDecimals(0).ToList();
-        //        var actual = await _db.AsQueryableValues(expected, 0).ToListAsync();
-        //        Assert.Equal(expected, actual);
-        //    }
+        //        new { Id = 1, Value = -1234567.890123D },
+        //        new { Id = 3, Value = 1234567.890123D }
+        //    };
 
-        //    {
-        //        var expected = TestUtil.GetSequenceOfDecimals(2).ToList();
-        //        var actual = await _db.AsQueryableValues(expected, 2).ToListAsync();
-        //        Assert.Equal(expected, actual);
-        //    }
+        //    var expected = new[] { 1, 3 };
 
-        //    {
-        //        var expected = TestUtil.GetSequenceOfDecimals(6).ToList();
-        //        var actual = await _db.AsQueryableValues(expected, 6).ToListAsync();
-        //        Assert.Equal(expected, actual);
-        //    }
-        //}
+        //    var query =
+        //        from td in _db.TestData
+        //        join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.DoubleValue } equals new { v.Id, v.Value }
+        //        orderby td.Id
+        //        select td.Id;
 
-        //[Fact]
-        //public async Task MustFailSequenceOfDecimalInvalidNumberOfDecimals()
-        //{
-        //    await Assert.ThrowsAsync<ArgumentException>("numberOfDecimals", async () =>
-        //    {
-        //        _ = await _db.AsQueryableValues(Array.Empty<decimal>(), -1).ToListAsync();
-        //    });
+        //    var actual = await query.ToListAsync();
 
-        //    await Assert.ThrowsAsync<ArgumentException>("numberOfDecimals", async () =>
-        //    {
-        //        _ = await _db.AsQueryableValues(Array.Empty<decimal>(), 39).ToListAsync();
-        //    });
-        //}
-
-
-        //[Fact]
-        //public async Task MustMatchSequenceOfDouble()
-        //{
-        //    {
-        //        var expected = TestUtil.GetSequenceOfDecimals(0).Select(i => (double)i).ToList();
-        //        var actual = await _db.AsQueryableValues(expected).ToListAsync();
-        //        Assert.Equal(expected, actual);
-        //    }
-
-        //    {
-        //        var expected = TestUtil.GetSequenceOfDecimals(2).Select(i => (double)i).ToList();
-        //        var actual = await _db.AsQueryableValues(expected).ToListAsync();
-        //        Assert.Equal(expected, actual);
-        //    }
-
-        //    {
-        //        var expected = TestUtil.GetSequenceOfDecimals(6).Select(i => (double)i).ToList();
-        //        var actual = await _db.AsQueryableValues(expected).ToListAsync();
-        //        Assert.Equal(expected, actual);
-        //    }
+        //    TestUtil.EqualShape(expected, actual);
         //}
 
         //[Fact]
@@ -586,6 +666,18 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
         //    Assert.Equal(expected, actual);
         //}
+
+        [Fact]
+        public void MustFailPropertyConfigurationOnNonString()
+        {
+            var values = Enumerable.Range(0, 10)
+                .Select(id => new { Id = id });
+
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                _ = _db.AsQueryableValues(values, c => c.Property(p => p.Id).IsUnicode(true));
+            });
+        }
 
         [Fact]
         public async Task ComplexTypeTest()

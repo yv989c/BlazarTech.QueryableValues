@@ -20,19 +20,24 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var values = Enumerable.Range(0, 10);
 
-            Exception? actualException = null;
-
-            try
+            var actualException = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
                 _ = await db.AsQueryableValues(values).ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                actualException = ex;
-            }
+            });
 
-            Assert.IsType<InvalidOperationException>(actualException);
             Assert.StartsWith($"{nameof(QueryableValues)} have not been configured", actualException?.Message);
+        }
+
+        [Fact]
+        public void MustNotScriptOutInternalEntity()
+        {
+            using var db = new MyDbContext();
+
+            var script = db.Database.GenerateCreateScript();
+
+            Assert.DoesNotContain(nameof(QueryableValuesEntity<object>), script, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(nameof(QueryableValuesEntity), script, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("QueryableValues", script, StringComparison.OrdinalIgnoreCase);
         }
     }
 }
