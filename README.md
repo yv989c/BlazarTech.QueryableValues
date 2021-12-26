@@ -6,7 +6,7 @@
 This library allows us to efficiently compose an [IEnumerable\<T\>] in our [Entity Framework Core] queries when using the [SQL Server Database Provider]. This is done by using the `AsQueryableValues` extension method that is made available on the [DbContext] class. Everything is evaluated on the server with a single roundtrip, in a way that preserves the query's [execution plan], even when the values behind the [IEnumerable\<T\>] are changed on subsequent executions.
 
 The supported types for `T` are:
-- Simple Types: [Int32], [Int64], [Decimal], [Double], [DateTime], [DateTimeOffset], [Guid], and [String].
+- Simple Type: [Int32], [Int64], [Decimal], [Double], [DateTime], [DateTimeOffset], [Guid], and [String].
 - Complex Type:
   - Can be an anonymous type.
   - Can be a user defined class or struct, with read/write properties and a public constructor.
@@ -17,6 +17,8 @@ For a detailed explanation, please continue reading [here][readme-background].
 ## When Should I Use It?
 The `AsQueryableValues` extension method is intended for queries that are dependent on a *non-constant* sequence of external values. In this case, the underline SQL query will be efficient on subsequent executions.
 
+It provides a solution to the following long standing EF Core [issue](https://github.com/dotnet/efcore/issues/13617) and enables other currently unsupported scenarios; like the ability to efficiently create joins with in-memory data.
+
 ## Getting Started
 
 ### Installation
@@ -26,9 +28,9 @@ Please choose the appropriate command below to install it using the NuGet Packag
 
 EF Core | Command
 :---: | ---
-3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.1.0`
-5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.1.0`
-6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.1.0`
+3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.2.0`
+5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.2.0`
+6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.2.0`
 
 ### Configuration
 Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method, as shown in the following simplified examples:
@@ -73,14 +75,15 @@ public class Startup
 ```
 
 ### How Do I Use It?
-The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace, therefore, you must add the following `using` directive to your source code file in order for it to appear as a method of your [DbContext] instance.
+The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace, therefore, you must add the following `using` directive to your source code file in order for it to appear as a method of your [DbContext] instance:
 ```
 using BlazarTech.QueryableValues;
 ```
 
-Below are two patterns that you can use to retrieve data from an entity based on values provided by an [IEnumerable\<T\>].
+Below you can find a few examples composing a query using the values provided by an [IEnumerable\<T\>].
 
-#### Simple Type, using the [Contains][ContainsQueryable] LINQ method:
+#### Simple Type Examples
+Using the [Contains][ContainsQueryable] LINQ method:
 
 ```c#
 // Sample values.
@@ -110,7 +113,7 @@ var myQuery2 =
         i.PropA
     });
 ```
-#### Simple Type, using the [Join] LINQ method:
+Using the [Join] LINQ method:
 ```c#
 // Sample values.
 IEnumerable<int> values = Enumerable.Range(1, 10);
@@ -138,14 +141,26 @@ var myQuery2 =
         i.PropA
     });
 ```
-#### Complex Type, using the [Join] LINQ method:
+#### Complex Type Examples
 ```c#
-// todo
-```
-**When providing a Complex Type**
-> :warning: All the data provided by this type is transmitted to the server, therefore, ensure that it only contains the properties that you are using in your query. Not following this recommendation will degrade the query's performance.
+// If your IEnumerable<T> variable's item type is a complex type with many properties,
+// project only what you need to a new variable and use it in your query.
+var projectedItems = items.Select(i => new { i.CategoryId, i.ColorName });
 
-> :warning: There is a limit of up to ten properties for any given simple type (e.g., cannot have more than ten [Int32] properties). Reaching that limit will cause an exception, and may also be a sign that you are doing too much.
+var myQuery = 
+    from p in dbContext.Product
+    join pi in dbContext.AsQueryableValues(projectedItems) on new { p.CategoryId, p.ColorName } equals new { pi.CategoryId, pi.ColorName }
+    select new
+    {
+        p.ProductId,
+        p.Description
+    };
+```
+**About Complex Types**
+> :warning: All the data provided by this type is transmitted to the server, therefore, ensure that it only contains the properties that you need for your query. Not following this recommendation will degrade the query's performance.
+
+> :warning: There is a limit of up to ten properties for any given simple type (e.g., cannot have more than ten [Int32] properties). Exceeding that limit will cause an exception and may also be a sign that you should rethink your strategy.
+
 ---
 
 ## Background 📚
@@ -256,14 +271,14 @@ As expected, none of the queries in the orange section hit the cache, on the oth
 Now, let's focus our attention to the first query of the green section. We can appreciate that there's a cost associated with this technique, but this cost can be offset in the long run, especially when our queries are not trivial like the ones that I am using in these examples.
 
 ## What Makes this Work? 🤓
-I am making use of the XML parsing capabilities in SQL Server, which are available in all the supported versions of SQL Server to date. The provided values are serialized as XML and embedded in the underline SQL query using a native XML parameter, then I use SQL Server's XML type methods to project the query in a way that can be mapped by Entity Framework.
+I am making use of the XML parsing capabilities in SQL Server, which are available in all the supported versions of SQL Server to date. The provided values are serialized as XML and embedded in the underline SQL query using a native XML parameter, then I use SQL Server's XML type methods to project the query in a way that can be mapped by [Entity Framework Core].
 
 This is a technique that I have not seen being used by other popular libraries that aim to solve this problem. It is superior from a latency standpoint because it resolves the query with a single roundtrip to the database, and most importantly, it preserves the query’s [execution plan], even when the content of the XML is changed.
 
 ## One More Thing 👀
-The `AsQueryableValues` extension method allows us to treat our sequence of values as we normally would if these were another entity in the [DbContext]. The type returned by the extension is a [IQueryable\<T\>] that can be composed with other entities in your query.
+The `AsQueryableValues` extension method allows us to treat our sequence of values as we normally would if these were another entity in the [DbContext]. The type returned by the extension is an [IQueryable\<T\>] that can be composed with other entities in your query.
 
-For example, we can do one or more joins like this and it’s totally fine:
+For example, we can do one or more joins like this and it is totally fine:
 ```c#
 var myQuery =
     from i in dbContext.MyEntities

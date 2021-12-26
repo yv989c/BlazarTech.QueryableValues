@@ -1,14 +1,20 @@
-# QueryableValues [![CI/CD Workflow](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml)
-This library improves the efficiency of some types of queries in [Entity Framework Core] when using the [SQL Server Database Provider].
+# QueryableValues
 
-The provided `AsQueryableValues` extension method on the [DbContext] class allows us to efficiently compose an [IEnumerable<T>] in our queries when it consist of *non-constant* values. It returns an [IQueryable<T>] that in the context of a query can be treated as any other entity in our [DbContext]. Everything is evaluated on the server.
+This library allows us to efficiently compose an [IEnumerable<T>] in our [Entity Framework Core] queries when using the [SQL Server Database Provider]. This is done by using the `AsQueryableValues` extension method that is made available on the [DbContext] class. Everything is evaluated on the server with a single roundtrip, in a way that preserves the query's [execution plan], even when the values behind the [IEnumerable<T>] are changed on subsequent executions.
 
-The supported types for `T` are: `Int32`, `Int64`, `Decimal`, `Double`, `DateTime`, `DateTimeOffset`, `Guid`, and `String`.
+The supported types for `T` are:
+- Simple Type: [Int32], [Int64], [Decimal], [Double], [DateTime], [DateTimeOffset], [Guid], and [String].
+- Complex Type:
+  - Can be an anonymous type.
+  - Can be a user defined class or struct, with read/write properties and a public constructor.
+  - Must have one or more simple type properties.
 
 For a detailed explanation, please continue reading [here][readme-background].
 
 ## When Should I Use It?
 The `AsQueryableValues` extension method is intended for queries that are dependent on a *non-constant* sequence of external values. In this case, the underline SQL query will be efficient on subsequent executions.
+
+It provides a solution to the following long standing EF Core [issue](https://github.com/dotnet/efcore/issues/13617) and enables other currently unsupported scenarios; like the ability to efficiently create joins with in-memory data.
 
 ## Getting Started
 
@@ -19,9 +25,9 @@ Please choose the appropriate command below to install it using the NuGet Packag
 
 EF Core | Command
 :---: | ---
-3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.1.0`
-5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.1.0`
-6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.1.0`
+3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.2.0`
+5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.2.0`
+6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.2.0`
 
 ### Configuration
 Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method, as shown in the following simplified examples:
@@ -66,14 +72,15 @@ public class Startup
 ```
 
 ### How Do I Use It?
-The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace, therefore, you must add the following `using` directive to your source code file in order for it to appear as a method of your [DbContext] instance.
+The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace, therefore, you must add the following `using` directive to your source code file in order for it to appear as a method of your [DbContext] instance:
 ```
 using BlazarTech.QueryableValues;
 ```
 
-Below are two patterns that you can use to retrieve data from an entity based on values provided by an [IEnumerable<T>].
+Below you can find a few examples composing a query using the values provided by an [IEnumerable<T>].
 
-Using the [Contains][ContainsQueryable] LINQ method
+#### Simple Type Examples
+Using the [Contains][ContainsQueryable] LINQ method:
 
 ```c#
 // Sample values.
@@ -103,7 +110,7 @@ var myQuery2 =
         i.PropA
     });
 ```
-Using the [Join] LINQ method
+Using the [Join] LINQ method:
 ```c#
 // Sample values.
 IEnumerable<int> values = Enumerable.Range(1, 10);
@@ -131,6 +138,25 @@ var myQuery2 =
         i.PropA
     });
 ```
+#### Complex Type Examples
+```c#
+// If your IEnumerable<T> variable's item type is a complex type with many properties,
+// project only what you need to a new variable and use it in your query.
+var projectedItems = items.Select(i => new { i.CategoryId, i.ColorName });
+
+var myQuery = 
+    from p in dbContext.Product
+    join pi in dbContext.AsQueryableValues(projectedItems) on new { p.CategoryId, p.ColorName } equals new { pi.CategoryId, pi.ColorName }
+    select new
+    {
+        p.ProductId,
+        p.Description
+    };
+```
+**About Complex Types**
+> :warning: All the data provided by this type is transmitted to the server, therefore, ensure that it only contains the properties that you need for your query. Not following this recommendation will degrade the query's performance.
+
+> :warning: There is a limit of up to ten properties for any given simple type (e.g., cannot have more than ten [Int32] properties). Exceeding that limit will cause an exception and may also be a sign that you should rethink your strategy.
 
 ## Do You Want to Know More? 📚
 Please take a look at the repository [here](https://github.com/yv989c/BlazarTech.QueryableValues).
@@ -149,3 +175,12 @@ Please take a look at the repository [here](https://github.com/yv989c/BlazarTech
 [IQueryable<T>]: https://docs.microsoft.com/en-us/dotnet/api/system.linq.iqueryable-1
 [NuGet Package]: https://www.nuget.org/packages/BlazarTech.QueryableValues.SqlServer/
 [readme-background]: https://github.com/yv989c/BlazarTech.QueryableValues#background-
+[execution plan]: https://docs.microsoft.com/en-us/sql/relational-databases/query-processing-architecture-guide?#execution-plan-caching-and-reuse
+[Int32]: https://docs.microsoft.com/en-us/dotnet/api/system.int32
+[Int64]: https://docs.microsoft.com/en-us/dotnet/api/system.int64
+[Decimal]: https://docs.microsoft.com/en-us/dotnet/api/system.decimal
+[Double]: https://docs.microsoft.com/en-us/dotnet/api/system.double
+[DateTime]: https://docs.microsoft.com/en-us/dotnet/api/system.datetime
+[DateTimeOffset]: https://docs.microsoft.com/en-us/dotnet/api/system.datetimeoffset
+[Guid]: https://docs.microsoft.com/en-us/dotnet/api/system.guid
+[String]: https://docs.microsoft.com/en-us/dotnet/api/system.string
