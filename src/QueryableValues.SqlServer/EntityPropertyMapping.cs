@@ -92,6 +92,11 @@ namespace BlazarTech.QueryableValues
 
                 if (targetPropertiesByType.TryGetValue(propertyType, out Queue<PropertyInfo>? targetProperties))
                 {
+                    if (targetProperties.Count == 0)
+                    {
+                        throw new InvalidOperationException($"Mapping properties for the type {sourceProperty.PropertyType.FullName} have been depleted.");
+                    }
+
                     var mapping = new EntityPropertyMapping(
                         sourceProperty,
                         targetProperties.Dequeue(),
@@ -102,7 +107,7 @@ namespace BlazarTech.QueryableValues
                 }
                 else
                 {
-                    throw new NotSupportedException($"{sourceProperty.PropertyType.FullName} is not supported.");
+                    throw new NotSupportedException($"The type {sourceProperty.PropertyType.FullName} is not supported.");
                 }
             }
 
