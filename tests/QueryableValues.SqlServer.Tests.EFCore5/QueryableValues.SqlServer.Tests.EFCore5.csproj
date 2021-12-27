@@ -21,6 +21,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\QueryableValues.SqlServer.EFCore5\QueryableValues.SqlServer.EFCore5.csproj" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.12" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.13" />
 	</ItemGroup>
 </Project>
