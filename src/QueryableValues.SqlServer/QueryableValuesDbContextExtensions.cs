@@ -305,6 +305,11 @@ namespace BlazarTech.QueryableValues
             ValidateParameters(dbContext, values);
             EnsureConfigured(dbContext);
 
+            if (EntityPropertyMapping.IsSimpleType(typeof(TSource)))
+            {
+                throw new ArgumentException("This method signature is intended for complex types only.", nameof(TSource));
+            }
+
             var mappings = EntityPropertyMapping.GetMappings<TSource>();
             var deferredValues = new DeferredEntityValues<TSource>(values, mappings);
             var sql = getSql(mappings, configure, deferredValues.HasCount);
