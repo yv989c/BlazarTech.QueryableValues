@@ -298,6 +298,7 @@ namespace BlazarTech.QueryableValues
         /// <param name="configure">Performs configuration.</param>
         /// <returns>An <see cref="IQueryable{T}"/> that can be composed with other entities in the query.</returns>
         /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<TSource> AsQueryableValues<TSource>(this DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure = null)
             where TSource : notnull
