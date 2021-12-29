@@ -14,8 +14,7 @@ namespace BlazarTech.QueryableValues
                 throw new ArgumentNullException(nameof(source));
             }
 
-            // todo: Target multiple runtimes and check for NET6 instead of EFCORE6.
-#if EFCORE6
+#if NET6_0_OR_GREATER
             if (System.Linq.Enumerable.TryGetNonEnumeratedCount(source, out count))
             {
                 return true;

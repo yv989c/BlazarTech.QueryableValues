@@ -7,10 +7,10 @@
 		<Authors>Carlos Villegas</Authors>
 		<Product>BlazarTech.QueryableValues</Product>
 		<PackageId>BlazarTech.QueryableValues.SqlServer</PackageId>
-		<Description>This library enhances the DbContext class by providing the AsQueryableValues extension method, which allows us to efficiently compose an IEnumerable&lt;T&gt; in our queries. It returns an IQueryable&lt;T&gt; that in the context of a query can be treated as any other entity in our DbContext.</Description>
+		<Description>Provides the AsQueryableValues extension method on the DbContext class, which allows us to efficiently compose an IEnumerable&lt;T&gt; in our queries. It returns an IQueryable&lt;T&gt; that in the context of a query can be treated as any other entity in our DbContext.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/yv989c/BlazarTech.QueryableValues</PackageProjectUrl>
-		<PackageTags>Entity Framework Core entity-framework-core EF Data O/RM EntityFramework EntityFrameworkCore EFCore SQL Server IQueryable IEnumerable Queryable Values MemoryJoin BulkInsertTempTableAsync WhereBulkContains</PackageTags>
+		<PackageTags>Entity Framework Core entity-framework-core EF Data O/RM EntityFramework EntityFrameworkCore EFCore SQL Server IQueryable IEnumerable Queryable Values MemoryJoin BulkInsertTempTableAsync WhereBulkContains Extension Extensions Memory Join Contains Performance LINQ</PackageTags>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
