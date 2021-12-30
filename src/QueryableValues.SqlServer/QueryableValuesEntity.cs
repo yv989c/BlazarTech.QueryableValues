@@ -98,5 +98,49 @@ namespace BlazarTech.QueryableValues
         public string? String7 { get; set; }
         public string? String8 { get; set; }
         public string? String9 { get; set; }
+
+        public bool? Bool0 { get; set; }
+        public bool? Bool1 { get; set; }
+        public bool? Bool2 { get; set; }
+        public bool? Bool3 { get; set; }
+        public bool? Bool4 { get; set; }
+        public bool? Bool5 { get; set; }
+        public bool? Bool6 { get; set; }
+        public bool? Bool7 { get; set; }
+        public bool? Bool8 { get; set; }
+        public bool? Bool9 { get; set; }
+
+        public byte? Byte0 { get; set; }
+        public byte? Byte1 { get; set; }
+        public byte? Byte2 { get; set; }
+        public byte? Byte3 { get; set; }
+        public byte? Byte4 { get; set; }
+        public byte? Byte5 { get; set; }
+        public byte? Byte6 { get; set; }
+        public byte? Byte7 { get; set; }
+        public byte? Byte8 { get; set; }
+        public byte? Byte9 { get; set; }
+
+        public short? Short0 { get; set; }
+        public short? Short1 { get; set; }
+        public short? Short2 { get; set; }
+        public short? Short3 { get; set; }
+        public short? Short4 { get; set; }
+        public short? Short5 { get; set; }
+        public short? Short6 { get; set; }
+        public short? Short7 { get; set; }
+        public short? Short8 { get; set; }
+        public short? Short9 { get; set; }
+
+        public float? Float0 { get; set; }
+        public float? Float1 { get; set; }
+        public float? Float2 { get; set; }
+        public float? Float3 { get; set; }
+        public float? Float4 { get; set; }
+        public float? Float5 { get; set; }
+        public float? Float6 { get; set; }
+        public float? Float7 { get; set; }
+        public float? Float8 { get; set; }
+        public float? Float9 { get; set; }
     }
 }

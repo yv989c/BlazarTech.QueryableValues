@@ -127,6 +127,42 @@ namespace BlazarTech.QueryableValues
         }
 
         /// <summary>
+        /// Allows an <see cref="IEnumerable{Byte}">IEnumerable&lt;byte&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{Byte}">IQueryable&lt;byte&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<byte> AsQueryableValues(this DbContext dbContext, IEnumerable<byte> values)
+        {
+            ValidateParameters(dbContext, values);
+
+            var deferredValues = new DeferredByteValues(values);
+            var sql = GetSqlForSimpleTypes("unsignedByte", "tinyint", deferredValues);
+
+            return GetQuery(dbContext, sql, deferredValues);
+        }
+
+        /// <summary>
+        /// Allows an <see cref="IEnumerable{Int16}">IEnumerable&lt;short&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{Int16}">IQueryable&lt;short&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<short> AsQueryableValues(this DbContext dbContext, IEnumerable<short> values)
+        {
+            ValidateParameters(dbContext, values);
+
+            var deferredValues = new DeferredInt16Values(values);
+            var sql = GetSqlForSimpleTypes("short", "smallint", deferredValues);
+
+            return GetQuery(dbContext, sql, deferredValues);
+        }
+
+        /// <summary>
         /// Allows an <see cref="IEnumerable{Int32}">IEnumerable&lt;int&gt;</see> to be composed in an Entity Framework query.
         /// </summary>
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
@@ -185,6 +221,24 @@ namespace BlazarTech.QueryableValues
         }
 
         /// <summary>
+        /// Allows an <see cref="IEnumerable{Single}">IEnumerable&lt;float&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{Single}">IQueryable&lt;float&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<float> AsQueryableValues(this DbContext dbContext, IEnumerable<float> values)
+        {
+            ValidateParameters(dbContext, values);
+
+            var deferredValues = new DeferredSingleValues(values);
+            var sql = GetSqlForSimpleTypes("float", "real", deferredValues);
+
+            return GetQuery(dbContext, sql, deferredValues);
+        }
+
+        /// <summary>
         /// Allows an <see cref="IEnumerable{Double}">IEnumerable&lt;double&gt;</see> to be composed in an Entity Framework query.
         /// </summary>
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
@@ -234,6 +288,40 @@ namespace BlazarTech.QueryableValues
 
             var deferredValues = new DeferredDateTimeOffsetValues(values);
             var sql = GetSqlForSimpleTypes("dateTime", "datetimeoffset", deferredValues);
+
+            return GetQuery(dbContext, sql, deferredValues);
+        }
+
+        /// <summary>
+        /// Allows an <see cref="IEnumerable{Char}">IEnumerable&lt;char&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <param name="isUnicode">If <c>true</c>, will cast the <paramref name="values"/> as <c>nvarchar</c>, otherwise, <c>varchar</c>.</param>
+        /// <returns>An <see cref="IQueryable{Char}">IQueryable&lt;char&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <remarks>
+        /// About Performance: If the result is going to be composed against the property of an entity that uses 
+        /// unicode (<c>nvarchar</c>), then <paramref name="isUnicode"/> should be <c>true</c>.
+        /// Failing to do this may force SQL Server's query engine to do an implicit casting, which results 
+        /// in a scan instead of an index seek (assuming there's a covering index).
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<char> AsQueryableValues(this DbContext dbContext, IEnumerable<char> values, bool isUnicode = false)
+        {
+            ValidateParameters(dbContext, values);
+
+            string sql;
+            var deferredValues = new DeferredCharValues(values);
+
+            if (isUnicode)
+            {
+                sql = GetSqlForSimpleTypes("string", "nvarchar(1)", deferredValues);
+            }
+            else
+            {
+                sql = GetSqlForSimpleTypes("string", "varchar(1)", deferredValues);
+            }
 
             return GetQuery(dbContext, sql, deferredValues);
         }
@@ -379,10 +467,19 @@ namespace BlazarTech.QueryableValues
 
                     switch (mapping.TypeName)
                     {
-                        case EntityPropertyTypeName.Int:
+                        case EntityPropertyTypeName.Boolean:
+                            sb.Append("xs:boolean?', 'bit'");
+                            break;
+                        case EntityPropertyTypeName.Byte:
+                            sb.Append("xs:unsignedByte?', 'tinyint'");
+                            break;
+                        case EntityPropertyTypeName.Int16:
+                            sb.Append("xs:short?', 'smallint'");
+                            break;
+                        case EntityPropertyTypeName.Int32:
                             sb.Append("xs:integer?', 'int'");
                             break;
-                        case EntityPropertyTypeName.Long:
+                        case EntityPropertyTypeName.Int64:
                             sb.Append("xs:integer?', 'bigint'");
                             break;
                         case EntityPropertyTypeName.Decimal:
@@ -390,6 +487,9 @@ namespace BlazarTech.QueryableValues
                                 var numberOfDecimals = propertyOptions?.NumberOfDecimals ?? entityOptions.DefaultForNumberOfDecimals;
                                 sb.Append("xs:decimal?', 'decimal(38, ").Append(numberOfDecimals).Append(")'");
                             }
+                            break;
+                        case EntityPropertyTypeName.Single:
+                            sb.Append("xs:float?', 'real'");
                             break;
                         case EntityPropertyTypeName.Double:
                             sb.Append("xs:double?', 'float'");
@@ -402,6 +502,16 @@ namespace BlazarTech.QueryableValues
                             break;
                         case EntityPropertyTypeName.Guid:
                             sb.Append("xs:string?', 'uniqueidentifier'");
+                            break;
+                        case EntityPropertyTypeName.Char:
+                            if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
+                            {
+                                sb.Append("xs:string?', 'nvarchar(1)'");
+                            }
+                            else
+                            {
+                                sb.Append("xs:string?', 'varchar(1)'");
+                            }
                             break;
                         case EntityPropertyTypeName.String:
                             if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)

@@ -2,13 +2,18 @@
 {
     internal enum EntityPropertyTypeName
     {
-        Int,
-        Long,
+        Boolean,
+        Byte,
+        Int16,
+        Int32,
+        Int64,
         Decimal,
+        Single,
         Double,
         DateTime,
         DateTimeOffset,
         Guid,
+        Char,
         String
     }
 }

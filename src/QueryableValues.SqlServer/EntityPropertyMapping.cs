@@ -21,13 +21,18 @@ namespace BlazarTech.QueryableValues
         {
             SimpleTypes = new Dictionary<Type, EntityPropertyTypeName>
             {
-                { typeof(int), EntityPropertyTypeName.Int },
-                { typeof(long), EntityPropertyTypeName.Long },
+                { typeof(bool), EntityPropertyTypeName.Boolean },
+                { typeof(byte), EntityPropertyTypeName.Byte },
+                { typeof(short), EntityPropertyTypeName.Int16 },
+                { typeof(int), EntityPropertyTypeName.Int32 },
+                { typeof(long), EntityPropertyTypeName.Int64 },
                 { typeof(decimal), EntityPropertyTypeName.Decimal },
+                { typeof(float), EntityPropertyTypeName.Single },
                 { typeof(double), EntityPropertyTypeName.Double },
                 { typeof(DateTime), EntityPropertyTypeName.DateTime },
                 { typeof(DateTimeOffset), EntityPropertyTypeName.DateTimeOffset },
                 { typeof(Guid), EntityPropertyTypeName.Guid },
+                { typeof(char), EntityPropertyTypeName.Char },
                 { typeof(string), EntityPropertyTypeName.String }
             };
         }

@@ -37,14 +37,18 @@ namespace BlazarTech.QueryableValues
 
         public void Customize(ModelBuilder modelBuilder, DbContext context)
         {
+            SetupEntity<byte>(modelBuilder);
+            SetupEntity<short>(modelBuilder);
             SetupEntity<int>(modelBuilder);
             SetupEntity<long>(modelBuilder);
             SetupEntity<decimal>(modelBuilder);
+            SetupEntity<float>(modelBuilder);
             SetupEntity<double>(modelBuilder);
             SetupEntity<DateTime>(modelBuilder);
             SetupEntity<DateTimeOffset>(modelBuilder);
-            SetupEntity<string>(modelBuilder);
             SetupEntity<Guid>(modelBuilder);
+            SetupEntity<char>(modelBuilder);
+            SetupEntity<string>(modelBuilder);
 
             SetupEntity(modelBuilder);
 

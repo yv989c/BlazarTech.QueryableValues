@@ -19,6 +19,22 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task MustMatchSequenceOfByte()
+        {
+            var expected = Enumerable.Range(0, 256).Select(i => (byte)i);
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfInt16()
+        {
+            var expected = Enumerable.Range(0, 10).Select(i => (short)i);
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public async Task MustMatchSequenceOfInt32()
         {
             var expected = Enumerable.Range(0, 10);
@@ -70,6 +86,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             });
         }
 
+        [Fact]
+        public async Task MustMatchSequenceOfSingle()
+        {
+            var expected = new float[] { -3.402823E+38F, 3.402823E+38F, 0, 1, 9999999, 1234567, 123456.7F, 12345.67F, 1.234567F };
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+            Assert.Equal(expected, actual);
+        }
 
         [Fact]
         public async Task MustMatchSequenceOfDouble()
@@ -93,9 +116,35 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             }
         }
 
+        //[Fact]
+        //public async Task MustMatchSequenceOfChar()
+        //{
+        //    // todo: Add control character/single space cases when supported.
+
+        //    var values = new[] { 'A', 'a', 'ᴭ', ' ' };
+
+        //    {
+        //        var expected = new[] { 'A', 'a', '?', ' ' };
+        //        var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
+        //        Assert.Equal(expected, actual);
+        //    }
+
+        //    {
+        //        var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
+        //        Assert.Equal(values, actual);
+        //    }
+
+        //    {
+        //        var actual = await _db.AsQueryableValues(Array.Empty<string>()).ToListAsync();
+        //        Assert.Empty(actual);
+        //    }
+        //}
+
         [Fact]
         public async Task MustMatchSequenceOfString()
         {
+            // todo: Add control character/single space cases when supported.
+
             var values = new[] { "Test 1", "Test <2>", "Test &3", "😀", "ᴭ", "" };
 
             {

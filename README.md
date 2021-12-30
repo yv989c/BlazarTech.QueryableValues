@@ -143,8 +143,9 @@ var myQuery2 =
 ```
 #### Complex Type Examples
 ```c#
-// If your IEnumerable<T> variable's item type is a complex type with many properties,
-// project only what you need to a new variable and use it in your query.
+// Performance Tip:
+// If your IEnumerable<T> variable's item type has many properties,
+// project only the ones you need to a new variable and use it in your query.
 var projectedItems = items.Select(i => new { i.CategoryId, i.ColorName });
 
 var myQuery = 

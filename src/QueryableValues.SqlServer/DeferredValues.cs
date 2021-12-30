@@ -74,6 +74,18 @@ namespace BlazarTech.QueryableValues
         public ulong ToUInt64(IFormatProvider? provider) => throw new NotImplementedException();
     }
 
+    internal sealed class DeferredByteValues : DeferredValues<byte>
+    {
+        public DeferredByteValues(IEnumerable<byte> values) : base(values) { }
+        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+    }
+
+    internal sealed class DeferredInt16Values : DeferredValues<short>
+    {
+        public DeferredInt16Values(IEnumerable<short> values) : base(values) { }
+        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+    }
+
     internal sealed class DeferredInt32Values : DeferredValues<int>
     {
         public DeferredInt32Values(IEnumerable<int> values) : base(values) { }
@@ -89,6 +101,12 @@ namespace BlazarTech.QueryableValues
     internal sealed class DeferredDecimalValues : DeferredValues<decimal>
     {
         public DeferredDecimalValues(IEnumerable<decimal> values) : base(values) { }
+        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+    }
+
+    internal sealed class DeferredSingleValues : DeferredValues<float>
+    {
+        public DeferredSingleValues(IEnumerable<float> values) : base(values) { }
         public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
     }
 
@@ -116,10 +134,15 @@ namespace BlazarTech.QueryableValues
         public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
     }
 
+    internal sealed class DeferredCharValues : DeferredValues<char>
+    {
+        public DeferredCharValues(IEnumerable<char> values) : base(values) { }
+        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+    }
+
     internal sealed class DeferredStringValues : DeferredValues<string>
     {
         public DeferredStringValues(IEnumerable<string> values) : base(values) { }
-
         public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
     }
 
@@ -133,6 +156,7 @@ namespace BlazarTech.QueryableValues
         {
             _mappings = mappings;
         }
+
         public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values, _mappings);
     }
 }
