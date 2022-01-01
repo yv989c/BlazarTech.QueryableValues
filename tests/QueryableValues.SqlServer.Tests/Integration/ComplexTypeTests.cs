@@ -15,12 +15,20 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
         public class TestType
         {
-            public int IntValue { get; set; }
-            public int? IntNullableValue { get; set; }
-            public long LongValue { get; set; }
-            public long? LongNullableValue { get; set; }
+            public bool BooleanValue { get; set; }
+            public bool? BooleanNullableValue { get; set; }
+            public byte ByteValue { get; set; }
+            public byte? ByteNullableValue { get; set; }
+            public short Int16Value { get; set; }
+            public short? Int16NullableValue { get; set; }
+            public int Int32Value { get; set; }
+            public int? Int32NullableValue { get; set; }
+            public long Int64Value { get; set; }
+            public long? Int64NullableValue { get; set; }
             public decimal DecimalValue { get; set; }
             public decimal? DecimalNullableValue { get; set; }
+            public float SingleValue { get; set; }
+            public float? SingleNullableValue { get; set; }
             public double DoubleValue { get; set; }
             public double? DoubleNullableValue { get; set; }
             public DateTime DateTimeValue { get; set; }
@@ -29,6 +37,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             public DateTimeOffset? DateTimeOffsetNullableValue { get; set; }
             public Guid GuidValue { get; set; }
             public Guid? GuidNullableValue { get; set; }
+            public char CharValue { get; set; }
+            public char? CharNullableValue { get; set; }
+            public char CharUnicodeValue { get; set; }
+            public char? CharUnicodeNullableValue { get; set; }
             public string? StringValue { get; set; }
             public string? StringUnicodeValue { get; set; }
         }
@@ -56,8 +68,8 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             {
                 new TestType
                 {
-                    IntValue = int.MinValue,
-                    IntNullableValue = int.MaxValue
+                    Int32Value = int.MinValue,
+                    Int32NullableValue = int.MaxValue
                 }
             };
 
@@ -155,10 +167,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             {
                 new TestType
                 {
-                    IntValue = int.MinValue,
-                    IntNullableValue = int.MaxValue,
-                    LongValue = long.MinValue,
-                    LongNullableValue = long.MaxValue,
+                    Int32Value = int.MinValue,
+                    Int32NullableValue = int.MaxValue,
+                    Int64Value = long.MinValue,
+                    Int64NullableValue = long.MaxValue,
                     DecimalValue = 1.1234M,
                     DecimalNullableValue = 999999.1234M,
                     DoubleValue = 1.1234D,
@@ -169,14 +181,16 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     DateTimeOffsetNullableValue = DateTimeOffset.MaxValue,
                     GuidValue = Guid.Parse("22ebe092-5665-4118-bf23-daff0dbe9f3c"),
                     GuidNullableValue = Guid.Parse("46367e3b-77cd-4e4e-a931-cf8b69e84cf2"),
+                    CharValue = 'A',
+                    CharUnicodeValue = '1',
                     StringValue = "Lorem ipsum dolor sit amet"
                 },
                 new TestType
                 {
-                    IntValue = 0,
-                    IntNullableValue = 0,
-                    LongValue = 0,
-                    LongNullableValue = 0,
+                    Int32Value = 0,
+                    Int32NullableValue = 0,
+                    Int64Value = 0,
+                    Int64NullableValue = 0,
                     DecimalValue = 0.0000M,
                     DecimalNullableValue = 0.0000M,
                     DoubleValue = 0,
@@ -187,11 +201,15 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     DateTimeOffsetNullableValue = DateTimeOffset.MinValue,
                     GuidValue = Guid.Empty,
                     GuidNullableValue = Guid.Empty,
+                    CharValue = ' ',
+                    CharUnicodeValue = ' ',
                     StringValue = ""
                 },
                 new TestType
                 {
-                    DecimalValue = 0.0000M
+                    DecimalValue = 0.0000M,
+                    CharValue = 'B',
+                    CharUnicodeValue = '2',
                 }
             };
 
@@ -210,10 +228,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             {
                 new TestType
                 {
-                    IntValue = int.MinValue,
-                    IntNullableValue = int.MaxValue,
-                    LongValue = long.MinValue,
-                    LongNullableValue = long.MaxValue,
+                    Int32Value = int.MinValue,
+                    Int32NullableValue = int.MaxValue,
+                    Int64Value = long.MinValue,
+                    Int64NullableValue = long.MaxValue,
                     DecimalValue = 1.12M,
                     DecimalNullableValue = 999999.1234M,
                     DoubleValue = 1.1234D,
@@ -224,15 +242,17 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     DateTimeOffsetNullableValue = DateTimeOffset.MaxValue,
                     GuidValue = Guid.Parse("22ebe092-5665-4118-bf23-daff0dbe9f3c"),
                     GuidNullableValue = Guid.Parse("46367e3b-77cd-4e4e-a931-cf8b69e84cf2"),
+                    CharValue = 'a',
+                    CharUnicodeValue = '☢',
                     StringValue = "Lorem ipsum dolor sit amet",
                     StringUnicodeValue = "😀👋"
                 },
                 new TestType
                 {
-                    IntValue = 0,
-                    IntNullableValue = 0,
-                    LongValue = 0,
-                    LongNullableValue = 0,
+                    Int32Value = 0,
+                    Int32NullableValue = 0,
+                    Int64Value = 0,
+                    Int64NullableValue = 0,
                     DecimalValue = 0.00M,
                     DecimalNullableValue = 0.0000M,
                     DoubleValue = 0,
@@ -243,11 +263,17 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     DateTimeOffsetNullableValue = DateTimeOffset.MinValue,
                     GuidValue = Guid.Empty,
                     GuidNullableValue = Guid.Empty,
+                    CharValue = 'b',
+                    CharNullableValue = '1',
+                    CharUnicodeValue = '☃',
+                    CharUnicodeNullableValue = '☢',
                     StringValue = ""
                 },
                 new TestType
                 {
-                    DecimalValue = 0.00M
+                    DecimalValue = 0.00M,
+                    CharValue = ' ',
+                    CharUnicodeValue = ' '
                 }
             };
 
@@ -255,6 +281,8 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 .AsQueryableValues(expected, configure =>
                 {
                     configure.Property(p => p.DecimalValue).NumberOfDecimals(2);
+                    configure.Property(p => p.CharUnicodeValue).IsUnicode(true);
+                    configure.Property(p => p.CharUnicodeNullableValue).IsUnicode(true);
                     configure.Property(p => p.StringUnicodeValue).IsUnicode(true);
                 })
                 .ToListAsync();
@@ -603,6 +631,29 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             var expected = new[] { 2 };
 
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task MustBeEmpty()
+        {
+            var actual = await _db.AsQueryableValues(Array.Empty<TestType>()).ToListAsync();
+            Assert.Empty(actual);
+        }
+
+        [Fact]
+        public async Task MustMatchCount()
+        {
+            const int expectedItemCount = 1000;
+
+            var values = Enumerable.Range(0, expectedItemCount)
+                .Select(i => new
+                {
+                    Id = i
+                });
+
+            var actualItemCount = await _db.AsQueryableValues(values).CountAsync();
+
+            Assert.Equal(expectedItemCount, actualItemCount);
         }
     }
 }

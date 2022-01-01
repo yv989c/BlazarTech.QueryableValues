@@ -49,6 +49,7 @@ namespace BlazarTech.QueryableValues
             {
                 // DeferredValues allows us to defer the enumeration of values until the query is materialized.
                 // Uses deferredValues.ToString() at evaluation time.
+                //Value = deferredValues.SqlXmlValue()
                 Value = deferredValues
             };
 
@@ -208,7 +209,7 @@ namespace BlazarTech.QueryableValues
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
-        public static IQueryable<decimal> AsQueryableValues(this DbContext dbContext, IEnumerable<decimal> values, int numberOfDecimals)
+        public static IQueryable<decimal> AsQueryableValues(this DbContext dbContext, IEnumerable<decimal> values, int numberOfDecimals = 4)
         {
             ValidateParameters(dbContext, values);
             Validations.ValidateNumberOfDecimals(numberOfDecimals);
@@ -386,7 +387,6 @@ namespace BlazarTech.QueryableValues
         /// <param name="configure">Performs configuration.</param>
         /// <returns>An <see cref="IQueryable{T}"/> that can be composed with other entities in the query.</returns>
         /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<TSource> AsQueryableValues<TSource>(this DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure = null)
             where TSource : notnull
@@ -394,9 +394,11 @@ namespace BlazarTech.QueryableValues
             ValidateParameters(dbContext, values);
             EnsureConfigured(dbContext);
 
-            if (EntityPropertyMapping.IsSimpleType(typeof(TSource)))
+            var simpleTypeQueryable = getSimpleTypeQueryable(dbContext, values);
+
+            if (simpleTypeQueryable != null)
             {
-                throw new ArgumentException("This method signature is intended for complex types only.", nameof(TSource));
+                return simpleTypeQueryable;
             }
 
             var mappings = EntityPropertyMapping.GetMappings<TSource>();
@@ -640,7 +642,7 @@ namespace BlazarTech.QueryableValues
                     }
                 }
 
-                static IQueryable<TSource>? getFromCache(Type sourceType, IQueryable< QueryableValuesEntity> source)
+                static IQueryable<TSource>? getFromCache(Type sourceType, IQueryable<QueryableValuesEntity> source)
                 {
                     if (SelectorExpressionCache.TryGetValue(sourceType, out object? selectorFromCache))
                     {
@@ -655,6 +657,69 @@ namespace BlazarTech.QueryableValues
                 }
 
                 #endregion
+            }
+
+            static IQueryable<TSource>? getSimpleTypeQueryable(DbContext dbContext, IEnumerable<TSource> values)
+            {
+                if (EntityPropertyMapping.IsSimpleType(typeof(TSource)))
+                {
+                    if (values is IEnumerable<byte> byteValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, byteValues);
+                    }
+                    else if (values is IEnumerable<short> int16Values)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, int16Values);
+                    }
+                    else if (values is IEnumerable<int> int32Values)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, int32Values);
+                    }
+                    else if (values is IEnumerable<long> int64Values)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, int64Values);
+                    }
+                    else if (values is IEnumerable<decimal> decimalValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, decimalValues);
+                    }
+                    else if (values is IEnumerable<float> singleValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, singleValues);
+                    }
+                    else if (values is IEnumerable<double> doubleValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, doubleValues);
+                    }
+                    else if (values is IEnumerable<DateTime> dateTimeValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, dateTimeValues);
+                    }
+                    else if (values is IEnumerable<DateTimeOffset> dateTimeOffsetValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, dateTimeOffsetValues);
+                    }
+                    else if (values is IEnumerable<Guid> guidValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, guidValues);
+                    }
+                    else if (values is IEnumerable<char> charValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, charValues);
+                    }
+                    else if (values is IEnumerable<string> stringValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, stringValues);
+                    }
+                    else
+                    {
+                        throw new NotImplementedException(typeof(TSource).FullName);
+                    }
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
     }

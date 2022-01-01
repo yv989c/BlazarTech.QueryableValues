@@ -28,7 +28,7 @@ namespace BlazarTech.QueryableValues
                     {
                         continue;
                     }
-                    
+
                     xmlWriter.WriteStartElement("V");
 
                     writeValue(xmlWriter, value);
@@ -41,14 +41,6 @@ namespace BlazarTech.QueryableValues
 
             return sb.ToString();
         }
-
-        /*
-            Discovered bug when serializing char/string.
-            Some characters must be entitized so SQL Server can properly represent them.
-            System.Xml.XmlWriter is not flexible on this.
-            todo: Use a combination of xmlWriter.WriteCharEntity and xmlWriter.WriteChars when writing the content of a char/string.
-            Related to: https://github.com/yv989c/BlazarTech.QueryableValues/issues/4
-         */
 
         private static void WriteValue(XmlWriter writer, bool value) => writer.WriteValue(value ? 1 : 0);
         private static void WriteValue(XmlWriter writer, byte value) => writer.WriteValue(value);
@@ -71,8 +63,58 @@ namespace BlazarTech.QueryableValues
         }
         private static void WriteValue(XmlWriter writer, DateTimeOffset value) => writer.WriteValue(value);
         private static void WriteValue(XmlWriter writer, Guid value) => writer.WriteValue(value.ToString());
-        private static void WriteValue(XmlWriter writer, char value) => writer.WriteValue(value.ToString());
-        private static void WriteValue(XmlWriter writer, string value) => writer.WriteValue(value);
+        private static void WriteValue(XmlWriter writer, char[] chars)
+        {
+            var startIndex = 0;
+            var length = 0;
+
+            for (int i = 0; i < chars.Length; i++)
+            {
+                var c = chars[i];
+                var isValidCharacter = XmlConvert.IsXmlChar(c);
+                var mustEntitize = isValidCharacter && (char.IsWhiteSpace(c) || char.IsControl(c));
+
+                if (mustEntitize)
+                {
+                    WriterHelper(writer, chars, startIndex, ref length);
+                    writer.WriteCharEntity(c);
+                    startIndex = i + 1;
+                }
+                else if (isValidCharacter)
+                {
+                    length++;
+                }
+                else if (
+                    i + 1 < chars.Length &&
+                    // todo: Do I have to worry about endianness here?
+                    XmlConvert.IsXmlSurrogatePair(chars[i + 1], chars[i])
+                    )
+                {
+                    length += 2;
+                    i++;
+                }
+                // It is an illegal XML character.
+                // https://www.w3.org/TR/xml/#charsets
+                else
+                {
+                    length++;
+                    chars[i] = '?';
+                }
+            }
+
+            WriterHelper(writer, chars, startIndex, ref length);
+
+            static void WriterHelper(XmlWriter writer, char[] chars, int startIndex, ref int length)
+            {
+                if (length > 0)
+                {
+                    writer.WriteChars(chars, startIndex, length);
+                    length = 0;
+                }
+            }
+        }
+        private static void WriteValue(XmlWriter writer, char value) => WriteValue(writer, new[] { value });
+        private static void WriteValue(XmlWriter writer, string value) => WriteValue(writer, value.ToCharArray());
 
         public static string GetXml(IEnumerable<byte> values)
         {
@@ -184,6 +226,7 @@ namespace BlazarTech.QueryableValues
                     EntityPropertyTypeName.DateTime => (writer, value) => WriteAttribute(writer, (DateTime?)value, XmlUtil.WriteValue),
                     EntityPropertyTypeName.DateTimeOffset => (writer, value) => WriteAttribute(writer, (DateTimeOffset?)value, XmlUtil.WriteValue),
                     EntityPropertyTypeName.Guid => (writer, value) => WriteAttribute(writer, (Guid?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Char => (writer, value) => WriteAttribute(writer, (char?)value, XmlUtil.WriteValue),
                     EntityPropertyTypeName.String => (writer, value) => WriteStringAttribute(writer, (string?)value),
                     _ => throw new NotImplementedException(mapping.TypeName.ToString()),
                 };

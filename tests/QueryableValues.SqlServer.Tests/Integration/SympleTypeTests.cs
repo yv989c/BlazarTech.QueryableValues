@@ -116,51 +116,58 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             }
         }
 
-        //[Fact]
-        //public async Task MustMatchSequenceOfChar()
-        //{
-        //    // todo: Add control character/single space cases when supported.
-
-        //    var values = new[] { 'A', 'a', 'ᴭ', ' ' };
-
-        //    {
-        //        var expected = new[] { 'A', 'a', '?', ' ' };
-        //        var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
-        //        Assert.Equal(expected, actual);
-        //    }
-
-        //    {
-        //        var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
-        //        Assert.Equal(values, actual);
-        //    }
-
-        //    {
-        //        var actual = await _db.AsQueryableValues(Array.Empty<string>()).ToListAsync();
-        //        Assert.Empty(actual);
-        //    }
-        //}
-
         [Fact]
-        public async Task MustMatchSequenceOfString()
+        public async Task MustMatchSequenceOfChar()
         {
-            // todo: Add control character/single space cases when supported.
-
-            var values = new[] { "Test 1", "Test <2>", "Test &3", "😀", "ᴭ", "" };
+            var values = new[] { 'A', 'a', 'ᴭ', ' ', '\n', '\0', '\u0001' };
 
             {
-                var expected = new[] { "Test 1", "Test <2>", "Test &3", "??", "?", "" };
+                var expected = new[] { 'A', 'a', '?', ' ', '\n', '?', '?' };
                 var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
                 Assert.Equal(expected, actual);
             }
 
             {
+                var expected = new[] { 'A', 'a', 'ᴭ', ' ', '\n', '?', '?' };
                 var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
-                Assert.Equal(values, actual);
+                Assert.Equal(expected, actual);
             }
 
             {
-                var actual = await _db.AsQueryableValues(Array.Empty<string>()).ToListAsync();
-                Assert.Empty(actual);
+                var many = Enumerable.Range(0, 1000).Select(i => (char)i);
+                var actual = await _db.AsQueryableValues(many, isUnicode: true).ToListAsync();
+                Assert.Equal(1000, actual.Count);
+            }
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfString()
+        {
+            var values = new[] { "\0 ", "\u0001", "Test 1", "Test <2>", "Test &3", "😀", "ᴭ", "", " ", "\n", " \n", " \n ", "\r", "\r ", " Test\t1 ", "\U00010330" };
+
+            {
+                var expected = new string[values.Length];
+                values.CopyTo(expected, 0);
+                expected[0] = "? ";
+                expected[1] = "?";
+                expected[5] = "??";
+                expected[6] = "?";
+                expected[15] = "??";
+
+                var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
+
+                Assert.Equal(expected, actual);
+            }
+
+            {
+                var expected = new string[values.Length];
+                values.CopyTo(expected, 0);
+                expected[0] = "? ";
+                expected[1] = "?";
+
+                var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
+
+                Assert.Equal(expected, actual);
             }
         }
 
@@ -416,6 +423,73 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 .ToArrayAsync();
 
             Assert.Equal(expected, actual);
+        }
+
+
+        [Fact]
+        public async Task MustBeEmpty()
+        {
+            var testCounter = 0;
+
+            await AssertEmpty<byte>();
+            await AssertEmpty<short>();
+            await AssertEmpty<int>();
+            await AssertEmpty<long>();
+            await AssertEmpty<decimal>();
+            await AssertEmpty<float>();
+            await AssertEmpty<double>();
+            await AssertEmpty<DateTime>();
+            await AssertEmpty<DateTimeOffset>();
+            await AssertEmpty<Guid>();
+            await AssertEmpty<char>();
+            await AssertEmpty<string>();
+
+            // Coverage check.
+            var expectedTestCount = EntityPropertyMapping.SimpleTypes.Count - 1;
+            Assert.Equal(expectedTestCount, testCounter);
+
+            async Task AssertEmpty<T>()
+                where T : notnull
+            {
+                testCounter++;
+                var actual = await _db.AsQueryableValues<T>(Array.Empty<T>()).ToListAsync();
+                Assert.Empty(actual);
+            }
+        }
+
+        [Fact]
+        public async Task MustMatchCount()
+        {
+            const int expectedItemCount = 2500;
+
+            var testCounter = 0;
+            var helperBytes = new byte[8];
+
+            await AssertCount<byte>(i => (byte)i);
+            await AssertCount<short>(i => (short)i);
+            await AssertCount<int>(i => i);
+            await AssertCount<long>(i => (long)i);
+            await AssertCount<decimal>(i => (decimal)i);
+            await AssertCount<float>(i => (float)i);
+            await AssertCount<double>(i => (double)i);
+            await AssertCount<DateTime>(i => DateTime.MinValue.AddDays(i));
+            await AssertCount<DateTimeOffset>(i => DateTimeOffset.MinValue.AddDays(i));
+            await AssertCount<Guid>(i => new Guid(i, 0, 0, helperBytes));
+            await AssertCount<char>(i => 'A');
+            await AssertCount<string>(i => $"Test {i}");
+
+            // Coverage check.
+            var expectedTestCount = EntityPropertyMapping.SimpleTypes.Count - 1;
+            Assert.Equal(expectedTestCount, testCounter);
+
+            async Task AssertCount<T>(Func<int, T> getValue)
+                where T : notnull
+            {
+                testCounter++;
+                var values = Enumerable.Range(0, expectedItemCount).Select(i => getValue(i));
+                var actualItemCount = await _db.AsQueryableValues<T>(values).CountAsync();
+                Assert.Equal(expectedItemCount, actualItemCount);
+            }
         }
     }
 }

@@ -142,5 +142,16 @@ namespace BlazarTech.QueryableValues
         public float? Float7 { get; set; }
         public float? Float8 { get; set; }
         public float? Float9 { get; set; }
+
+        public char? Char0 { get; set; }
+        public char? Char1 { get; set; }
+        public char? Char2 { get; set; }
+        public char? Char3 { get; set; }
+        public char? Char4 { get; set; }
+        public char? Char5 { get; set; }
+        public char? Char6 { get; set; }
+        public char? Char7 { get; set; }
+        public char? Char8 { get; set; }
+        public char? Char9 { get; set; }
     }
 }
