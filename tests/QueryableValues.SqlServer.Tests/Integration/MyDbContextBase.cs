@@ -45,14 +45,14 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 entity.Property(p => p.CharValue)
                     .IsUnicode(false);
 
-                entity.Property(p => p.UnicodeCharValue)
+                entity.Property(p => p.CharUnicodeValue)
                     .IsUnicode(true);
 
                 entity.Property(p => p.StringValue)
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
-                entity.Property(p => p.UnicodeStringValue)
+                entity.Property(p => p.StringUnicodeValue)
                     .HasMaxLength(50)
                     .IsUnicode(true);
             });
@@ -72,9 +72,9 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public float SingleValue { get; set; }
         public double DoubleValue { get; set; }
         public char CharValue { get; set; }
-        public char UnicodeCharValue { get; set; }
+        public char CharUnicodeValue { get; set; }
         public string StringValue { get; set; }
-        public string UnicodeStringValue { get; set; }
+        public string StringUnicodeValue { get; set; }
         public DateTime DateTimeValue { get; set; }
         public DateTimeOffset DateTimeOffsetValue { get; set; }
         public Guid GuidValue { get; set; }

@@ -19,6 +19,94 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task MustValidateEnumerationCount()
+        {
+            var enumerationCount = 0;
+
+            IEnumerable<int> enumerableData()
+            {
+                enumerationCount++;
+                yield return 1;
+            }
+
+            var query = _db.AsQueryableValues(enumerableData());
+
+            Assert.Equal(0, enumerationCount);
+
+            var expectedEnumerationCount = 0;
+
+            _ = await query.FirstAsync();
+            _ = await query.FirstAsync();
+
+#if EFCORE3
+            // Under EF Core 3, enumerableData gets enumerated only once...
+            expectedEnumerationCount = 1;
+#else
+            expectedEnumerationCount = 2;
+#endif
+
+            Assert.Equal(expectedEnumerationCount, enumerationCount);
+        }
+
+        [Fact]
+        public async Task MustSeeAllItemsFromCollection()
+        {
+            var expected = new List<int>();
+
+            var query = _db.AsQueryableValues(expected);
+
+            var actual = await query.ToListAsync();
+            Assert.Equal(expected, actual);
+
+            for (int i = 0; i <= 3; i++)
+            {
+                expected.Add(i);
+
+                actual = await query.ToListAsync();
+#if EFCORE3
+                // EF Core 3 do NOT support this.
+                // Keep to check if this behavior changes.
+                Assert.NotEqual(expected, actual);
+#else
+                Assert.Equal(expected, actual);
+#endif
+            }
+        }
+
+        [Fact]
+        public async Task MustSeeAllItemsFromNonCollection()
+        {
+            var count = 0;
+
+            IEnumerable<int> getIds()
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    yield return i;
+                }
+            }
+
+            var expected = getIds();
+            var query = _db.AsQueryableValues(expected);
+
+            var actual = await query.ToListAsync();
+            Assert.Equal(expected, actual);
+
+            for (int i = 0; i < 3; i++)
+            {
+                count++;
+                actual = await query.ToListAsync();
+#if EFCORE3
+                // EF Core 3 do NOT support this.
+                // Keep to check if this behavior changes.
+                Assert.NotEqual(expected, actual);
+#else
+                Assert.Equal(expected, actual);
+#endif
+            }
+        }
+
+        [Fact]
         public async Task MustMatchSequenceOfByte()
         {
             var expected = Enumerable.Range(0, 256).Select(i => (byte)i);
@@ -230,6 +318,47 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task QueryEntityByte()
+        {
+            var values = new[] {
+                byte.MaxValue
+            };
+
+            var expected = new[] { 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.ByteValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task QueryEntityInt16()
+        {
+            var values = new short[] {
+                0,
+                short.MaxValue
+            };
+
+            var expected = new[] { 2, 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.Int16Value equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public async Task QueryEntityInt32()
         {
             var values = new[] {
@@ -294,6 +423,27 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task QueryEntitySingle()
+        {
+            var values = new[] {
+                12345.67F,
+                3.402823E+38F
+            };
+
+            var expected = new[] { 2, 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.SingleValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public async Task QueryEntityDouble()
         {
             var values = new[] {
@@ -306,6 +456,48 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             var actual = await (
                 from i in _db.TestData
                 join v in _db.AsQueryableValues(values) on i.DoubleValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task QueryEntityChar()
+        {
+            var values = new[] {
+                'A',
+                'c'
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.CharValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task QueryEntityCharUnicode()
+        {
+            var values = new[] {
+                '☢',
+                '你'
+            };
+
+            var expected = new[] { 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values, isUnicode: true) on i.CharUnicodeValue equals v
                 orderby i.Id
                 select i.Id
                 )
@@ -336,7 +528,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
-        public async Task QueryEntityUnicodeString()
+        public async Task QueryEntityStringUnicode()
         {
             var values = new[] {
                 "👋",
@@ -347,7 +539,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var actual = await (
                 from i in _db.TestData
-                join v in _db.AsQueryableValues(values, isUnicode: true) on i.UnicodeStringValue equals v
+                join v in _db.AsQueryableValues(values, isUnicode: true) on i.StringUnicodeValue equals v
                 orderby i.Id
                 select i.Id
                 )

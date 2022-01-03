@@ -58,29 +58,20 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             _db = contextFixture.Db;
         }
 
-        // todo: Also add this test to SimpleTypeTests.
         [Fact]
         public async Task MustValidateEnumerationCount()
         {
             var enumerationCount = 0;
 
-            var data = new[]
-            {
-                new TestType
-                {
-                    Int32Value = int.MinValue,
-                    Int32NullableValue = int.MaxValue
-                }
-            };
-
             IEnumerable<TestType> enumerableData()
             {
                 enumerationCount++;
 
-                foreach (var item in data)
+                yield return new TestType
                 {
-                    yield return item;
-                }
+                    Int32Value = int.MinValue,
+                    Int32NullableValue = int.MaxValue
+                };
             }
 
             var query = _db.AsQueryableValues(enumerableData());
@@ -291,6 +282,74 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task JoinWithBoolean()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = false },
+                new { Id = 2, Value = true },
+                new { Id = 3, Value = true }
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.BoolValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task JoinWithByte()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = byte.MinValue },
+                new { Id = 2, Value = (byte)1 },
+                new { Id = 3, Value = byte.MaxValue }
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.ByteValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task JoinWithInt16()
+        {
+            var values = new[]
+            {
+                new { Value = short.MinValue },
+                new { Value = short.MaxValue }
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on td.Int16Value equals v.Value
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public async Task JoinWithInt32()
         {
             {
@@ -314,7 +373,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
                 var actual = await query.ToListAsync();
 
-                TestUtil.EqualShape(expected, actual);
+                Assert.Equal(expected, actual);
             }
 
             {
@@ -334,7 +393,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
                 var actual = await query.ToListAsync();
 
-                TestUtil.EqualShape(expected, actual);
+                Assert.Equal(expected, actual);
             }
         }
 
@@ -357,7 +416,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var actual = await query.ToListAsync();
 
-            TestUtil.EqualShape(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
         [Fact]
@@ -384,7 +443,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var actual = await query.ToListAsync();
 
-            TestUtil.EqualShape(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
         [Fact]
@@ -431,6 +490,27 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             });
         }
 
+        [Fact]
+        public async Task JoinWithSingle()
+        {
+            var values = new[]
+            {
+                new { Value = -3.402823E+38F },
+                new { Value = 12345.67F }
+            };
+
+            var expected = new[] { 1, 2 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on td.SingleValue equals v.Value
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
 
         [Fact]
         public async Task JoinWithDouble()
@@ -451,7 +531,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var actual = await query.ToListAsync();
 
-            TestUtil.EqualShape(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
         [Fact]
@@ -473,7 +553,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var actual = await query.ToListAsync();
 
-            TestUtil.EqualShape(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
         [Fact]
@@ -495,7 +575,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var actual = await query.ToListAsync();
 
-            TestUtil.EqualShape(expected, actual);
+            Assert.Equal(expected, actual);
         }
 
         [Fact]
@@ -517,7 +597,67 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var actual = await query.ToListAsync();
 
-            TestUtil.EqualShape(expected, actual);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task JoinWithChar()
+        {
+            {
+                var values = new[]
+                {
+                    new { Id = 1, Value = 'A' },
+                    new { Id = 3, Value = '☢' }
+                };
+
+                {
+                    var expected = new[] { 1 };
+
+                    var query =
+                        from td in _db.TestData
+                        join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.CharValue } equals new { v.Id, v.Value }
+                        orderby td.Id
+                        select td.Id;
+
+                    var actual = await query.ToListAsync();
+
+                    Assert.Equal(expected, actual);
+                }
+
+                {
+                    var expected = new[] { 3 };
+
+                    var query =
+                        from td in _db.TestData
+                        join v in _db.AsQueryableValues(values, c => c.Property(p => p.Value).IsUnicode(true)) on new { td.Id, Value = td.CharUnicodeValue } equals new { v.Id, v.Value }
+                        orderby td.Id
+                        select td.Id;
+
+                    var actual = await query.ToListAsync();
+
+                    Assert.Equal(expected, actual);
+                }
+            }
+
+            {
+                var values = new[]
+                {
+                    new { Id = 1, Value = '☃' },
+                    new { Id = 3, Value = '☢' }
+                };
+
+                var expected = new[] { 1, 3 };
+
+                var query =
+                    from td in _db.TestData
+                    join v in _db.AsQueryableValues(values, c => c.DefaultForIsUnicode(true)) on new { td.Id, Value = td.CharUnicodeValue } equals new { v.Id, v.Value }
+                    orderby td.Id
+                    select td.Id;
+
+                var actual = await query.ToListAsync();
+
+                Assert.Equal(expected, actual);
+            }
         }
 
         [Fact]
@@ -541,7 +681,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
                     var actual = await query.ToListAsync();
 
-                    TestUtil.EqualShape(expected, actual);
+                    Assert.Equal(expected, actual);
                 }
 
                 {
@@ -553,7 +693,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
                     var actual = await query.ToListAsync();
 
-                    TestUtil.EqualShape(expected, actual);
+                    Assert.Equal(expected, actual);
                 }
             }
 
@@ -568,13 +708,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
                 var query =
                     from td in _db.TestData
-                    join v in _db.AsQueryableValues(values, c => c.DefaultForIsUnicode(true)) on new { td.Id, Value = td.UnicodeStringValue } equals new { v.Id, v.Value }
+                    join v in _db.AsQueryableValues(values, c => c.DefaultForIsUnicode(true)) on new { td.Id, Value = td.StringUnicodeValue } equals new { v.Id, v.Value }
                     orderby td.Id
                     select td.Id;
 
                 var actual = await query.ToListAsync();
 
-                TestUtil.EqualShape(expected, actual);
+                Assert.Equal(expected, actual);
             }
         }
 
@@ -623,7 +763,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             var query =
                 from td in _db.TestData
                 join id in _db.AsQueryableValues(data1) on td.Id equals id.Id
-                join greeting in _db.AsQueryableValues(data2, c => c.DefaultForIsUnicode(true)) on td.UnicodeStringValue equals greeting.Greeting
+                join greeting in _db.AsQueryableValues(data2, c => c.DefaultForIsUnicode(true)) on td.StringUnicodeValue equals greeting.Greeting
                 where guidsQuery.Select(i => i.Guid).Contains(td.GuidValue)
                 select td.Id;
 
