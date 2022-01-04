@@ -3,18 +3,18 @@
 </p>
 
 # QueryableValues [![CI/CD Workflow](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml)
-This library allows us to efficiently compose an [IEnumerable\<T\>] in your [Entity Framework Core] queries when using the [SQL Server Database Provider]. This is accomplished by using the `AsQueryableValues` extension method available on the [DbContext] class. Everything is evaluated on the server with a single roundtrip, in a way that preserves the query’s [execution plan], even when the values behind the [IEnumerable\<T\>] are changed on subsequent executions.
+This library allows you to efficiently compose an [IEnumerable\<T\>] in your [Entity Framework Core] queries when using the [SQL Server Database Provider]. This is accomplished by using the `AsQueryableValues` extension method available on the [DbContext] class. Everything is evaluated on the server with a single round trip, in a way that preserves the query’s [execution plan], even when the values behind the [IEnumerable\<T\>] are changed on subsequent executions.
 
 The supported types for `T` are:
-- Simple Type: [Int32], [Int64], [Decimal], [Double], [DateTime], [DateTimeOffset], [Guid], and [String].
+- Simple Type: [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], and [String].
 - Complex Type:
   - Can be an anonymous type.
   - Can be a user-defined class or struct with read/write properties and a public constructor.
-  - Must have one or more simple type properties.
+  - Must have one or more simple type properties, including [Boolean].
 
 For a detailed explanation, please continue reading [here][readme-background].
 
-## When Should I Use It?
+## When Should You Use It?
 The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. In such cases, the underlying SQL query will be efficient on subsequent executions.
 
 It provides a solution to the following long standing [EF Core issue](https://github.com/dotnet/efcore/issues/13617) and enables other currently unsupported scenarios; like the ability to efficiently create joins with in-memory data.
@@ -28,9 +28,9 @@ Please choose the appropriate command below to install it using the NuGet Packag
 
 EF Core | Command
 :---: | ---
-3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.2.0`
-5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.2.0`
-6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.2.0`
+3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.3.0`
+5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.3.0`
+6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.3.0`
 
 ### Configuration
 Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method as shown in the following simplified examples:
@@ -74,7 +74,7 @@ public class Startup
 }
 ```
 
-### How Do I Use It?
+### How Do You Use It?
 The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace; therefore, you must add the following `using` directive to your source code file for it to appear as a method of your [DbContext] instance:
 ```
 using BlazarTech.QueryableValues;
@@ -141,7 +141,7 @@ var myQuery2 =
         i.PropA
     });
 ```
-#### Complex Type Examples
+#### Complex Type Example
 ```c#
 // Performance Tip:
 // If your IEnumerable<T> variable’s item type has many properties,
@@ -218,9 +218,9 @@ As we can see, a new SQL statement was generated just because we modified the li
 ## Enter AsQueryableValues 🙌
 ![Parameterize All the Things](/docs/images/parameterize-all-the-things.jpg)
 
-This library provides the `AsQueryableValues` extension method made available on the [DbContext] class. It solves the problem explained above by allowing us to build a query that will generate a SQL statement for [sp_executesql] that will remain constant execution after execution, allowing SQL Server to do its best every time by using a previously cached [execution plan]. This will speed up our query on subsequent executions, and conserve system resources.
+This library provides you with the `AsQueryableValues` extension method made available on the [DbContext] class. It solves the problem explained above by allowing you to build a query that will generate a SQL statement for [sp_executesql] that will remain constant execution after execution, allowing SQL Server to do its best every time by using a previously cached [execution plan]. This will speed up your query on subsequent executions, and conserve system resources.
 
-Let’s take a look at the following query making use of this method, which is functionally equivalent to the previous examples:
+Let’s take a look at the following query making use of this method, which is functionally equivalent to the previous example:
 ```c#
 var myQuery = dbContext.MyEntities
     .Where(i =>
@@ -259,27 +259,27 @@ WHERE EXISTS (
     ) AS [q]
     WHERE [q].[V] = [m].[MyEntityID]) OR ([m].[PropB] = @__p_1)',N'@p0 xml,@__p_1 bigint',@p0=@p3,@__p_1=100
 ```
-Great! The SQL statement provided to [sp_executesql] remains constant. In this case SQL Server can reuse the [execution plan] from our previous execution.
+Great! The SQL statement provided to [sp_executesql] remains constant. In this case SQL Server can reuse the [execution plan] from the previous execution.
 
 ## The Numbers 📊
-You don’t have to take my word for it! Let’s see a trace of what’s going on under the hood when both of these queries are executed multiple times, adding a new value to our list after each execution. First, five executions of the one making direct use of the [Contains][ContainsEnumerable] LINQ method (orange), and then five executions of the second one making use of the `AsQueryableValues` extension method on our [DbContext] (green):
+You don’t have to take my word for it! Let’s see a trace of what’s going on under the hood when both of these queries are executed multiple times, adding a new value to the list after each execution. First, five executions of the one making direct use of the [Contains][ContainsEnumerable] LINQ method (orange), and then five executions of the second one making use of the `AsQueryableValues` extension method on the [DbContext] (green):
 
 ![Trace](/docs/images/as-queryable-trace.png)
 <sup>Queries executed against SQL Server 2017 Express (14.0.2037) running on a resource constrained laptop.</sup>
 
 As expected, none of the queries in the orange section hit the cache. On the other hand, after the first query in the green section, all the subsequent ones hit the cache and consumed fewer resources.
 
-Now, let’s focus our attention to the first query of the green section. We can appreciate that there’s a cost associated with this technique, but this cost can be offset in the long run, especially when our queries are not trivial like the ones that I am using in these examples.
+Now, focus your attention to the first query of the green section. Here you can observe that there’s a cost associated with this technique, but this cost can be offset in the long run, especially when your queries are not trivial like the ones in these examples.
 
 ## What Makes This Work? 🤓
-I am making use of the XML parsing capabilities in SQL Server, which are available in all the supported versions of SQL Server to date. The provided values are serialized as XML and embedded in the underlying SQL query using a native XML parameter, then I use SQL Server’s XML type methods to project the query in a way that can be mapped by [Entity Framework Core].
+QueryableValues makes use of the XML parsing capabilities in SQL Server, which are available in all the supported versions of SQL Server to date. The provided sequence of values are serialized as XML and embedded in the underlying SQL query using a native XML parameter, then it uses SQL Server’s XML type methods to project the query in a way that can be mapped by [Entity Framework Core].
 
 This is a technique that I have not seen being used by other popular libraries that aim to solve this problem. It is superior from a latency standpoint because it resolves the query with a single round trip to the database and most importantly, it preserves the query’s [execution plan] even when the content of the XML is changed.
 
 ## One More Thing 👀
-The `AsQueryableValues` extension method allows us to treat our sequence of values as we normally would if these were another entity in the [DbContext]. The type returned by the extension is an [IQueryable\<T\>] that can be composed with other entities in your query.
+The `AsQueryableValues` extension method allows you to treat a sequence of values as you normally would if these were another entity in your [DbContext]. The type returned by the extension is an [IQueryable\<T\>] that can be composed with other entities in your query.
 
-For example, we can do one or more joins like this and it is totally fine:
+For example, you can do one or more joins like this and it is totally fine:
 ```c#
 var myQuery =
     from i in dbContext.MyEntities
@@ -308,11 +308,16 @@ PRs are welcome! 🙂
 [NuGet Package]: https://www.nuget.org/packages/BlazarTech.QueryableValues.SqlServer/
 [readme-background]: #background-
 [execution plan]: https://docs.microsoft.com/en-us/sql/relational-databases/query-processing-architecture-guide?#execution-plan-caching-and-reuse
+[Boolean]: https://docs.microsoft.com/en-us/dotnet/api/system.boolean
+[Byte]: https://docs.microsoft.com/en-us/dotnet/api/system.byte
+[Int16]: https://docs.microsoft.com/en-us/dotnet/api/system.int16
 [Int32]: https://docs.microsoft.com/en-us/dotnet/api/system.int32
 [Int64]: https://docs.microsoft.com/en-us/dotnet/api/system.int64
 [Decimal]: https://docs.microsoft.com/en-us/dotnet/api/system.decimal
+[Single]: https://docs.microsoft.com/en-us/dotnet/api/system.single
 [Double]: https://docs.microsoft.com/en-us/dotnet/api/system.double
 [DateTime]: https://docs.microsoft.com/en-us/dotnet/api/system.datetime
 [DateTimeOffset]: https://docs.microsoft.com/en-us/dotnet/api/system.datetimeoffset
 [Guid]: https://docs.microsoft.com/en-us/dotnet/api/system.guid
+[Char]: https://docs.microsoft.com/en-us/dotnet/api/system.char
 [String]: https://docs.microsoft.com/en-us/dotnet/api/system.string
