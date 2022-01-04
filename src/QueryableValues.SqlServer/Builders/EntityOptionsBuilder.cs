@@ -52,7 +52,7 @@ namespace BlazarTech.QueryableValues.Builders
         }
 
         /// <summary>
-        /// Sets the default behavior for the handling of unicode characters in <see cref="string"/> properties.
+        /// Sets the default behavior for the handling of unicode characters in <see cref="char"/> and <see cref="string"/> properties.
         /// </summary>
         /// <param name="isUnicode">A value indicating whether support for unicode characters is enabled by default.</param>
         /// <returns>The same builder instance so that multiple configuration calls can be chained.</returns>

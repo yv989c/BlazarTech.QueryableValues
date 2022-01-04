@@ -23,16 +23,21 @@ namespace BlazarTech.QueryableValues.Builders
         }
 
         /// <summary>
-        /// Configures the property as capable of handling unicode characters. Can only be set on <see cref="string"/> properties.
+        /// Configures the property as capable of handling unicode characters. Can only be set on <see cref="char"/> and <see cref="string"/> properties.
         /// </summary>
         /// <param name="isUnicode">A value indicating whether the property can handle unicode characters.</param>
         /// <returns>The same builder instance so that multiple configuration calls can be chained.</returns>
         /// <exception cref="InvalidOperationException"></exception>
         public PropertyOptionsBuilder<TProperty> IsUnicode(bool isUnicode = true)
         {
-            if (typeof(TProperty) != typeof(string))
+            var isValidType =
+                typeof(TProperty) == typeof(string) ||
+                typeof(TProperty) == typeof(char) ||
+                typeof(TProperty) == typeof(char?);
+
+            if (!isValidType)
             {
-                throw new InvalidOperationException("This method can only be used on String properties.");
+                throw new InvalidOperationException("This method can only be used on Char and String properties.");
             }
 
             _isUnicode = isUnicode;

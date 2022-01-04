@@ -42,11 +42,17 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 #else
                 entity.Property(p => p.DecimalValue).HasPrecision(18, 6);
 #endif
+                entity.Property(p => p.CharValue)
+                    .IsUnicode(false);
+
+                entity.Property(p => p.CharUnicodeValue)
+                    .IsUnicode(true);
+
                 entity.Property(p => p.StringValue)
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
-                entity.Property(p => p.UnicodeStringValue)
+                entity.Property(p => p.StringUnicodeValue)
                     .HasMaxLength(50)
                     .IsUnicode(true);
             });
@@ -57,12 +63,18 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     public class TestDataEntity
     {
         public int Id { get; set; }
+        public bool BoolValue { get; set; }
+        public byte ByteValue { get; set; }
+        public short Int16Value { get; set; }
         public int Int32Value { get; set; }
         public long Int64Value { get; set; }
         public decimal DecimalValue { get; set; }
+        public float SingleValue { get; set; }
         public double DoubleValue { get; set; }
+        public char CharValue { get; set; }
+        public char CharUnicodeValue { get; set; }
         public string StringValue { get; set; }
-        public string UnicodeStringValue { get; set; }
+        public string StringUnicodeValue { get; set; }
         public DateTime DateTimeValue { get; set; }
         public DateTimeOffset DateTimeOffsetValue { get; set; }
         public Guid GuidValue { get; set; }

@@ -42,9 +42,13 @@ namespace BlazarTech.QueryableValues
             return sb.ToString();
         }
 
+        private static void WriteValue(XmlWriter writer, bool value) => writer.WriteValue(value ? 1 : 0);
+        private static void WriteValue(XmlWriter writer, byte value) => writer.WriteValue(value);
+        private static void WriteValue(XmlWriter writer, short value) => writer.WriteValue(value);
         private static void WriteValue(XmlWriter writer, int value) => writer.WriteValue(value);
         private static void WriteValue(XmlWriter writer, long value) => writer.WriteValue(value);
         private static void WriteValue(XmlWriter writer, decimal value) => writer.WriteValue(value);
+        private static void WriteValue(XmlWriter writer, float value) => writer.WriteValue(value);
         private static void WriteValue(XmlWriter writer, double value) => writer.WriteValue(value);
         private static void WriteValue(XmlWriter writer, DateTime value)
         {
@@ -59,7 +63,68 @@ namespace BlazarTech.QueryableValues
         }
         private static void WriteValue(XmlWriter writer, DateTimeOffset value) => writer.WriteValue(value);
         private static void WriteValue(XmlWriter writer, Guid value) => writer.WriteValue(value.ToString());
-        private static void WriteValue(XmlWriter writer, string value) => writer.WriteValue(value);
+        private static void WriteValue(XmlWriter writer, char[] chars)
+        {
+            var startIndex = 0;
+            var length = 0;
+
+            for (int i = 0; i < chars.Length; i++)
+            {
+                var c = chars[i];
+                var isValidCharacter = XmlConvert.IsXmlChar(c);
+                var mustEntitize = isValidCharacter && (char.IsWhiteSpace(c) || char.IsControl(c));
+
+                if (mustEntitize)
+                {
+                    WriterHelper(writer, chars, startIndex, ref length);
+                    writer.WriteCharEntity(c);
+                    startIndex = i + 1;
+                }
+                else if (isValidCharacter)
+                {
+                    length++;
+                }
+                else if (
+                    i + 1 < chars.Length &&
+                    // todo: Do I have to worry about endianness here?
+                    XmlConvert.IsXmlSurrogatePair(chars[i + 1], chars[i])
+                    )
+                {
+                    length += 2;
+                    i++;
+                }
+                // It is an illegal XML character.
+                // https://www.w3.org/TR/xml/#charsets
+                else
+                {
+                    length++;
+                    chars[i] = '?';
+                }
+            }
+
+            WriterHelper(writer, chars, startIndex, ref length);
+
+            static void WriterHelper(XmlWriter writer, char[] chars, int startIndex, ref int length)
+            {
+                if (length > 0)
+                {
+                    writer.WriteChars(chars, startIndex, length);
+                    length = 0;
+                }
+            }
+        }
+        private static void WriteValue(XmlWriter writer, char value) => WriteValue(writer, new[] { value });
+        private static void WriteValue(XmlWriter writer, string value) => WriteValue(writer, value.ToCharArray());
+
+        public static string GetXml(IEnumerable<byte> values)
+        {
+            return GetXml(values, WriteValue);
+        }
+
+        public static string GetXml(IEnumerable<short> values)
+        {
+            return GetXml(values, WriteValue);
+        }
 
         public static string GetXml(IEnumerable<int> values)
         {
@@ -72,6 +137,11 @@ namespace BlazarTech.QueryableValues
         }
 
         public static string GetXml(IEnumerable<decimal> values)
+        {
+            return GetXml(values, WriteValue);
+        }
+
+        public static string GetXml(IEnumerable<float> values)
         {
             return GetXml(values, WriteValue);
         }
@@ -92,6 +162,11 @@ namespace BlazarTech.QueryableValues
         }
 
         public static string GetXml(IEnumerable<Guid> values)
+        {
+            return GetXml(values, WriteValue);
+        }
+
+        public static string GetXml(IEnumerable<char> values)
         {
             return GetXml(values, WriteValue);
         }
@@ -140,13 +215,18 @@ namespace BlazarTech.QueryableValues
 
                 _writeValue = mapping.TypeName switch
                 {
-                    EntityPropertyTypeName.Int => (writer, value) => WriteAttribute(writer, (int?)value, XmlUtil.WriteValue),
-                    EntityPropertyTypeName.Long => (writer, value) => WriteAttribute(writer, (long?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Boolean => (writer, value) => WriteAttribute(writer, (bool?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Byte => (writer, value) => WriteAttribute(writer, (byte?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Int16 => (writer, value) => WriteAttribute(writer, (short?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Int32 => (writer, value) => WriteAttribute(writer, (int?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Int64 => (writer, value) => WriteAttribute(writer, (long?)value, XmlUtil.WriteValue),
                     EntityPropertyTypeName.Decimal => (writer, value) => WriteAttribute(writer, (decimal?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Single => (writer, value) => WriteAttribute(writer, (float?)value, XmlUtil.WriteValue),
                     EntityPropertyTypeName.Double => (writer, value) => WriteAttribute(writer, (double?)value, XmlUtil.WriteValue),
                     EntityPropertyTypeName.DateTime => (writer, value) => WriteAttribute(writer, (DateTime?)value, XmlUtil.WriteValue),
                     EntityPropertyTypeName.DateTimeOffset => (writer, value) => WriteAttribute(writer, (DateTimeOffset?)value, XmlUtil.WriteValue),
                     EntityPropertyTypeName.Guid => (writer, value) => WriteAttribute(writer, (Guid?)value, XmlUtil.WriteValue),
+                    EntityPropertyTypeName.Char => (writer, value) => WriteAttribute(writer, (char?)value, XmlUtil.WriteValue),
                     EntityPropertyTypeName.String => (writer, value) => WriteStringAttribute(writer, (string?)value),
                     _ => throw new NotImplementedException(mapping.TypeName.ToString()),
                 };

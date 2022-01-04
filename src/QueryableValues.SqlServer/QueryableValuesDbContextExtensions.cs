@@ -49,6 +49,7 @@ namespace BlazarTech.QueryableValues
             {
                 // DeferredValues allows us to defer the enumeration of values until the query is materialized.
                 // Uses deferredValues.ToString() at evaluation time.
+                //Value = deferredValues.SqlXmlValue()
                 Value = deferredValues
             };
 
@@ -127,6 +128,42 @@ namespace BlazarTech.QueryableValues
         }
 
         /// <summary>
+        /// Allows an <see cref="IEnumerable{Byte}">IEnumerable&lt;byte&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{Byte}">IQueryable&lt;byte&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<byte> AsQueryableValues(this DbContext dbContext, IEnumerable<byte> values)
+        {
+            ValidateParameters(dbContext, values);
+
+            var deferredValues = new DeferredByteValues(values);
+            var sql = GetSqlForSimpleTypes("unsignedByte", "tinyint", deferredValues);
+
+            return GetQuery(dbContext, sql, deferredValues);
+        }
+
+        /// <summary>
+        /// Allows an <see cref="IEnumerable{Int16}">IEnumerable&lt;short&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{Int16}">IQueryable&lt;short&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<short> AsQueryableValues(this DbContext dbContext, IEnumerable<short> values)
+        {
+            ValidateParameters(dbContext, values);
+
+            var deferredValues = new DeferredInt16Values(values);
+            var sql = GetSqlForSimpleTypes("short", "smallint", deferredValues);
+
+            return GetQuery(dbContext, sql, deferredValues);
+        }
+
+        /// <summary>
         /// Allows an <see cref="IEnumerable{Int32}">IEnumerable&lt;int&gt;</see> to be composed in an Entity Framework query.
         /// </summary>
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
@@ -172,7 +209,7 @@ namespace BlazarTech.QueryableValues
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
-        public static IQueryable<decimal> AsQueryableValues(this DbContext dbContext, IEnumerable<decimal> values, int numberOfDecimals)
+        public static IQueryable<decimal> AsQueryableValues(this DbContext dbContext, IEnumerable<decimal> values, int numberOfDecimals = 4)
         {
             ValidateParameters(dbContext, values);
             Validations.ValidateNumberOfDecimals(numberOfDecimals);
@@ -180,6 +217,24 @@ namespace BlazarTech.QueryableValues
             var deferredValues = new DeferredDecimalValues(values);
             var precisionScale = (38, numberOfDecimals);
             var sql = GetSqlForSimpleTypes("decimal", "decimal", deferredValues, precisionScale: precisionScale);
+
+            return GetQuery(dbContext, sql, deferredValues);
+        }
+
+        /// <summary>
+        /// Allows an <see cref="IEnumerable{Single}">IEnumerable&lt;float&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{Single}">IQueryable&lt;float&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<float> AsQueryableValues(this DbContext dbContext, IEnumerable<float> values)
+        {
+            ValidateParameters(dbContext, values);
+
+            var deferredValues = new DeferredSingleValues(values);
+            var sql = GetSqlForSimpleTypes("float", "real", deferredValues);
 
             return GetQuery(dbContext, sql, deferredValues);
         }
@@ -234,6 +289,40 @@ namespace BlazarTech.QueryableValues
 
             var deferredValues = new DeferredDateTimeOffsetValues(values);
             var sql = GetSqlForSimpleTypes("dateTime", "datetimeoffset", deferredValues);
+
+            return GetQuery(dbContext, sql, deferredValues);
+        }
+
+        /// <summary>
+        /// Allows an <see cref="IEnumerable{Char}">IEnumerable&lt;char&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <param name="isUnicode">If <c>true</c>, will cast the <paramref name="values"/> as <c>nvarchar</c>, otherwise, <c>varchar</c>.</param>
+        /// <returns>An <see cref="IQueryable{Char}">IQueryable&lt;char&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <remarks>
+        /// About Performance: If the result is going to be composed against the property of an entity that uses 
+        /// unicode (<c>nvarchar</c>), then <paramref name="isUnicode"/> should be <c>true</c>.
+        /// Failing to do this may force SQL Server's query engine to do an implicit casting, which results 
+        /// in a scan instead of an index seek (assuming there's a covering index).
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<char> AsQueryableValues(this DbContext dbContext, IEnumerable<char> values, bool isUnicode = false)
+        {
+            ValidateParameters(dbContext, values);
+
+            string sql;
+            var deferredValues = new DeferredCharValues(values);
+
+            if (isUnicode)
+            {
+                sql = GetSqlForSimpleTypes("string", "nvarchar(1)", deferredValues);
+            }
+            else
+            {
+                sql = GetSqlForSimpleTypes("string", "varchar(1)", deferredValues);
+            }
 
             return GetQuery(dbContext, sql, deferredValues);
         }
@@ -298,7 +387,6 @@ namespace BlazarTech.QueryableValues
         /// <param name="configure">Performs configuration.</param>
         /// <returns>An <see cref="IQueryable{T}"/> that can be composed with other entities in the query.</returns>
         /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         public static IQueryable<TSource> AsQueryableValues<TSource>(this DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure = null)
             where TSource : notnull
@@ -306,9 +394,11 @@ namespace BlazarTech.QueryableValues
             ValidateParameters(dbContext, values);
             EnsureConfigured(dbContext);
 
-            if (EntityPropertyMapping.IsSimpleType(typeof(TSource)))
+            var simpleTypeQueryable = getSimpleTypeQueryable(dbContext, values);
+
+            if (simpleTypeQueryable != null)
             {
-                throw new ArgumentException("This method signature is intended for complex types only.", nameof(TSource));
+                return simpleTypeQueryable;
             }
 
             var mappings = EntityPropertyMapping.GetMappings<TSource>();
@@ -379,10 +469,19 @@ namespace BlazarTech.QueryableValues
 
                     switch (mapping.TypeName)
                     {
-                        case EntityPropertyTypeName.Int:
+                        case EntityPropertyTypeName.Boolean:
+                            sb.Append("xs:boolean?', 'bit'");
+                            break;
+                        case EntityPropertyTypeName.Byte:
+                            sb.Append("xs:unsignedByte?', 'tinyint'");
+                            break;
+                        case EntityPropertyTypeName.Int16:
+                            sb.Append("xs:short?', 'smallint'");
+                            break;
+                        case EntityPropertyTypeName.Int32:
                             sb.Append("xs:integer?', 'int'");
                             break;
-                        case EntityPropertyTypeName.Long:
+                        case EntityPropertyTypeName.Int64:
                             sb.Append("xs:integer?', 'bigint'");
                             break;
                         case EntityPropertyTypeName.Decimal:
@@ -390,6 +489,9 @@ namespace BlazarTech.QueryableValues
                                 var numberOfDecimals = propertyOptions?.NumberOfDecimals ?? entityOptions.DefaultForNumberOfDecimals;
                                 sb.Append("xs:decimal?', 'decimal(38, ").Append(numberOfDecimals).Append(")'");
                             }
+                            break;
+                        case EntityPropertyTypeName.Single:
+                            sb.Append("xs:float?', 'real'");
                             break;
                         case EntityPropertyTypeName.Double:
                             sb.Append("xs:double?', 'float'");
@@ -402,6 +504,16 @@ namespace BlazarTech.QueryableValues
                             break;
                         case EntityPropertyTypeName.Guid:
                             sb.Append("xs:string?', 'uniqueidentifier'");
+                            break;
+                        case EntityPropertyTypeName.Char:
+                            if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
+                            {
+                                sb.Append("xs:string?', 'nvarchar(1)'");
+                            }
+                            else
+                            {
+                                sb.Append("xs:string?', 'varchar(1)'");
+                            }
                             break;
                         case EntityPropertyTypeName.String:
                             if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
@@ -530,7 +642,7 @@ namespace BlazarTech.QueryableValues
                     }
                 }
 
-                static IQueryable<TSource>? getFromCache(Type sourceType, IQueryable< QueryableValuesEntity> source)
+                static IQueryable<TSource>? getFromCache(Type sourceType, IQueryable<QueryableValuesEntity> source)
                 {
                     if (SelectorExpressionCache.TryGetValue(sourceType, out object? selectorFromCache))
                     {
@@ -545,6 +657,69 @@ namespace BlazarTech.QueryableValues
                 }
 
                 #endregion
+            }
+
+            static IQueryable<TSource>? getSimpleTypeQueryable(DbContext dbContext, IEnumerable<TSource> values)
+            {
+                if (EntityPropertyMapping.IsSimpleType(typeof(TSource)))
+                {
+                    if (values is IEnumerable<byte> byteValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, byteValues);
+                    }
+                    else if (values is IEnumerable<short> int16Values)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, int16Values);
+                    }
+                    else if (values is IEnumerable<int> int32Values)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, int32Values);
+                    }
+                    else if (values is IEnumerable<long> int64Values)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, int64Values);
+                    }
+                    else if (values is IEnumerable<decimal> decimalValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, decimalValues);
+                    }
+                    else if (values is IEnumerable<float> singleValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, singleValues);
+                    }
+                    else if (values is IEnumerable<double> doubleValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, doubleValues);
+                    }
+                    else if (values is IEnumerable<DateTime> dateTimeValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, dateTimeValues);
+                    }
+                    else if (values is IEnumerable<DateTimeOffset> dateTimeOffsetValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, dateTimeOffsetValues);
+                    }
+                    else if (values is IEnumerable<Guid> guidValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, guidValues);
+                    }
+                    else if (values is IEnumerable<char> charValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, charValues);
+                    }
+                    else if (values is IEnumerable<string> stringValues)
+                    {
+                        return (IQueryable<TSource>)AsQueryableValues(dbContext, stringValues);
+                    }
+                    else
+                    {
+                        throw new NotImplementedException(typeof(TSource).FullName);
+                    }
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
     }

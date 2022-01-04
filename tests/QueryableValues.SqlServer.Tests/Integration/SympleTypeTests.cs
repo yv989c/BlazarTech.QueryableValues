@@ -19,6 +19,110 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task MustValidateEnumerationCount()
+        {
+            var enumerationCount = 0;
+
+            IEnumerable<int> enumerableData()
+            {
+                enumerationCount++;
+                yield return 1;
+            }
+
+            var query = _db.AsQueryableValues(enumerableData());
+
+            Assert.Equal(0, enumerationCount);
+
+            var expectedEnumerationCount = 0;
+
+            _ = await query.FirstAsync();
+            _ = await query.FirstAsync();
+
+#if EFCORE3
+            // Under EF Core 3, enumerableData gets enumerated only once...
+            expectedEnumerationCount = 1;
+#else
+            expectedEnumerationCount = 2;
+#endif
+
+            Assert.Equal(expectedEnumerationCount, enumerationCount);
+        }
+
+        [Fact]
+        public async Task MustSeeAllItemsFromCollection()
+        {
+            var expected = new List<int>();
+
+            var query = _db.AsQueryableValues(expected);
+
+            var actual = await query.ToListAsync();
+            Assert.Equal(expected, actual);
+
+            for (int i = 0; i <= 3; i++)
+            {
+                expected.Add(i);
+
+                actual = await query.ToListAsync();
+#if EFCORE3
+                // EF Core 3 do NOT support this.
+                // Keep to check if this behavior changes.
+                Assert.NotEqual(expected, actual);
+#else
+                Assert.Equal(expected, actual);
+#endif
+            }
+        }
+
+        [Fact]
+        public async Task MustSeeAllItemsFromNonCollection()
+        {
+            var count = 0;
+
+            IEnumerable<int> getIds()
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    yield return i;
+                }
+            }
+
+            var expected = getIds();
+            var query = _db.AsQueryableValues(expected);
+
+            var actual = await query.ToListAsync();
+            Assert.Equal(expected, actual);
+
+            for (int i = 0; i < 3; i++)
+            {
+                count++;
+                actual = await query.ToListAsync();
+#if EFCORE3
+                // EF Core 3 do NOT support this.
+                // Keep to check if this behavior changes.
+                Assert.NotEqual(expected, actual);
+#else
+                Assert.Equal(expected, actual);
+#endif
+            }
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfByte()
+        {
+            var expected = Enumerable.Range(0, 256).Select(i => (byte)i);
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfInt16()
+        {
+            var expected = Enumerable.Range(0, 10).Select(i => (short)i);
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public async Task MustMatchSequenceOfInt32()
         {
             var expected = Enumerable.Range(0, 10);
@@ -70,6 +174,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             });
         }
 
+        [Fact]
+        public async Task MustMatchSequenceOfSingle()
+        {
+            var expected = new float[] { -3.402823E+38F, 3.402823E+38F, 0, 1, 9999999, 1234567, 123456.7F, 12345.67F, 1.234567F };
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+            Assert.Equal(expected, actual);
+        }
 
         [Fact]
         public async Task MustMatchSequenceOfDouble()
@@ -94,24 +205,57 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
-        public async Task MustMatchSequenceOfString()
+        public async Task MustMatchSequenceOfChar()
         {
-            var values = new[] { "Test 1", "Test <2>", "Test &3", "😀", "ᴭ", "" };
+            var values = new[] { 'A', 'a', 'ᴭ', ' ', '\n', '\0', '\u0001' };
 
             {
-                var expected = new[] { "Test 1", "Test <2>", "Test &3", "??", "?", "" };
+                var expected = new[] { 'A', 'a', '?', ' ', '\n', '?', '?' };
                 var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
                 Assert.Equal(expected, actual);
             }
 
             {
+                var expected = new[] { 'A', 'a', 'ᴭ', ' ', '\n', '?', '?' };
                 var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
-                Assert.Equal(values, actual);
+                Assert.Equal(expected, actual);
             }
 
             {
-                var actual = await _db.AsQueryableValues(Array.Empty<string>()).ToListAsync();
-                Assert.Empty(actual);
+                var many = Enumerable.Range(0, 1000).Select(i => (char)i);
+                var actual = await _db.AsQueryableValues(many, isUnicode: true).ToListAsync();
+                Assert.Equal(1000, actual.Count);
+            }
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfString()
+        {
+            var values = new[] { "\0 ", "\u0001", "Test 1", "Test <2>", "Test &3", "😀", "ᴭ", "", " ", "\n", " \n", " \n ", "\r", "\r ", " Test\t1 ", "\U00010330" };
+
+            {
+                var expected = new string[values.Length];
+                values.CopyTo(expected, 0);
+                expected[0] = "? ";
+                expected[1] = "?";
+                expected[5] = "??";
+                expected[6] = "?";
+                expected[15] = "??";
+
+                var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
+
+                Assert.Equal(expected, actual);
+            }
+
+            {
+                var expected = new string[values.Length];
+                values.CopyTo(expected, 0);
+                expected[0] = "? ";
+                expected[1] = "?";
+
+                var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
+
+                Assert.Equal(expected, actual);
             }
         }
 
@@ -169,6 +313,47 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             };
 
             var actual = await _db.AsQueryableValues(expected).ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task QueryEntityByte()
+        {
+            var values = new[] {
+                byte.MaxValue
+            };
+
+            var expected = new[] { 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.ByteValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task QueryEntityInt16()
+        {
+            var values = new short[] {
+                0,
+                short.MaxValue
+            };
+
+            var expected = new[] { 2, 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.Int16Value equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
 
             Assert.Equal(expected, actual);
         }
@@ -238,6 +423,27 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task QueryEntitySingle()
+        {
+            var values = new[] {
+                12345.67F,
+                3.402823E+38F
+            };
+
+            var expected = new[] { 2, 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.SingleValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public async Task QueryEntityDouble()
         {
             var values = new[] {
@@ -250,6 +456,48 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             var actual = await (
                 from i in _db.TestData
                 join v in _db.AsQueryableValues(values) on i.DoubleValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task QueryEntityChar()
+        {
+            var values = new[] {
+                'A',
+                'c'
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.CharValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task QueryEntityCharUnicode()
+        {
+            var values = new[] {
+                '☢',
+                '你'
+            };
+
+            var expected = new[] { 3 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values, isUnicode: true) on i.CharUnicodeValue equals v
                 orderby i.Id
                 select i.Id
                 )
@@ -280,7 +528,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
-        public async Task QueryEntityUnicodeString()
+        public async Task QueryEntityStringUnicode()
         {
             var values = new[] {
                 "👋",
@@ -291,7 +539,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var actual = await (
                 from i in _db.TestData
-                join v in _db.AsQueryableValues(values, isUnicode: true) on i.UnicodeStringValue equals v
+                join v in _db.AsQueryableValues(values, isUnicode: true) on i.StringUnicodeValue equals v
                 orderby i.Id
                 select i.Id
                 )
@@ -367,6 +615,73 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 .ToArrayAsync();
 
             Assert.Equal(expected, actual);
+        }
+
+
+        [Fact]
+        public async Task MustBeEmpty()
+        {
+            var testCounter = 0;
+
+            await AssertEmpty<byte>();
+            await AssertEmpty<short>();
+            await AssertEmpty<int>();
+            await AssertEmpty<long>();
+            await AssertEmpty<decimal>();
+            await AssertEmpty<float>();
+            await AssertEmpty<double>();
+            await AssertEmpty<DateTime>();
+            await AssertEmpty<DateTimeOffset>();
+            await AssertEmpty<Guid>();
+            await AssertEmpty<char>();
+            await AssertEmpty<string>();
+
+            // Coverage check.
+            var expectedTestCount = EntityPropertyMapping.SimpleTypes.Count - 1;
+            Assert.Equal(expectedTestCount, testCounter);
+
+            async Task AssertEmpty<T>()
+                where T : notnull
+            {
+                testCounter++;
+                var actual = await _db.AsQueryableValues<T>(Array.Empty<T>()).ToListAsync();
+                Assert.Empty(actual);
+            }
+        }
+
+        [Fact]
+        public async Task MustMatchCount()
+        {
+            const int expectedItemCount = 2500;
+
+            var testCounter = 0;
+            var helperBytes = new byte[8];
+
+            await AssertCount<byte>(i => (byte)i);
+            await AssertCount<short>(i => (short)i);
+            await AssertCount<int>(i => i);
+            await AssertCount<long>(i => (long)i);
+            await AssertCount<decimal>(i => (decimal)i);
+            await AssertCount<float>(i => (float)i);
+            await AssertCount<double>(i => (double)i);
+            await AssertCount<DateTime>(i => DateTime.MinValue.AddDays(i));
+            await AssertCount<DateTimeOffset>(i => DateTimeOffset.MinValue.AddDays(i));
+            await AssertCount<Guid>(i => new Guid(i, 0, 0, helperBytes));
+            await AssertCount<char>(i => 'A');
+            await AssertCount<string>(i => $"Test {i}");
+
+            // Coverage check.
+            var expectedTestCount = EntityPropertyMapping.SimpleTypes.Count - 1;
+            Assert.Equal(expectedTestCount, testCounter);
+
+            async Task AssertCount<T>(Func<int, T> getValue)
+                where T : notnull
+            {
+                testCounter++;
+                var values = Enumerable.Range(0, expectedItemCount).Select(i => getValue(i));
+                var actualItemCount = await _db.AsQueryableValues<T>(values).CountAsync();
+                Assert.Equal(expectedItemCount, actualItemCount);
+            }
         }
     }
 }

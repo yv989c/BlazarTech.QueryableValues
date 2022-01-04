@@ -34,12 +34,18 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             {
                 new TestDataEntity
                 {
+                    BoolValue = false,
+                    ByteValue = byte.MinValue,
+                    Int16Value = short.MinValue,
                     Int32Value = int.MinValue,
                     Int64Value = long.MinValue,
                     DecimalValue = -1234567.890123M,
+                    SingleValue = -3.402823E+38F,
                     DoubleValue = -1234567.890123D,
+                    CharValue = 'A',
+                    CharUnicodeValue = '\u2603',
                     StringValue = "Hola!",
-                    UnicodeStringValue = "👋",
+                    StringUnicodeValue = "👋",
                     DateTimeValue = DateTime.MinValue,
                     DateTimeOffsetValue = DateTimeOffset.MinValue,
                     GuidValue = Guid.Empty
@@ -49,21 +55,28 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     Int32Value = 0,
                     Int64Value = 0,
                     DecimalValue = 0,
+                    SingleValue = 12345.67F,
                     DoubleValue = 0,
                     StringValue = "Hallo!",
-                    UnicodeStringValue = "你好！",
+                    StringUnicodeValue = "你好！",
                     DateTimeValue = dateTimeOffset.DateTime,
                     DateTimeOffsetValue = dateTimeOffset,
                     GuidValue = Guid.Parse("df2c9bfe-9d83-4331-97ce-2876d5dc6576")
                 },
                 new TestDataEntity
                 {
+                    BoolValue = true,
+                    ByteValue = byte.MaxValue,
+                    Int16Value = short.MaxValue,
                     Int32Value = int.MaxValue,
                     Int64Value = long.MaxValue,
                     DecimalValue = 1234567.890123M,
+                    SingleValue = 3.402823E+38F,
                     DoubleValue = 1234567.890123D,
+                    CharValue = 'c',
+                    CharUnicodeValue = '\u2622',
                     StringValue = "Hi!",
-                    UnicodeStringValue = "أهلا",
+                    StringUnicodeValue = "أهلا",
                     DateTimeValue = DateTime.MaxValue,
                     DateTimeOffsetValue = DateTimeOffset.MaxValue,
                     GuidValue = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6")
