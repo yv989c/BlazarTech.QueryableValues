@@ -111,7 +111,7 @@ var myQuery2 =
     {
         i.MyEntityID,
         i.PropA
-    });
+    };
 ```
 Using the [Join] LINQ method:
 ```c#
@@ -139,7 +139,7 @@ var myQuery2 =
     {
         i.MyEntityID,
         i.PropA
-    });
+    };
 ```
 #### Complex Type Example
 ```c#
