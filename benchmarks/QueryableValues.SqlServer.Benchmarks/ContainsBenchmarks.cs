@@ -2,27 +2,24 @@
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Engines;
 using BlazarTech.QueryableValues;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace QueryableValues.SqlServer.Benchmarks;
 
-[SimpleJob(RunStrategy.Monitoring, warmupCount: 1, invocationCount: 200, id: nameof(ContainsBenchmarks))]
-//[SimpleJob(RunStrategy.Monitoring, launchCount: 1, warmupCount: 5, targetCount: 100, invocationCount: 5)]
-//[SimpleJob(RunStrategy.ColdStart, launchCount: 1, warmupCount: 5, targetCount: 1000, invocationCount: 5)]
+[SimpleJob(RunStrategy.Monitoring, warmupCount: 1, targetCount: 25, invocationCount: 200)]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
-[MemoryDiagnoser]
+[GcServer(true), MemoryDiagnoser]
 public class ContainsBenchmarks
 {
 #pragma warning disable CS8618
-    private IQueryable<IntEntity> _classicIntQuery;
-    private IQueryable<GuidEntity> _classicGuidQuery;
-    private IQueryable<IntEntity> _queryableValuesIntQuery;
+    private IQueryable<Int32Entity> _int32Query;
+    private IQueryable<GuidEntity> _guidQuery;
+    private IQueryable<Int32Entity> _queryableValuesInt32Query;
     private IQueryable<GuidEntity> _queryableValuesGuidQuery;
 #pragma warning restore CS8618
 
-    //[Params(5, 10, 50, 100, 150, 200, 250, 500, 750, 1000)]
-    //[Params(8, 16, 32, 64, 128, 256, 512)]
-    [Params(32)]
+    [Params(2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)]
     public int NumberOfValues { get; set; }
 
     private IEnumerable<int> GetIntValues()
@@ -56,25 +53,34 @@ public class ContainsBenchmarks
             {
                 for (int i = 0; i < 1000; i++)
                 {
-                    dbContext.Add(new IntEntity());
+                    dbContext.Add(new Int32Entity());
                     dbContext.Add(new GuidEntity());
                 }
 
                 dbContext.SaveChanges();
             }
 
+            var versionParam = new SqlParameter("@Version", System.Data.SqlDbType.NVarChar, -1)
+            {
+                Direction = System.Data.ParameterDirection.Output
+            };
+
+            dbContext.Database.ExecuteSqlRaw("SET @Version = @@VERSION;", versionParam);
+
+            Console.WriteLine(versionParam.Value);
+
             dbContext.Database.ExecuteSqlRaw("DBCC FREEPROCCACHE; DBCC DROPCLEANBUFFERS;");
         }
         #endregion
 
-        #region Int Queries
+        #region Int32 Queries
         {
             var intValues = GetIntValues();
 
-            _classicIntQuery = dbContext.IntEntities
+            _int32Query = dbContext.Int32Entities
                 .Where(i => intValues.Contains(i.Id));
 
-            _queryableValuesIntQuery = dbContext.IntEntities
+            _queryableValuesInt32Query = dbContext.Int32Entities
                 .Where(i => dbContext.AsQueryableValues(intValues).Contains(i.Id));
         }
         #endregion
@@ -83,7 +89,7 @@ public class ContainsBenchmarks
         {
             var guidValues = GetGuidValues();
 
-            _classicGuidQuery = dbContext.GuidEntities
+            _guidQuery = dbContext.GuidEntities
                 .Where(i => guidValues.Contains(i.Id));
 
             _queryableValuesGuidQuery = dbContext.GuidEntities
@@ -93,25 +99,25 @@ public class ContainsBenchmarks
     }
 
     [Benchmark(Baseline = true), BenchmarkCategory("Int32")]
-    public void Classic_Int32()
+    public void Without_Int32()
     {
-        _classicIntQuery.Any();
+        _int32Query.Any();
     }
 
     [Benchmark, BenchmarkCategory("Int32")]
-    public void QueryableValues_Int32()
+    public void With_Int32()
     {
-        _queryableValuesIntQuery.Any();
+        _queryableValuesInt32Query.Any();
     }
 
     [Benchmark(Baseline = true), BenchmarkCategory("Guid")]
-    public void Classic_Guid()
+    public void Without_Guid()
     {
-        _classicGuidQuery.Any();
+        _guidQuery.Any();
     }
 
     [Benchmark, BenchmarkCategory("Guid")]
-    public void QueryableValues_Guid()
+    public void With_Guid()
     {
         _queryableValuesGuidQuery.Any();
     }

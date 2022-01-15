@@ -6,7 +6,7 @@ namespace QueryableValues.SqlServer.Benchmarks
     public class MyDbContext : DbContext
     {
 #pragma warning disable CS8618
-        public DbSet<IntEntity> IntEntities { get; set; }
+        public DbSet<Int32Entity> Int32Entities { get; set; }
         public DbSet<GuidEntity> GuidEntities { get; set; }
 #pragma warning restore CS8618
 
@@ -24,7 +24,7 @@ namespace QueryableValues.SqlServer.Benchmarks
         }
     }
 
-    public class IntEntity
+    public class Int32Entity
     {
         public int Id { get; set; }
     }
