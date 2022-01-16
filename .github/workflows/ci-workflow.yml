@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - develop
+    - 'feature/**'
     paths:
       - 'src/**'
       - 'Version.xml'
