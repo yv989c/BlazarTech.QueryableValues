@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryableValues.SqlServer.Benchmarks", "benchmarks\QueryableValues.SqlServer.Benchmarks\QueryableValues.SqlServer.Benchmarks.csproj", "{7C293C8A-107E-4C94-B046-7753938A4CD8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7C293C8A-107E-4C94-B046-7753938A4CD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C293C8A-107E-4C94-B046-7753938A4CD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C293C8A-107E-4C94-B046-7753938A4CD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C293C8A-107E-4C94-B046-7753938A4CD8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {13B09C6A-3CA7-41E5-B059-AE5616B18EB6}
+	EndGlobalSection
+EndGlobal
