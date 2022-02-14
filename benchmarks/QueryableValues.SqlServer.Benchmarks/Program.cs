@@ -6,8 +6,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        var summary = BenchmarkRunner.Run<ContainsBenchmarks>();
-        //var summary = BenchmarkRunner.Run<XmlBenchmarks>();
+        //var summary = BenchmarkRunner.Run<ContainsBenchmarks>();
+        var summary = BenchmarkRunner.Run<XmlBenchmarks>();
         //Test();
     }
 
