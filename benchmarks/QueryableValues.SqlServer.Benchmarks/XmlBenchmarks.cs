@@ -15,6 +15,9 @@ namespace QueryableValues.SqlServer.Benchmarks
         private int[] _int32s;
         private long[] _int64s;
         private decimal[] _decimals;
+        private float[] _singles;
+        private double[] _doubles;
+        private DateTime[] _dateTimes;
         private Guid[] _guids;
 
         //[Params(2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)]
@@ -55,6 +58,24 @@ namespace QueryableValues.SqlServer.Benchmarks
                 Enumerable
                 .Range(0, NumberOfValues)
                 .Select(i => (decimal)_random.NextDouble() * decimal.MaxValue)
+                .ToArray();
+
+            _singles =
+                Enumerable
+                .Range(0, NumberOfValues)
+                .Select(i => (float)_random.NextDouble() * float.MaxValue)
+                .ToArray();
+
+            _doubles =
+                Enumerable
+                .Range(0, NumberOfValues)
+                .Select(i => _random.NextDouble() * double.MaxValue)
+                .ToArray();
+
+            _dateTimes =
+                Enumerable
+                .Range(0, NumberOfValues)
+                .Select(i => DateTime.Now.AddMinutes(i))
                 .ToArray();
 
             _guids =
@@ -113,16 +134,52 @@ namespace QueryableValues.SqlServer.Benchmarks
         //    _ = XmlUtil2.GetXml(_int64s);
         //}
 
-        [Benchmark(Baseline = true), BenchmarkCategory("Decimal")]
-        public void DecimalOld()
+        //[Benchmark(Baseline = true), BenchmarkCategory("Decimal")]
+        //public void DecimalOld()
+        //{
+        //    _ = XmlUtil.GetXml(_decimals);
+        //}
+
+        //[Benchmark, BenchmarkCategory("Decimal")]
+        //public void DecimalNew()
+        //{
+        //    _ = XmlUtil2.GetXml(_decimals);
+        //}
+
+        //[Benchmark(Baseline = true), BenchmarkCategory("Single")]
+        //public void SingleOld()
+        //{
+        //    _ = XmlUtil.GetXml(_singles);
+        //}
+
+        //[Benchmark, BenchmarkCategory("Single")]
+        //public void SingleNew()
+        //{
+        //    _ = XmlUtil2.GetXml(_singles);
+        //}
+
+        //[Benchmark(Baseline = true), BenchmarkCategory("Double")]
+        //public void DoubleOld()
+        //{
+        //    _ = XmlUtil.GetXml(_doubles);
+        //}
+
+        //[Benchmark, BenchmarkCategory("Double")]
+        //public void DoubleNew()
+        //{
+        //    _ = XmlUtil2.GetXml(_doubles);
+        //}
+
+        [Benchmark(Baseline = true), BenchmarkCategory("DateTime")]
+        public void DateTimeOld()
         {
-            _ = XmlUtil.GetXml(_decimals);
+            _ = XmlUtil.GetXml(_dateTimes);
         }
 
-        [Benchmark, BenchmarkCategory("Decimal")]
-        public void DecimalNew()
+        [Benchmark, BenchmarkCategory("DateTime")]
+        public void DateTimeNew()
         {
-            _ = XmlUtil2.GetXml(_decimals);
+            _ = XmlUtil2.GetXml(_dateTimes);
         }
 
         // ################################
