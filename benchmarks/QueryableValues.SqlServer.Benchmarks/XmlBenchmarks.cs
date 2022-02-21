@@ -18,6 +18,7 @@ namespace QueryableValues.SqlServer.Benchmarks
         private float[] _singles;
         private double[] _doubles;
         private DateTime[] _dateTimes;
+        private DateTimeOffset[] _dateTimeOffsets;
         private Guid[] _guids;
 
         //[Params(2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)]
@@ -78,10 +79,16 @@ namespace QueryableValues.SqlServer.Benchmarks
                 .Select(i => DateTime.Now.AddMinutes(i))
                 .ToArray();
 
+            _dateTimeOffsets =
+                Enumerable
+                .Range(0, NumberOfValues)
+                .Select(i => DateTimeOffset.Now.AddMinutes(i))
+                .ToArray();
+
             _guids =
                 Enumerable
                 .Range(0, NumberOfValues)
-                .Select(i => System.Guid.NewGuid())
+                .Select(i => Guid.NewGuid())
                 .ToArray();
         }
 
@@ -170,16 +177,41 @@ namespace QueryableValues.SqlServer.Benchmarks
         //    _ = XmlUtil2.GetXml(_doubles);
         //}
 
-        [Benchmark(Baseline = true), BenchmarkCategory("DateTime")]
-        public void DateTimeOld()
+        //[Benchmark(Baseline = true), BenchmarkCategory("DateTime")]
+        //public void DateTimeOld()
+        //{
+        //    _ = XmlUtil.GetXml(_dateTimes);
+        //}
+
+        //[Benchmark, BenchmarkCategory("DateTime")]
+        //public void DateTimeNew()
+        //{
+        //    _ = XmlUtil2.GetXml(_dateTimes);
+        //}
+
+        //[Benchmark(Baseline = true), BenchmarkCategory("DateTimeOffset")]
+        //public void DateTimeOffsetOld()
+        //{
+        //    _ = XmlUtil.GetXml(_dateTimeOffsets);
+        //}
+
+        //[Benchmark, BenchmarkCategory("DateTimeOffset")]
+        //public void DateTimeOffsetNew()
+        //{
+        //    _ = XmlUtil2.GetXml(_dateTimeOffsets);
+        //}
+
+
+        [Benchmark(Baseline = true), BenchmarkCategory("Guid")]
+        public void GuidOld()
         {
-            _ = XmlUtil.GetXml(_dateTimes);
+            _ = XmlUtil.GetXml(_guids);
         }
 
-        [Benchmark, BenchmarkCategory("DateTime")]
-        public void DateTimeNew()
+        [Benchmark, BenchmarkCategory("Guid")]
+        public void GuidNew()
         {
-            _ = XmlUtil2.GetXml(_dateTimes);
+            _ = XmlUtil2.GetXml(_guids);
         }
 
         // ################################

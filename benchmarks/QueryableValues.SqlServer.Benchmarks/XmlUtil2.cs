@@ -32,6 +32,7 @@ namespace QueryableValues.SqlServer.Benchmarks
         private static readonly Func<IEnumerable<double>, string> GetXmlDouble = (IEnumerable<double> values) => GetXml(values, WriteValue, null, 10, true);
         private static readonly Func<IEnumerable<DateTime>, string> GetXmlDateTime = (IEnumerable<DateTime> values) => GetXml(values, WriteValue, null, 27, true);
         private static readonly Func<IEnumerable<DateTimeOffset>, string> GetXmlDateTimeOffset = (IEnumerable<DateTimeOffset> values) => GetXml(values, WriteValue, null, 33, true);
+        private static readonly Func<IEnumerable<Guid>, string> GetXmlGuid = (IEnumerable<Guid> values) => GetXml(values, WriteValue, null, 36, true);
 
         private static string GetXml<T>(
             IEnumerable<T> values,
@@ -165,6 +166,9 @@ namespace QueryableValues.SqlServer.Benchmarks
             //}
         }
 
+        private static void WriteValue(Guid value, StringBuilder sb, char[] buffer) => AppendSpanFormattable(value, sb, buffer);
+
+
         // https://github.com/dotnet/runtime/blob/v6.0.2/src/libraries/System.Private.CoreLib/src/System/Text/StringBuilder.cs#L1176
         private static void AppendSpanFormattable<T>(T value, StringBuilder sb, char[] buffer, ReadOnlySpan<char> format = default) where T : ISpanFormattable
         {
@@ -230,6 +234,11 @@ namespace QueryableValues.SqlServer.Benchmarks
         public static string GetXml(IEnumerable<DateTimeOffset> values)
         {
             return GetXmlDateTimeOffset(values);
+        }
+
+        public static string GetXml(IEnumerable<Guid> values)
+        {
+            return GetXmlGuid(values);
         }
     }
 }
