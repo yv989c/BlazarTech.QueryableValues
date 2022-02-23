@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.Extensions.ObjectPool;
 
 namespace QueryableValues.SqlServer.Benchmarks
@@ -34,6 +35,15 @@ namespace QueryableValues.SqlServer.Benchmarks
         private static readonly Func<IEnumerable<DateTimeOffset>, string> GetXmlDateTimeOffset = (IEnumerable<DateTimeOffset> values) => GetXml(values, WriteValue, null, 33, true);
         private static readonly Func<IEnumerable<Guid>, string> GetXmlGuid = (IEnumerable<Guid> values) => GetXml(values, WriteValue, null, 36, true);
 
+        private static void EnsureCapacity<T>(StringBuilder sb, IEnumerable<T> values, int valueMinLength)
+        {
+            if (valueMinLength > 0 && values.TryGetNonEnumeratedCount(out int count))
+            {
+                var capacity = ((valueMinLength + 7) * count) + 7;
+                sb.EnsureCapacity(capacity);
+            }
+        }
+
         private static string GetXml<T>(
             IEnumerable<T> values,
             Action<T, StringBuilder, char[]> writeValue,
@@ -42,23 +52,12 @@ namespace QueryableValues.SqlServer.Benchmarks
             bool useBuffer = false
             )
         {
-            var capacity = 0;
-
-            if (valueMinLength > 0 && values.TryGetNonEnumeratedCount(out int count))
-            {
-                capacity = ((valueMinLength + 7) * count) + 7;
-            }
-
             var sb = StringBuilderPool.Get();
             var buffer = useBuffer ? BufferPool.Rent(ValueBufferSize) : Array.Empty<char>();
-            //var buffer = useBuffer ? new char[128] : Array.Empty<char>();
 
             try
             {
-                if (capacity > 0)
-                {
-                    sb.EnsureCapacity(capacity);
-                }
+                EnsureCapacity(sb, values, valueMinLength);
 
                 sb.Append("<R>");
 
@@ -168,6 +167,56 @@ namespace QueryableValues.SqlServer.Benchmarks
 
         private static void WriteValue(Guid value, StringBuilder sb, char[] buffer) => AppendSpanFormattable(value, sb, buffer);
 
+        private static void WriteValue(char[] chars, int length, XmlWriter writer)
+        {
+            var startIndex = 0;
+            var localLength = 0;
+
+            for (int i = 0; i < length; i++)
+            {
+                var c = chars[i];
+                var isValidCharacter = XmlConvert.IsXmlChar(c);
+                var mustEntitize = isValidCharacter && (char.IsWhiteSpace(c) || char.IsControl(c));
+
+                if (mustEntitize)
+                {
+                    WriterHelper(writer, chars, startIndex, ref localLength);
+                    writer.WriteCharEntity(c);
+                    startIndex = i + 1;
+                }
+                else if (isValidCharacter)
+                {
+                    localLength++;
+                }
+                else if (
+                    i + 1 < length &&
+                    // todo: Do I have to worry about endianness here?
+                    XmlConvert.IsXmlSurrogatePair(chars[i + 1], chars[i])
+                    )
+                {
+                    localLength += 2;
+                    i++;
+                }
+                // It is an illegal XML character.
+                // https://www.w3.org/TR/xml/#charsets
+                else
+                {
+                    localLength++;
+                    chars[i] = '?';
+                }
+            }
+
+            WriterHelper(writer, chars, startIndex, ref localLength);
+
+            static void WriterHelper(XmlWriter writer, char[] chars, int startIndex, ref int length)
+            {
+                if (length > 0)
+                {
+                    writer.WriteChars(chars, startIndex, length);
+                    length = 0;
+                }
+            }
+        }
 
         // https://github.com/dotnet/runtime/blob/v6.0.2/src/libraries/System.Private.CoreLib/src/System/Text/StringBuilder.cs#L1176
         private static void AppendSpanFormattable<T>(T value, StringBuilder sb, char[] buffer, ReadOnlySpan<char> format = default) where T : ISpanFormattable
@@ -239,6 +288,96 @@ namespace QueryableValues.SqlServer.Benchmarks
         public static string GetXml(IEnumerable<Guid> values)
         {
             return GetXmlGuid(values);
+        }
+
+        public static string GetXml(IEnumerable<string> values)
+        {
+            var sb = StringBuilderPool.Get();
+
+            try
+            {
+                EnsureCapacity(sb, values, 10);
+
+                var settings = new XmlWriterSettings
+                {
+                    CheckCharacters = false,
+                    ConformanceLevel = ConformanceLevel.Fragment
+                };
+
+                using var writer = XmlWriter.Create(sb, settings);
+
+                writer.WriteStartElement("R");
+
+                foreach (var value in values)
+                {
+                    if (value is null)
+                    {
+                        continue;
+                    }
+
+                    var buffer = BufferPool.Rent(value.Length);
+
+                    try
+                    {
+                        value.CopyTo(0, buffer, 0, value.Length);
+
+                        writer.WriteStartElement("V");
+                        WriteValue(buffer, value.Length, writer);
+                        writer.WriteEndElement();
+                    }
+                    finally
+                    {
+                        BufferPool.Return(buffer);
+                    }
+                }
+
+                writer.WriteEndElement();
+
+                return sb.ToString();
+            }
+            finally
+            {
+                StringBuilderPool.Return(sb);
+            }
+        }
+
+        public static string GetXml(IEnumerable<char> values)
+        {
+            var sb = StringBuilderPool.Get();
+            var buffer = BufferPool.Rent(1);
+
+            try
+            {
+                EnsureCapacity(sb, values, 1);
+
+                var settings = new XmlWriterSettings
+                {
+                    CheckCharacters = false,
+                    ConformanceLevel = ConformanceLevel.Fragment
+                };
+
+                using var writer = XmlWriter.Create(sb, settings);
+
+                writer.WriteStartElement("R");
+
+                foreach (var value in values)
+                {
+                    buffer[0] = value;
+
+                    writer.WriteStartElement("V");
+                    WriteValue(buffer, 1, writer);
+                    writer.WriteEndElement();
+                }
+
+                writer.WriteEndElement();
+
+                return sb.ToString();
+            }
+            finally
+            {
+                BufferPool.Return(buffer);
+                StringBuilderPool.Return(sb);
+            }
         }
     }
 }

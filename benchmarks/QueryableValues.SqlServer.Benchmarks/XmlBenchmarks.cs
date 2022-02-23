@@ -20,6 +20,7 @@ namespace QueryableValues.SqlServer.Benchmarks
         private DateTime[] _dateTimes;
         private DateTimeOffset[] _dateTimeOffsets;
         private Guid[] _guids;
+        private string[] _strings;
 
         //[Params(2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)]
         //[Params(2, 8, 32, 4096)]
@@ -90,6 +91,8 @@ namespace QueryableValues.SqlServer.Benchmarks
                 .Range(0, NumberOfValues)
                 .Select(i => Guid.NewGuid())
                 .ToArray();
+
+            _strings = _guids.Select(i => i.ToString()).ToArray();
         }
 
         //[Benchmark(Baseline = true), BenchmarkCategory("Byte")]
@@ -202,16 +205,29 @@ namespace QueryableValues.SqlServer.Benchmarks
         //}
 
 
-        [Benchmark(Baseline = true), BenchmarkCategory("Guid")]
-        public void GuidOld()
+        //[Benchmark(Baseline = true), BenchmarkCategory("Guid")]
+        //public void GuidOld()
+        //{
+        //    _ = XmlUtil.GetXml(_guids);
+        //}
+
+        //[Benchmark, BenchmarkCategory("Guid")]
+        //public void GuidNew()
+        //{
+        //    _ = XmlUtil2.GetXml(_guids);
+        //}
+
+
+        [Benchmark(Baseline = true), BenchmarkCategory("String")]
+        public void StringOld()
         {
-            _ = XmlUtil.GetXml(_guids);
+            _ = XmlUtil.GetXml(_strings);
         }
 
-        [Benchmark, BenchmarkCategory("Guid")]
-        public void GuidNew()
+        [Benchmark, BenchmarkCategory("String")]
+        public void StringNew()
         {
-            _ = XmlUtil2.GetXml(_guids);
+            _ = XmlUtil2.GetXml(_strings);
         }
 
         // ################################
