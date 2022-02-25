@@ -12,28 +12,28 @@ namespace QueryableValues.SqlServer.Benchmarks
 {
     internal class XmlUtil2
     {
-        private const int ValueBufferSize = 128;
+        private const int ValueBufferLength = 128;
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
         private static readonly DefaultObjectPool<StringBuilder> StringBuilderPool = new(new StringBuilderPooledObjectPolicy
         {
             InitialCapacity = 100,
-            MaximumRetainedCapacity = 100000
+            MaximumRetainedCapacity = 512_000
         });
 
         private static readonly ArrayPool<char> BufferPool = ArrayPool<char>.Shared;
 
-        private static readonly Func<IEnumerable<byte>, string> GetXmlByte = (IEnumerable<byte> values) => GetXml(values, WriteValue, null, 3);
-        private static readonly Func<IEnumerable<short>, string> GetXmlInt16 = (IEnumerable<short> values) => GetXml(values, WriteValue, null, 3);
-        private static readonly Func<IEnumerable<int>, string> GetXmlInt32 = (IEnumerable<int> values) => GetXml(values, WriteValue, null, 5);
-        private static readonly Func<IEnumerable<long>, string> GetXmlInt64 = (IEnumerable<long> values) => GetXml(values, WriteValue, null, 10);
-        private static readonly Func<IEnumerable<decimal>, string> GetXmlDecimal = (IEnumerable<decimal> values) => GetXml(values, WriteValue, null, 10, true);
-        private static readonly Func<IEnumerable<float>, string> GetXmlSingle = (IEnumerable<float> values) => GetXml(values, WriteValue, null, 10, true);
-        private static readonly Func<IEnumerable<double>, string> GetXmlDouble = (IEnumerable<double> values) => GetXml(values, WriteValue, null, 10, true);
-        private static readonly Func<IEnumerable<DateTime>, string> GetXmlDateTime = (IEnumerable<DateTime> values) => GetXml(values, WriteValue, null, 27, true);
-        private static readonly Func<IEnumerable<DateTimeOffset>, string> GetXmlDateTimeOffset = (IEnumerable<DateTimeOffset> values) => GetXml(values, WriteValue, null, 33, true);
-        private static readonly Func<IEnumerable<Guid>, string> GetXmlGuid = (IEnumerable<Guid> values) => GetXml(values, WriteValue, null, 36, true);
+        private static readonly Func<IEnumerable<byte>, string> GetXmlByte = (IEnumerable<byte> values) => GetXml(values, WriteValue, 3);
+        private static readonly Func<IEnumerable<short>, string> GetXmlInt16 = (IEnumerable<short> values) => GetXml(values, WriteValue, 3);
+        private static readonly Func<IEnumerable<int>, string> GetXmlInt32 = (IEnumerable<int> values) => GetXml(values, WriteValue, 5);
+        private static readonly Func<IEnumerable<long>, string> GetXmlInt64 = (IEnumerable<long> values) => GetXml(values, WriteValue, 10);
+        private static readonly Func<IEnumerable<decimal>, string> GetXmlDecimal = (IEnumerable<decimal> values) => GetXml(values, WriteValue, 10, true);
+        private static readonly Func<IEnumerable<float>, string> GetXmlSingle = (IEnumerable<float> values) => GetXml(values, WriteValue, 10, true);
+        private static readonly Func<IEnumerable<double>, string> GetXmlDouble = (IEnumerable<double> values) => GetXml(values, WriteValue, 10, true);
+        private static readonly Func<IEnumerable<DateTime>, string> GetXmlDateTime = (IEnumerable<DateTime> values) => GetXml(values, WriteValue, 27, true);
+        private static readonly Func<IEnumerable<DateTimeOffset>, string> GetXmlDateTimeOffset = (IEnumerable<DateTimeOffset> values) => GetXml(values, WriteValue, 33, true);
+        private static readonly Func<IEnumerable<Guid>, string> GetXmlGuid = (IEnumerable<Guid> values) => GetXml(values, WriteValue, 36, true);
 
         private static void EnsureCapacity<T>(StringBuilder sb, IEnumerable<T> values, int valueMinLength)
         {
@@ -46,115 +46,96 @@ namespace QueryableValues.SqlServer.Benchmarks
 
         private static string GetXml<T>(
             IEnumerable<T> values,
-            Action<T, StringBuilder, char[]> writeValue,
-            Func<T, bool>? mustSkipValue = null,
+            Action<WriterHelper, T> writeValue,
             int valueMinLength = 0,
             bool useBuffer = false
             )
         {
-            var sb = StringBuilderPool.Get();
-            var buffer = useBuffer ? BufferPool.Rent(ValueBufferSize) : Array.Empty<char>();
+            using var writer = new WriterHelper(ValueBufferLength);
 
-            try
+            EnsureCapacity(writer.Sb, values, valueMinLength);
+
+            writer.Sb.Append("<R>");
+
+            foreach (var value in values)
             {
-                EnsureCapacity(sb, values, valueMinLength);
-
-                sb.Append("<R>");
-
-                foreach (var value in values)
-                {
-                    if (mustSkipValue?.Invoke(value) == true)
-                    {
-                        continue;
-                    }
-
-                    sb.Append("<V>");
-                    writeValue(value, sb, buffer);
-                    sb.Append("</V>");
-                }
-
-                sb.Append("</R>");
-
-                return sb.ToString();
+                writer.Sb.Append("<V>");
+                writeValue(writer, value);
+                writer.Sb.Append("</V>");
             }
-            finally
-            {
-                if (useBuffer)
-                {
-                    BufferPool.Return(buffer);
-                }
 
-                StringBuilderPool.Return(sb);
-            }
+            writer.Sb.Append("</R>");
+
+            return writer.Sb.ToString();
         }
 
-        private static void WriteValue(bool value, StringBuilder sb, char[] buffer) => sb.Append(value ? '1' : '0');
+        private static void WriteValue(WriterHelper writer, bool value) => writer.Sb.Append(value ? '1' : '0');
 
-        private static void WriteValue(byte value, StringBuilder sb, char[] buffer) => sb.Append(value);
+        private static void WriteValue(WriterHelper writer, byte value) => writer.Sb.Append(value);
 
-        private static void WriteValue(short value, StringBuilder sb, char[] buffer) => sb.Append(value);
+        private static void WriteValue(WriterHelper writer, short value) => writer.Sb.Append(value);
 
-        private static void WriteValue(int value, StringBuilder sb, char[] buffer) => sb.Append(value);
+        private static void WriteValue(WriterHelper writer, int value) => writer.Sb.Append(value);
 
-        private static void WriteValue(long value, StringBuilder sb, char[] buffer) => sb.Append(value);
+        private static void WriteValue(WriterHelper writer, long value) => writer.Sb.Append(value);
 
-        private static void WriteValue(decimal value, StringBuilder sb, char[] buffer) => AppendSpanFormattable(value, sb, buffer);
+        private static void WriteValue(WriterHelper writer, decimal value) => AppendSpanFormattable(writer, value);
 
         // https://github.com/dotnet/runtime/blob/v6.0.2/src/libraries/System.Private.Xml/src/System/Xml/XmlConvert.cs#L726
-        private static void WriteValue(float value, StringBuilder sb, char[] buffer)
+        private static void WriteValue(WriterHelper writer, float value)
         {
             if (float.IsNegativeInfinity(value))
             {
-                sb.Append("-INF");
+                writer.Sb.Append("-INF");
             }
             else if (float.IsPositiveInfinity(value))
             {
-                sb.Append("INF");
+                writer.Sb.Append("INF");
             }
             else if (IsNegativeZero(value))
             {
-                sb.Append("-0");
+                writer.Sb.Append("-0");
             }
             else
             {
-                AppendSpanFormattable(value, sb, buffer, "R");
+                AppendSpanFormattable(writer, value, "R");
             }
         }
 
         // https://github.com/dotnet/runtime/blob/v6.0.2/src/libraries/System.Private.Xml/src/System/Xml/XmlConvert.cs#L737
-        private static void WriteValue(double value, StringBuilder sb, char[] buffer)
+        private static void WriteValue(WriterHelper writer, double value)
         {
             if (double.IsNegativeInfinity(value))
             {
-                sb.Append("-INF");
+                writer.Sb.Append("-INF");
             }
             else if (double.IsPositiveInfinity(value))
             {
-                sb.Append("INF");
+                writer.Sb.Append("INF");
             }
             else if (IsNegativeZero(value))
             {
-                sb.Append("-0");
+                writer.Sb.Append("-0");
             }
             else
             {
-                AppendSpanFormattable(value, sb, buffer, "R");
+                AppendSpanFormattable(writer, value, "R");
             }
         }
 
-        private static void WriteValue(DateTime value, StringBuilder sb, char[] buffer)
+        private static void WriteValue(WriterHelper writer, DateTime value)
         {
             if (value.Kind != DateTimeKind.Unspecified)
             {
                 value = DateTime.SpecifyKind(value, DateTimeKind.Unspecified);
             }
 
-            AppendSpanFormattable(value, sb, buffer, "o");
+            AppendSpanFormattable(writer, value, "o");
         }
 
-        private static void WriteValue(DateTimeOffset value, StringBuilder sb, char[] buffer)
+        private static void WriteValue(WriterHelper writer, DateTimeOffset value)
         {
-            AppendSpanFormattable(value, sb, buffer, "o");
+            AppendSpanFormattable(writer, value, "o");
             //if (value.Offset == TimeSpan.Zero)
             //{
             //    AppendSpanFormattable(value, sb, buffer, "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffffK");
@@ -165,9 +146,9 @@ namespace QueryableValues.SqlServer.Benchmarks
             //}
         }
 
-        private static void WriteValue(Guid value, StringBuilder sb, char[] buffer) => AppendSpanFormattable(value, sb, buffer);
+        private static void WriteValue(WriterHelper writer, Guid value) => AppendSpanFormattable(writer, value);
 
-        private static void WriteValue(char[] chars, int length, XmlWriter writer)
+        private static void WriteValue(XmlWriter writer, char[] chars, int length)
         {
             var startIndex = 0;
             var localLength = 0;
@@ -219,11 +200,11 @@ namespace QueryableValues.SqlServer.Benchmarks
         }
 
         // https://github.com/dotnet/runtime/blob/v6.0.2/src/libraries/System.Private.CoreLib/src/System/Text/StringBuilder.cs#L1176
-        private static void AppendSpanFormattable<T>(T value, StringBuilder sb, char[] buffer, ReadOnlySpan<char> format = default) where T : ISpanFormattable
+        private static void AppendSpanFormattable<T>(WriterHelper writer, T value, ReadOnlySpan<char> format = default) where T : ISpanFormattable
         {
-            if (value.TryFormat(buffer, out int charsWritten, format: format, provider: InvariantCulture))
+            if (value.TryFormat(writer.Buffer, out int charsWritten, format: format, provider: InvariantCulture))
             {
-                sb.Append(buffer, 0, charsWritten);
+                writer.Sb.Append(writer.Buffer, 0, charsWritten);
             }
             else
             {
@@ -290,45 +271,62 @@ namespace QueryableValues.SqlServer.Benchmarks
             return GetXmlGuid(values);
         }
 
+        private static XmlWriter CreateXmlWriter(StringBuilder sb)
+        {
+            var settings = new XmlWriterSettings
+            {
+                CheckCharacters = false,
+                ConformanceLevel = ConformanceLevel.Fragment
+            };
+
+            return XmlWriter.Create(sb, settings);
+        }
+
         public static string GetXml(IEnumerable<string> values)
         {
+            const int defaultBufferLength = 25;
+
             var sb = StringBuilderPool.Get();
 
             try
             {
-                EnsureCapacity(sb, values, 10);
+                EnsureCapacity(sb, values, defaultBufferLength);
 
-                var settings = new XmlWriterSettings
-                {
-                    CheckCharacters = false,
-                    ConformanceLevel = ConformanceLevel.Fragment
-                };
-
-                using var writer = XmlWriter.Create(sb, settings);
+                using var writer = CreateXmlWriter(sb);
 
                 writer.WriteStartElement("R");
 
-                foreach (var value in values)
+                var buffer = BufferPool.Rent(defaultBufferLength);
+
+                // buffer.Length may be bigger than defaultBufferLength.
+                var lastLength = buffer.Length;
+
+                try
                 {
-                    if (value is null)
+                    foreach (var value in values)
                     {
-                        continue;
-                    }
+                        if (value is null)
+                        {
+                            continue;
+                        }
 
-                    var buffer = BufferPool.Rent(value.Length);
+                        if (value.Length > lastLength)
+                        {
+                            BufferPool.Return(buffer);
+                            buffer = BufferPool.Rent(value.Length);
+                            lastLength = buffer.Length;
+                        }
 
-                    try
-                    {
                         value.CopyTo(0, buffer, 0, value.Length);
 
                         writer.WriteStartElement("V");
-                        WriteValue(buffer, value.Length, writer);
+                        WriteValue(writer, buffer, value.Length);
                         writer.WriteEndElement();
                     }
-                    finally
-                    {
-                        BufferPool.Return(buffer);
-                    }
+                }
+                finally
+                {
+                    BufferPool.Return(buffer);
                 }
 
                 writer.WriteEndElement();
@@ -350,13 +348,7 @@ namespace QueryableValues.SqlServer.Benchmarks
             {
                 EnsureCapacity(sb, values, 1);
 
-                var settings = new XmlWriterSettings
-                {
-                    CheckCharacters = false,
-                    ConformanceLevel = ConformanceLevel.Fragment
-                };
-
-                using var writer = XmlWriter.Create(sb, settings);
+                using var writer = CreateXmlWriter(sb);
 
                 writer.WriteStartElement("R");
 
@@ -365,7 +357,7 @@ namespace QueryableValues.SqlServer.Benchmarks
                     buffer[0] = value;
 
                     writer.WriteStartElement("V");
-                    WriteValue(buffer, 1, writer);
+                    WriteValue(writer, buffer, 1);
                     writer.WriteEndElement();
                 }
 
@@ -377,6 +369,28 @@ namespace QueryableValues.SqlServer.Benchmarks
             {
                 BufferPool.Return(buffer);
                 StringBuilderPool.Return(sb);
+            }
+        }
+
+        private sealed class WriterHelper : IDisposable
+        {
+            public readonly StringBuilder Sb;
+            public readonly char[] Buffer;
+
+            public WriterHelper(int bufferLength)
+            {
+                Sb = StringBuilderPool.Get();
+                Buffer = bufferLength > 0 ? BufferPool.Rent(bufferLength) : Array.Empty<char>();
+            }
+
+            public void Dispose()
+            {
+                if (Buffer.Length > 0)
+                {
+                    BufferPool.Return(Buffer);
+                }
+
+                StringBuilderPool.Return(Sb);
             }
         }
     }
