@@ -1,6 +1,7 @@
 ﻿#if EFCORE
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Collections.Generic;
 
@@ -46,6 +47,8 @@ namespace BlazarTech.QueryableValues
                     )
                 );
             }
+
+            services.TryAddSingleton<Serializers.IXmlSerializer, Serializers.XmlSerializer>();
         }
 
         public void Validate(IDbContextOptions options)

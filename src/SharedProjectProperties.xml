@@ -37,6 +37,9 @@
 		<Compile Include="..\QueryableValues.SqlServer\Builders\*.cs">
 			<Link>Builders\%(RecursiveDir)\%(FileName)%(Extension)</Link>
 		</Compile>
+		<Compile Include="..\QueryableValues.SqlServer\Serializers\*.cs">
+			<Link>Serializers\%(RecursiveDir)\%(FileName)%(Extension)</Link>
+		</Compile>
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)'!='Release'">
