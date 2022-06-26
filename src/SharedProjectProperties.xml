@@ -40,6 +40,9 @@
 		<Compile Include="..\QueryableValues.SqlServer\Serializers\*.cs">
 			<Link>Serializers\%(RecursiveDir)\%(FileName)%(Extension)</Link>
 		</Compile>
+		<Compile Include="..\QueryableValues.SqlServer\SqlServer\*.cs">
+			<Link>SqlServer\%(RecursiveDir)\%(FileName)%(Extension)</Link>
+		</Compile>
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)'!='Release'">
