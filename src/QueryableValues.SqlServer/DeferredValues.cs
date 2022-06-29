@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BlazarTech.QueryableValues.Serializers;
+using System;
 using System.Collections.Generic;
 
 namespace BlazarTech.QueryableValues
@@ -6,6 +7,7 @@ namespace BlazarTech.QueryableValues
     internal abstract class DeferredValues<T> : IConvertible
         where T : notnull
     {
+        protected readonly ISerializer _serializer;
         protected readonly IEnumerable<T> _values;
 
         // todo: Expose API to turn this behavior off by the user.
@@ -33,8 +35,9 @@ namespace BlazarTech.QueryableValues
             }
         }
 
-        public DeferredValues(IEnumerable<T> values)
+        public DeferredValues(ISerializer serializer, IEnumerable<T> values)
         {
+            _serializer = serializer;
             _values = values;
         }
 
@@ -76,74 +79,74 @@ namespace BlazarTech.QueryableValues
 
     internal sealed class DeferredByteValues : DeferredValues<byte>
     {
-        public DeferredByteValues(IEnumerable<byte> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredByteValues(ISerializer serializer, IEnumerable<byte> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredInt16Values : DeferredValues<short>
     {
-        public DeferredInt16Values(IEnumerable<short> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredInt16Values(ISerializer serializer, IEnumerable<short> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredInt32Values : DeferredValues<int>
     {
-        public DeferredInt32Values(IEnumerable<int> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredInt32Values(ISerializer serializer, IEnumerable<int> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredInt64Values : DeferredValues<long>
     {
-        public DeferredInt64Values(IEnumerable<long> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredInt64Values(ISerializer serializer, IEnumerable<long> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredDecimalValues : DeferredValues<decimal>
     {
-        public DeferredDecimalValues(IEnumerable<decimal> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredDecimalValues(ISerializer serializer, IEnumerable<decimal> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredSingleValues : DeferredValues<float>
     {
-        public DeferredSingleValues(IEnumerable<float> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredSingleValues(ISerializer serializer, IEnumerable<float> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredDoubleValues : DeferredValues<double>
     {
-        public DeferredDoubleValues(IEnumerable<double> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredDoubleValues(ISerializer serializer, IEnumerable<double> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredDateTimeValues : DeferredValues<DateTime>
     {
-        public DeferredDateTimeValues(IEnumerable<DateTime> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredDateTimeValues(ISerializer serializer, IEnumerable<DateTime> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredDateTimeOffsetValues : DeferredValues<DateTimeOffset>
     {
-        public DeferredDateTimeOffsetValues(IEnumerable<DateTimeOffset> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredDateTimeOffsetValues(ISerializer serializer, IEnumerable<DateTimeOffset> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredGuidValues : DeferredValues<Guid>
     {
-        public DeferredGuidValues(IEnumerable<Guid> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredGuidValues(ISerializer serializer, IEnumerable<Guid> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredCharValues : DeferredValues<char>
     {
-        public DeferredCharValues(IEnumerable<char> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredCharValues(ISerializer serializer, IEnumerable<char> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredStringValues : DeferredValues<string>
     {
-        public DeferredStringValues(IEnumerable<string> values) : base(values) { }
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values);
+        public DeferredStringValues(ISerializer serializer, IEnumerable<string> values) : base(serializer, values) { }
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values);
     }
 
     internal sealed class DeferredEntityValues<T> : DeferredValues<T>
@@ -151,12 +154,12 @@ namespace BlazarTech.QueryableValues
     {
         private readonly IReadOnlyList<EntityPropertyMapping> _mappings;
 
-        public DeferredEntityValues(IEnumerable<T> values, IReadOnlyList<EntityPropertyMapping> mappings)
-            : base(values)
+        public DeferredEntityValues(ISerializer serializer, IEnumerable<T> values, IReadOnlyList<EntityPropertyMapping> mappings)
+            : base(serializer, values)
         {
             _mappings = mappings;
         }
 
-        public override string ToString(IFormatProvider? provider) => XmlUtil.GetXml(_values, _mappings);
+        public override string ToString(IFormatProvider? provider) => _serializer.Serialize(_values, _mappings);
     }
 }

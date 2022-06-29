@@ -3,7 +3,6 @@ using BlazarTech.QueryableValues.Builders;
 using BlazarTech.QueryableValues.Serializers;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,7 +14,7 @@ using System.Text;
 
 namespace BlazarTech.QueryableValues.SqlServer
 {
-    internal sealed class SqlQueryableFactory : IQueryableFactory
+    internal sealed class XmlQueryableFactory : IQueryableFactory
     {
         private const string SqlSelect = "SELECT";
         private const string SqlSelectTop = "SELECT TOP({1})";
@@ -25,23 +24,9 @@ namespace BlazarTech.QueryableValues.SqlServer
 
         private readonly IXmlSerializer _xmlSerializer;
 
-        public SqlQueryableFactory(IXmlSerializer xmlSerializer)
+        public XmlQueryableFactory(IXmlSerializer xmlSerializer)
         {
             _xmlSerializer = xmlSerializer;
-        }
-
-        private static void EnsureConfigured(DbContext dbContext)
-        {
-            var options = dbContext.GetService<IDbContextOptions>();
-            var extension = options.FindExtension<DbContextOptionsExtension>();
-
-            if (extension is null)
-            {
-                var message = $"{nameof(QueryableValues)} have not been configured for {dbContext.GetType().Name}. " +
-                    "More info: https://github.com/yv989c/BlazarTech.QueryableValues#configuration";
-
-                throw new InvalidOperationException(message);
-            }
         }
 
         private static SqlParameter[] GetSqlParameters<T>(DeferredValues<T> deferredValues)
@@ -108,8 +93,6 @@ namespace BlazarTech.QueryableValues.SqlServer
         private static IQueryable<TValue> Create<TValue>(DbContext dbContext, string sql, DeferredValues<TValue> deferredValues)
             where TValue : notnull
         {
-            EnsureConfigured(dbContext);
-
             var sqlParameters = GetSqlParameters(deferredValues);
 
             var queryableValues = dbContext
@@ -121,35 +104,35 @@ namespace BlazarTech.QueryableValues.SqlServer
 
         public IQueryable<byte> Create(DbContext dbContext, IEnumerable<byte> values)
         {
-            var deferredValues = new DeferredByteValues(values);
+            var deferredValues = new DeferredByteValues(_xmlSerializer, values);
             var sql = GetSqlForSimpleTypes("unsignedByte", "tinyint", deferredValues);
             return Create(dbContext, sql, deferredValues);
         }
 
         public IQueryable<short> Create(DbContext dbContext, IEnumerable<short> values)
         {
-            var deferredValues = new DeferredInt16Values(values);
+            var deferredValues = new DeferredInt16Values(_xmlSerializer, values);
             var sql = GetSqlForSimpleTypes("short", "smallint", deferredValues);
             return Create(dbContext, sql, deferredValues);
         }
 
         public IQueryable<int> Create(DbContext dbContext, IEnumerable<int> values)
         {
-            var deferredValues = new DeferredInt32Values(values);
+            var deferredValues = new DeferredInt32Values(_xmlSerializer, values);
             var sql = GetSqlForSimpleTypes("integer", "int", deferredValues);
             return Create(dbContext, sql, deferredValues);
         }
 
         public IQueryable<long> Create(DbContext dbContext, IEnumerable<long> values)
         {
-            var deferredValues = new DeferredInt64Values(values);
+            var deferredValues = new DeferredInt64Values(_xmlSerializer, values);
             var sql = GetSqlForSimpleTypes("integer", "bigint", deferredValues);
             return Create(dbContext, sql, deferredValues);
         }
 
         public IQueryable<decimal> Create(DbContext dbContext, IEnumerable<decimal> values, int numberOfDecimals = 4)
         {
-            var deferredValues = new DeferredDecimalValues(values);
+            var deferredValues = new DeferredDecimalValues(_xmlSerializer, values);
             var precisionScale = (38, numberOfDecimals);
             var sql = GetSqlForSimpleTypes("decimal", "decimal", deferredValues, precisionScale: precisionScale);
             return Create(dbContext, sql, deferredValues);
@@ -157,28 +140,28 @@ namespace BlazarTech.QueryableValues.SqlServer
 
         public IQueryable<float> Create(DbContext dbContext, IEnumerable<float> values)
         {
-            var deferredValues = new DeferredSingleValues(values);
+            var deferredValues = new DeferredSingleValues(_xmlSerializer, values);
             var sql = GetSqlForSimpleTypes("float", "real", deferredValues);
             return Create(dbContext, sql, deferredValues);
         }
 
         public IQueryable<double> Create(DbContext dbContext, IEnumerable<double> values)
         {
-            var deferredValues = new DeferredDoubleValues(values);
+            var deferredValues = new DeferredDoubleValues(_xmlSerializer, values);
             var sql = GetSqlForSimpleTypes("double", "float", deferredValues);
             return Create(dbContext, sql, deferredValues);
         }
 
         public IQueryable<DateTime> Create(DbContext dbContext, IEnumerable<DateTime> values)
         {
-            var deferredValues = new DeferredDateTimeValues(values);
+            var deferredValues = new DeferredDateTimeValues(_xmlSerializer, values);
             var sql = GetSqlForSimpleTypes("dateTime", "datetime2", deferredValues);
             return Create(dbContext, sql, deferredValues);
         }
 
         public IQueryable<DateTimeOffset> Create(DbContext dbContext, IEnumerable<DateTimeOffset> values)
         {
-            var deferredValues = new DeferredDateTimeOffsetValues(values);
+            var deferredValues = new DeferredDateTimeOffsetValues(_xmlSerializer, values);
             var sql = GetSqlForSimpleTypes("dateTime", "datetimeoffset", deferredValues);
             return Create(dbContext, sql, deferredValues);
         }
@@ -186,7 +169,7 @@ namespace BlazarTech.QueryableValues.SqlServer
         public IQueryable<char> Create(DbContext dbContext, IEnumerable<char> values, bool isUnicode = false)
         {
             string sql;
-            var deferredValues = new DeferredCharValues(values);
+            var deferredValues = new DeferredCharValues(_xmlSerializer, values);
 
             if (isUnicode)
             {
@@ -203,7 +186,7 @@ namespace BlazarTech.QueryableValues.SqlServer
         public IQueryable<string> Create(DbContext dbContext, IEnumerable<string> values, bool isUnicode = false)
         {
             string sql;
-            var deferredValues = new DeferredStringValues(values);
+            var deferredValues = new DeferredStringValues(_xmlSerializer, values);
 
             if (isUnicode)
             {
@@ -219,15 +202,13 @@ namespace BlazarTech.QueryableValues.SqlServer
 
         public IQueryable<Guid> Create(DbContext dbContext, IEnumerable<Guid> values)
         {
-            var deferredValues = new DeferredGuidValues(values);
+            var deferredValues = new DeferredGuidValues(_xmlSerializer, values);
             var sql = GetSqlForSimpleTypes("string", "uniqueidentifier", deferredValues);
             return Create(dbContext, sql, deferredValues);
         }
 
         public IQueryable<TSource> Create<TSource>(DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure) where TSource : notnull
         {
-            EnsureConfigured(dbContext);
-
             var simpleTypeQueryable = getSimpleTypeQueryable(dbContext, values);
 
             if (simpleTypeQueryable != null)
@@ -236,7 +217,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             }
 
             var mappings = EntityPropertyMapping.GetMappings<TSource>();
-            var deferredValues = new DeferredEntityValues<TSource>(values, mappings);
+            var deferredValues = new DeferredEntityValues<TSource>(_xmlSerializer, values, mappings);
             var sql = getSql(mappings, configure, deferredValues.HasCount);
             var sqlParameters = GetSqlParameters(deferredValues);
 
@@ -460,7 +441,7 @@ namespace BlazarTech.QueryableValues.SqlServer
 
                 return queryable;
 
-                #region Helpers
+#region Helpers
 
                 static Expression getTargetPropertyExpression(ParameterExpression parameterExpression, EntityPropertyMapping mapping)
                 {
@@ -490,7 +471,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                     }
                 }
 
-                #endregion
+#endregion
             }
 
             IQueryable<TSource>? getSimpleTypeQueryable(DbContext dbContext, IEnumerable<TSource> values)

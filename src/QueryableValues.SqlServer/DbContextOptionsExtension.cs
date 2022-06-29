@@ -49,7 +49,8 @@ namespace BlazarTech.QueryableValues
             }
 
             services.TryAddSingleton<Serializers.IXmlSerializer, Serializers.XmlSerializer>();
-            services.TryAddScoped<IQueryableFactory, SqlServer.SqlQueryableFactory>();
+            // todo: Should it be singleton?
+            services.TryAddScoped<IQueryableFactory, SqlServer.XmlQueryableFactory>();
         }
 
         public void Validate(IDbContextOptions options)
