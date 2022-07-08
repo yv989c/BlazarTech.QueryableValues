@@ -36,7 +36,7 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	</PropertyGroup>
 
-	<ItemGroup>
+	<ItemGroup Condition="$(DefineConstants.Contains('EFCORE'))">
 		<Compile Include="..\QueryableValues.SqlServer\*.cs" />
 		<Compile Include="..\QueryableValues.SqlServer\Builders\*.cs">
 			<Link>Builders\%(RecursiveDir)\%(FileName)%(Extension)</Link>
