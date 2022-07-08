@@ -14,14 +14,12 @@ namespace BlazarTech.QueryableValues.Serializers
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
-#pragma warning disable IDE0090 // Use 'new(...)'
         private static readonly DefaultObjectPool<StringBuilder> StringBuilderPool = new DefaultObjectPool<StringBuilder>(
             new StringBuilderPooledObjectPolicy
             {
-                InitialCapacity = 100,
-                MaximumRetainedCapacity = 512_000
+                InitialCapacity = 512,
+                MaximumRetainedCapacity = 524288
             });
-#pragma warning restore IDE0090 // Use 'new(...)'
 
         private static readonly ArrayPool<char> BufferPool = ArrayPool<char>.Shared;
 
@@ -526,30 +524,6 @@ namespace BlazarTech.QueryableValues.Serializers
                     _ => throw new NotImplementedException(mapping.TypeName.ToString()),
                 };
             }
-
-            //private static void WriteValue(XmlWriter writer, bool value) => writer.WriteValue(value ? 1 : 0);
-            //private static void WriteValue(XmlWriter writer, byte value) => writer.WriteValue(value);
-            //private static void WriteValue(XmlWriter writer, short value) => writer.WriteValue(value);
-            //private static void WriteValue(XmlWriter writer, int value) => writer.WriteValue(value);
-            //private static void WriteValue(XmlWriter writer, long value) => writer.WriteValue(value);
-            //private static void WriteValue(XmlWriter writer, decimal value) => writer.WriteValue(value);
-            //private static void WriteValue(XmlWriter writer, float value) => writer.WriteValue(value);
-            //private static void WriteValue(XmlWriter writer, double value) => writer.WriteValue(value);
-            //private static void WriteValue(XmlWriter writer, DateTime value)
-            //{
-            //    if (value.Kind != DateTimeKind.Unspecified)
-            //    {
-            //        writer.WriteValue(DateTime.SpecifyKind(value, DateTimeKind.Unspecified));
-            //    }
-            //    else
-            //    {
-            //        writer.WriteValue(value);
-            //    }
-            //}
-            //private static void WriteValue(XmlWriter writer, DateTimeOffset value) => writer.WriteValue(value);
-            //private static void WriteValue(XmlWriter writer, Guid value) => writer.WriteValue(value.ToString());
-            //private static void WriteValue(XmlWriter writer, char value) => XmlSerializer.WriteValue(writer, new[] { value }, 1);
-            //private static void WriteValue(XmlWriter writer, string value) => XmlSerializer.WriteValue(writer, value.ToCharArray(), value.Length);
 
             private void WriteAttribute<TValue>(XmlWriter writer, TValue? value, Action<XmlWriter, TValue> writeValue)
                 where TValue : struct

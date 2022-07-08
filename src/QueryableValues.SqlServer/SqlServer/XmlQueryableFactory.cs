@@ -3,6 +3,7 @@ using BlazarTech.QueryableValues.Builders;
 using BlazarTech.QueryableValues.Serializers;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.ObjectPool;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,6 +23,13 @@ namespace BlazarTech.QueryableValues.SqlServer
         private static readonly ConcurrentDictionary<object, string> SqlCache = new();
         private static readonly ConcurrentDictionary<Type, object> SelectorExpressionCache = new();
 
+        private static readonly DefaultObjectPool<StringBuilder> StringBuilderPool = new DefaultObjectPool<StringBuilder>(
+            new StringBuilderPooledObjectPolicy
+            {
+                InitialCapacity = 1024,
+                MaximumRetainedCapacity = 16384
+            });
+
         private readonly IXmlSerializer _xmlSerializer;
 
         public XmlQueryableFactory(IXmlSerializer xmlSerializer)
@@ -39,7 +47,6 @@ namespace BlazarTech.QueryableValues.SqlServer
             {
                 // DeferredValues allows us to defer the enumeration of values until the query is materialized.
                 // Uses deferredValues.ToString() at evaluation time.
-                //Value = deferredValues.SqlXmlValue()
                 Value = deferredValues
             };
 
@@ -255,106 +262,113 @@ namespace BlazarTech.QueryableValues.SqlServer
                     return sqlFromCache;
                 }
 
-                var sb = new StringBuilder(500);
+                var sb = StringBuilderPool.Get();
 
-                if (hasCount)
+                try
                 {
-                    sb.Append(SqlSelectTop);
-                }
-                else
-                {
-                    sb.Append(SqlSelect);
-                }
-
-                sb.AppendLine();
-
-                for (int i = 0; i < mappings.Count; i++)
-                {
-                    var mapping = mappings[i];
-                    var propertyOptions = entityOptions.GetPropertyOptions(mapping.Source);
-
-                    if (i > 0)
+                    if (hasCount)
                     {
-                        sb.Append(',').AppendLine();
+                        sb.Append(SqlSelectTop);
+                    }
+                    else
+                    {
+                        sb.Append(SqlSelect);
                     }
 
-                    var targetName = mapping.Target.Name;
+                    sb.AppendLine();
 
-                    sb.Append("\tI.value('@").Append(targetName).Append("[1] cast as ");
-
-                    switch (mapping.TypeName)
+                    for (int i = 0; i < mappings.Count; i++)
                     {
-                        case EntityPropertyTypeName.Boolean:
-                            sb.Append("xs:boolean?', 'bit'");
-                            break;
-                        case EntityPropertyTypeName.Byte:
-                            sb.Append("xs:unsignedByte?', 'tinyint'");
-                            break;
-                        case EntityPropertyTypeName.Int16:
-                            sb.Append("xs:short?', 'smallint'");
-                            break;
-                        case EntityPropertyTypeName.Int32:
-                            sb.Append("xs:integer?', 'int'");
-                            break;
-                        case EntityPropertyTypeName.Int64:
-                            sb.Append("xs:integer?', 'bigint'");
-                            break;
-                        case EntityPropertyTypeName.Decimal:
-                            {
-                                var numberOfDecimals = propertyOptions?.NumberOfDecimals ?? entityOptions.DefaultForNumberOfDecimals;
-                                sb.Append("xs:decimal?', 'decimal(38, ").Append(numberOfDecimals).Append(")'");
-                            }
-                            break;
-                        case EntityPropertyTypeName.Single:
-                            sb.Append("xs:float?', 'real'");
-                            break;
-                        case EntityPropertyTypeName.Double:
-                            sb.Append("xs:double?', 'float'");
-                            break;
-                        case EntityPropertyTypeName.DateTime:
-                            sb.Append("xs:dateTime?', 'datetime2'");
-                            break;
-                        case EntityPropertyTypeName.DateTimeOffset:
-                            sb.Append("xs:dateTime?', 'datetimeoffset'");
-                            break;
-                        case EntityPropertyTypeName.Guid:
-                            sb.Append("xs:string?', 'uniqueidentifier'");
-                            break;
-                        case EntityPropertyTypeName.Char:
-                            if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
-                            {
-                                sb.Append("xs:string?', 'nvarchar(1)'");
-                            }
-                            else
-                            {
-                                sb.Append("xs:string?', 'varchar(1)'");
-                            }
-                            break;
-                        case EntityPropertyTypeName.String:
-                            if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
-                            {
-                                sb.Append("xs:string?', 'nvarchar(max)'");
-                            }
-                            else
-                            {
-                                sb.Append("xs:string?', 'varchar(max)'");
-                            }
-                            break;
-                        default:
-                            throw new NotImplementedException(mapping.TypeName.ToString());
+                        var mapping = mappings[i];
+                        var propertyOptions = entityOptions.GetPropertyOptions(mapping.Source);
+
+                        if (i > 0)
+                        {
+                            sb.Append(',').AppendLine();
+                        }
+
+                        var targetName = mapping.Target.Name;
+
+                        sb.Append("\tI.value('@").Append(targetName).Append("[1] cast as ");
+
+                        switch (mapping.TypeName)
+                        {
+                            case EntityPropertyTypeName.Boolean:
+                                sb.Append("xs:boolean?', 'bit'");
+                                break;
+                            case EntityPropertyTypeName.Byte:
+                                sb.Append("xs:unsignedByte?', 'tinyint'");
+                                break;
+                            case EntityPropertyTypeName.Int16:
+                                sb.Append("xs:short?', 'smallint'");
+                                break;
+                            case EntityPropertyTypeName.Int32:
+                                sb.Append("xs:integer?', 'int'");
+                                break;
+                            case EntityPropertyTypeName.Int64:
+                                sb.Append("xs:integer?', 'bigint'");
+                                break;
+                            case EntityPropertyTypeName.Decimal:
+                                {
+                                    var numberOfDecimals = propertyOptions?.NumberOfDecimals ?? entityOptions.DefaultForNumberOfDecimals;
+                                    sb.Append("xs:decimal?', 'decimal(38, ").Append(numberOfDecimals).Append(")'");
+                                }
+                                break;
+                            case EntityPropertyTypeName.Single:
+                                sb.Append("xs:float?', 'real'");
+                                break;
+                            case EntityPropertyTypeName.Double:
+                                sb.Append("xs:double?', 'float'");
+                                break;
+                            case EntityPropertyTypeName.DateTime:
+                                sb.Append("xs:dateTime?', 'datetime2'");
+                                break;
+                            case EntityPropertyTypeName.DateTimeOffset:
+                                sb.Append("xs:dateTime?', 'datetimeoffset'");
+                                break;
+                            case EntityPropertyTypeName.Guid:
+                                sb.Append("xs:string?', 'uniqueidentifier'");
+                                break;
+                            case EntityPropertyTypeName.Char:
+                                if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
+                                {
+                                    sb.Append("xs:string?', 'nvarchar(1)'");
+                                }
+                                else
+                                {
+                                    sb.Append("xs:string?', 'varchar(1)'");
+                                }
+                                break;
+                            case EntityPropertyTypeName.String:
+                                if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
+                                {
+                                    sb.Append("xs:string?', 'nvarchar(max)'");
+                                }
+                                else
+                                {
+                                    sb.Append("xs:string?', 'varchar(max)'");
+                                }
+                                break;
+                            default:
+                                throw new NotImplementedException(mapping.TypeName.ToString());
+                        }
+
+                        sb.Append(") AS [").Append(targetName).Append(']');
                     }
 
-                    sb.Append(") AS [").Append(targetName).Append(']');
+                    sb.AppendLine();
+                    sb.Append("FROM {0}.nodes('/R/V') N(I)");
+
+                    var sql = sb.ToString();
+
+                    SqlCache.TryAdd(cacheKey, sql);
+
+                    return sql;
                 }
-
-                sb.AppendLine();
-                sb.Append("FROM {0}.nodes('/R/V') N(I)");
-
-                var sql = sb.ToString();
-
-                SqlCache.TryAdd(cacheKey, sql);
-
-                return sql;
+                finally
+                {
+                    StringBuilderPool.Return(sb);
+                }
             }
 
             static IQueryable<TSource> projectQueryable(IQueryable<QueryableValuesEntity> source, IReadOnlyList<EntityPropertyMapping> mappings)
