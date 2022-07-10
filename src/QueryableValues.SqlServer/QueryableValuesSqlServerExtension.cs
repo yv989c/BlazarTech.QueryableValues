@@ -1,15 +1,15 @@
 ﻿#if EFCORE
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Collections.Generic;
 
 namespace BlazarTech.QueryableValues
 {
-    internal sealed class DbContextOptionsExtension : IDbContextOptionsExtension
+    internal sealed class QueryableValuesSqlServerExtension : IDbContextOptionsExtension
     {
         public DbContextOptionsExtensionInfo Info => new ExtensionInfo(this);
+        public QueryableValuesSqlServerOptions Options { get; } = new QueryableValuesSqlServerOptions();
 
         public void ApplyServices(IServiceCollection services)
         {
@@ -48,9 +48,15 @@ namespace BlazarTech.QueryableValues
                 );
             }
 
-            services.TryAddSingleton<Serializers.IXmlSerializer, Serializers.XmlSerializer>();
-            // todo: Should it be singleton?
-            services.TryAddScoped<IQueryableFactory, SqlServer.XmlQueryableFactory>();
+            services.AddSingleton<Serializers.IXmlSerializer, Serializers.XmlSerializer>();
+
+            services.AddScoped<IQueryableFactory>(sp =>
+            {
+                var options = sp.GetRequiredService<IDbContextOptions>();
+                var extension = options.FindExtension<QueryableValuesSqlServerExtension>() ?? throw new InvalidOperationException();
+                var xmlSerializer = sp.GetRequiredService<Serializers.IXmlSerializer>();
+                return new SqlServer.XmlQueryableFactory(xmlSerializer, extension.Options);
+            });
         }
 
         public void Validate(IDbContextOptions options)
@@ -59,7 +65,7 @@ namespace BlazarTech.QueryableValues
 
         private class ExtensionInfo : DbContextOptionsExtensionInfo
         {
-            private const string EntensionName = nameof(BlazarTech) + "." + nameof(QueryableValues);
+            private const string EntensionName = "BlazarTech.QueryableValues.SqlServer";
 
             public ExtensionInfo(IDbContextOptionsExtension extension)
                 : base(extension)
@@ -80,7 +86,6 @@ namespace BlazarTech.QueryableValues
 #else
             public override long GetServiceProviderHashCode() => 0;
 #endif
-
         }
     }
 }

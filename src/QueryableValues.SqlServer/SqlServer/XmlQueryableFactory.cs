@@ -31,13 +31,49 @@ namespace BlazarTech.QueryableValues.SqlServer
             });
 
         private readonly IXmlSerializer _xmlSerializer;
+        private readonly QueryableValuesSqlServerOptions _options;
 
-        public XmlQueryableFactory(IXmlSerializer xmlSerializer)
+        public XmlQueryableFactory(IXmlSerializer xmlSerializer, QueryableValuesSqlServerOptions options)
         {
+            if (xmlSerializer is null)
+            {
+                throw new ArgumentNullException(nameof(xmlSerializer));
+            }
+
+            if (options is null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
             _xmlSerializer = xmlSerializer;
+            _options = options;
         }
 
-        private static SqlParameter[] GetSqlParameters<T>(DeferredValues<T> deferredValues)
+        /// <summary>
+        /// Used to optimize the generated SQL by providing a TOP(n) on the SELECT statement.
+        /// In my tests, I observed improved memory grant estimation by SQL Server's query engine.
+        /// </summary>
+        private bool UseSelectTopOptimization<T>(DeferredValues<T> deferredValues)
+            where T : notnull
+        {
+#if EFCORE3
+                // In my EF Core 3 tests, it seems that on the first execution of the query,
+                // it is caching the values from the parameters provided to the FromSqlRaw method.
+                // This imposes a problem when trying to optimize the SQL using the HasCount property in this class.
+                // It is critical to know the exact number of elements behind "values" at execution time,
+                // this is because the number of items behind "values" can change between executions of the query,
+                // therefore, this optimization cannot be done in a reliable way under EF Core 3.
+                //
+                // Under EF Core 5 and 6 this is not an issue. The parameters are always evaluated on each execution.
+                return false;
+#else
+            return
+                _options.WithUseSelectTopOptimization &&
+                deferredValues.HasCount;
+#endif
+        }
+
+        private SqlParameter[] GetSqlParameters<T>(DeferredValues<T> deferredValues)
             where T : notnull
         {
             SqlParameter[] sqlParameters;
@@ -50,7 +86,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                 Value = deferredValues
             };
 
-            if (deferredValues.HasCount)
+            if (UseSelectTopOptimization(deferredValues))
             {
                 // bigint to avoid implicit casting by the TOP operation (observed in the execution plan).
                 var countParameter = new SqlParameter(null, SqlDbType.BigInt)
@@ -69,14 +105,15 @@ namespace BlazarTech.QueryableValues.SqlServer
             return sqlParameters;
         }
 
-        private static string GetSqlForSimpleTypes<T>(string xmlType, string sqlType, DeferredValues<T> deferredValues, (int Precision, int Scale)? precisionScale = null)
+        private string GetSqlForSimpleTypes<T>(string xmlType, string sqlType, DeferredValues<T> deferredValues, (int Precision, int Scale)? precisionScale = null)
             where T : notnull
         {
+            var useSelectTopOptimization = UseSelectTopOptimization(deferredValues);
             var cacheKey = new
             {
                 XmlType = xmlType,
                 SqlType = sqlType,
-                deferredValues.HasCount,
+                UseSelectTopOptimization = useSelectTopOptimization,
                 PrecisionScale = precisionScale
             };
 
@@ -85,7 +122,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                 return sql;
             }
 
-            var sqlPrefix = deferredValues.HasCount ? SqlSelectTop : SqlSelect;
+            var sqlPrefix = useSelectTopOptimization ? SqlSelectTop : SqlSelect;
             var sqlTypeArguments = precisionScale.HasValue ? $"({precisionScale.Value.Precision},{precisionScale.Value.Scale})" : null;
 
             sql =
@@ -97,7 +134,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             return sql;
         }
 
-        private static IQueryable<TValue> Create<TValue>(DbContext dbContext, string sql, DeferredValues<TValue> deferredValues)
+        private IQueryable<TValue> Create<TValue>(DbContext dbContext, string sql, DeferredValues<TValue> deferredValues)
             where TValue : notnull
         {
             var sqlParameters = GetSqlParameters(deferredValues);
@@ -225,7 +262,8 @@ namespace BlazarTech.QueryableValues.SqlServer
 
             var mappings = EntityPropertyMapping.GetMappings<TSource>();
             var deferredValues = new DeferredEntityValues<TSource>(_xmlSerializer, values, mappings);
-            var sql = getSql(mappings, configure, deferredValues.HasCount);
+            var useSelectTopOptimization = UseSelectTopOptimization(deferredValues);
+            var sql = getSql(mappings, configure, useSelectTopOptimization);
             var sqlParameters = GetSqlParameters(deferredValues);
 
             var source = dbContext
@@ -236,7 +274,7 @@ namespace BlazarTech.QueryableValues.SqlServer
 
             return projected;
 
-            static string getSql(IReadOnlyList<EntityPropertyMapping> mappings, Action<EntityOptionsBuilder<TSource>>? configure, bool hasCount)
+            static string getSql(IReadOnlyList<EntityPropertyMapping> mappings, Action<EntityOptionsBuilder<TSource>>? configure, bool useSelectTopOptimization)
             {
                 IEntityOptionsBuilder entityOptions;
 
@@ -254,7 +292,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                 var cacheKey = new
                 {
                     Options = entityOptions,
-                    HasCount = hasCount
+                    UseSelectTopOptimization = useSelectTopOptimization
                 };
 
                 if (SqlCache.TryGetValue(cacheKey, out string? sqlFromCache))
@@ -266,7 +304,7 @@ namespace BlazarTech.QueryableValues.SqlServer
 
                 try
                 {
-                    if (hasCount)
+                    if (useSelectTopOptimization)
                     {
                         sb.Append(SqlSelectTop);
                     }
@@ -455,7 +493,7 @@ namespace BlazarTech.QueryableValues.SqlServer
 
                 return queryable;
 
-#region Helpers
+                #region Helpers
 
                 static Expression getTargetPropertyExpression(ParameterExpression parameterExpression, EntityPropertyMapping mapping)
                 {
@@ -485,7 +523,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                     }
                 }
 
-#endregion
+                #endregion
             }
 
             IQueryable<TSource>? getSimpleTypeQueryable(DbContext dbContext, IEnumerable<TSource> values)

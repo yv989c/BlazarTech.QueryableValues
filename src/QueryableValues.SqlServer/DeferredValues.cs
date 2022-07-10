@@ -10,28 +10,11 @@ namespace BlazarTech.QueryableValues
         protected readonly ISerializer _serializer;
         protected readonly IEnumerable<T> _values;
 
-        // todo: Expose API to turn this behavior off by the user.
-        /// <summary>
-        /// Used to optimize the generated SQL by providing a TOP(n) on the SELECT statement.
-        /// In my tests, I observed improved memory grant estimation by SQL Server's query engine.
-        /// </summary>
         public bool HasCount
         {
             get
             {
-#if EFCORE3
-                // In my EF Core 3 tests, it seems that on the first execution of the query,
-                // it is caching the values from the parameters provided to the FromSqlRaw method.
-                // This imposes a problem when trying to optimize the SQL using the HasCount property in this class.
-                // It is critical to know the exact number of elements behind "values" at execution time,
-                // this is because the number of items behind "values" can change between executions of the query,
-                // therefore, this optimization cannot be done in a reliable way under EF Core 3.
-                //
-                // Under EF Core 5 and 6 this is not an issue. The parameters are always evaluated on each execution.
-                return false;
-#else
                 return _values.TryGetNonEnumeratedCount(out _);
-#endif
             }
         }
 
@@ -53,9 +36,6 @@ namespace BlazarTech.QueryableValues
         public short ToInt16(IFormatProvider? provider) => throw new NotImplementedException();
         public int ToInt32(IFormatProvider? provider) => throw new NotImplementedException();
 
-#if EFCORE3
-        public long ToInt64(IFormatProvider? provider) => throw new NotImplementedException();
-#else
         public long ToInt64(IFormatProvider? provider)
         {
             if (_values.TryGetNonEnumeratedCount(out int count))
@@ -67,7 +47,6 @@ namespace BlazarTech.QueryableValues
                 throw new InvalidOperationException("Count not available. (how did this happen?)");
             }
         }
-#endif
 
         public sbyte ToSByte(IFormatProvider? provider) => throw new NotImplementedException();
         public float ToSingle(IFormatProvider? provider) => throw new NotImplementedException();

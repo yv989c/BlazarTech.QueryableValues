@@ -16,7 +16,7 @@ namespace BlazarTech.QueryableValues
         private static void EnsureConfigured(DbContext dbContext)
         {
             var options = dbContext.GetService<IDbContextOptions>();
-            var extension = options.FindExtension<DbContextOptionsExtension>();
+            var extension = options.FindExtension<QueryableValuesSqlServerExtension>();
 
             if (extension is null)
             {
