@@ -2,12 +2,10 @@
 
 namespace BlazarTech.QueryableValues
 {
-#nullable disable
     internal class QueryableValuesEntity<T>
     {
-        public T V { get; set; }
+        public T V { get; set; } = default!;
     }
-#nullable restore
 
     internal class QueryableValuesEntity
     {

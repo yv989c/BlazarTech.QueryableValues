@@ -5,28 +5,62 @@ using System.IO;
 
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
-    public class MyDbContextBase : DbContext
+    public abstract class MyDbContextBase : DbContext
     {
         private readonly string _databaseName;
+        private readonly bool _useQueryableValues;
+        private readonly bool _useSelectTopOptimization;
 
-#nullable disable
-        public DbSet<TestDataEntity> TestData { get; set; }
-#nullable restore
+        public event Action<string>? LogEntryEmitted;
 
-        public MyDbContextBase(string databaseName)
+        public DbSet<TestDataEntity> TestData { get; set; } = null!;
+
+        public MyDbContextBase(
+            string databaseName,
+            bool useQueryableValues = true,
+            bool useSelectTopOptimization = true
+            )
         {
             _databaseName = databaseName;
+            _useQueryableValues = useQueryableValues;
+            _useSelectTopOptimization = useSelectTopOptimization;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var databaseFilePath = Path.Combine(Path.GetTempPath(), $"{_databaseName}.mdf");
 
+#if !EFCORE3
+            optionsBuilder.LogTo(
+                logEntry => {
+                    LogEntryEmitted?.Invoke(logEntry);
+                },
+                Microsoft.Extensions.Logging.LogLevel.Information);
+#endif
+
             optionsBuilder.UseSqlServer(
                 @$"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=190;Database={_databaseName};AttachDbFileName={databaseFilePath}",
                 sqlServerOptionsBuilder =>
                 {
-                    sqlServerOptionsBuilder.UseQueryableValues();
+                    if (_useQueryableValues)
+                    {
+                        var applyOptions = !_useSelectTopOptimization;
+
+                        if (applyOptions)
+                        {
+                            sqlServerOptionsBuilder.UseQueryableValues(options =>
+                            {
+                                if (!_useSelectTopOptimization)
+                                {
+                                    options.UseSelectTopOptimization(false);
+                                }
+                            });
+                        }
+                        else
+                        {
+                            sqlServerOptionsBuilder.UseQueryableValues();
+                        }
+                    }
                 }
             );
         }
@@ -59,7 +93,6 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
     }
 
-#nullable disable
     public class TestDataEntity
     {
         public int Id { get; set; }
@@ -73,12 +106,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public double DoubleValue { get; set; }
         public char CharValue { get; set; }
         public char CharUnicodeValue { get; set; }
-        public string StringValue { get; set; }
-        public string StringUnicodeValue { get; set; }
+        public string StringValue { get; set; } = null!;
+        public string StringUnicodeValue { get; set; } = null!;
         public DateTime DateTimeValue { get; set; }
         public DateTimeOffset DateTimeOffsetValue { get; set; }
         public Guid GuidValue { get; set; }
     }
-#nullable restore
 }
 #endif

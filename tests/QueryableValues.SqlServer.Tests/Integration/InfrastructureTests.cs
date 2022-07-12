@@ -1,22 +1,23 @@
 ﻿#if TESTS && TEST_ALL
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
     [Collection("DbContext")]
-
     public class InfrastructureTests
     {
         [Fact]
         public async Task MustFailNotConfigured()
         {
-            using var db = new MyBadDbContext();
+            using var db = new NotConfiguredDbContext();
 
             var values = Enumerable.Range(0, 10);
 
@@ -39,6 +40,52 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.DoesNotContain(nameof(QueryableValuesEntity), script, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("QueryableValues", script, StringComparison.OrdinalIgnoreCase);
         }
+
+#if !EFCORE3
+        [Fact]
+        public async Task MustControlSelectTopOptimization()
+        {
+            var services = new ServiceCollection();
+            services.AddDbContext<MyDbContext>();
+            services.AddDbContext<NotOptimizedDbContext>();
+            using var serviceProvider = services.BuildServiceProvider();
+
+            var optimizedDb = serviceProvider.GetRequiredService<MyDbContext>();
+            Assert.True(await isOptimizationEnabledSimpleType(optimizedDb));
+            Assert.True(await isOptimizationEnabledComplexType(optimizedDb));
+
+            var notOptimizedDb = serviceProvider.GetRequiredService<NotOptimizedDbContext>();
+            Assert.False(await isOptimizationEnabledComplexType(notOptimizedDb));
+            Assert.False(await isOptimizationEnabledSimpleType(notOptimizedDb));
+
+            async Task<bool> isOptimizationEnabledSimpleType(MyDbContextBase db)
+            {
+                var values = new[] { 1, 2, 3 };
+                var logEntries = new List<string>();
+                db.LogEntryEmitted += logEntry => logEntries.Add(logEntry);
+                var result = await db.AsQueryableValues(values).ToListAsync();
+                Assert.Equal(values.Length, result.Count);
+                var logEntry = logEntries.Single(i => i.Contains("RelationalEventId.CommandExecuted"));
+                return Regex.IsMatch(logEntry, @"SELECT TOP\(@\w+\)\s+I.value\(");
+            }
+
+            async Task<bool> isOptimizationEnabledComplexType(MyDbContextBase db)
+            {
+                var values = new[]
+                {
+                    new { Id = 1 },
+                    new { Id = 2 },
+                    new { Id = 3 }
+                };
+                var logEntries = new List<string>();
+                db.LogEntryEmitted += logEntry => logEntries.Add(logEntry);
+                var result = await db.AsQueryableValues(values).ToListAsync();
+                Assert.Equal(values.Length, result.Count);
+                var logEntry = logEntries.Single(i => i.Contains("RelationalEventId.CommandExecuted"));
+                return Regex.IsMatch(logEntry, @"SELECT TOP\(@\w+\)\s+I.value\(");
+            }
+        }
+#endif
     }
 }
 #endif
