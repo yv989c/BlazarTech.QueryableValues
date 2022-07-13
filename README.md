@@ -2,8 +2,13 @@
     <img src="https://raw.githubusercontent.com/yv989c/BlazarTech.QueryableValues/develop/docs/images/icon.png" alt="Logo" style="width: 80px;">
 </p>
 
-# QueryableValues [![CI/CD Workflow](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml/badge.svg)](https://github.com/yv989c/BlazarTech.QueryableValues/actions/workflows/ci-workflow.yml)
-This library allows you to efficiently compose an [IEnumerable\<T\>] in your [Entity Framework Core] queries when using the [SQL Server Database Provider]. This is accomplished by using the `AsQueryableValues` extension method available on the [DbContext] class. Everything is evaluated on the server with a single round trip, in a way that preserves the query's [execution plan], even when the values behind the [IEnumerable\<T\>] are changed on subsequent executions.
+# QueryableValues
+
+[![Nuget Downloads](https://badgen.net/nuget/dt/BlazarTech.QueryableValues.SqlServer?icon=nuget)][NuGet Package]
+[![GitHub Stars](https://badgen.net/github/stars/yv989c/BlazarTech.QueryableValues?icon=github)](https://github.com/yv989c/BlazarTech.QueryableValues/stargazers)
+[![MIT License](https://badgen.net/badge/license/MIT/blue)](https://github.com/yv989c/BlazarTech.QueryableValues/blob/main/LICENSE.md)
+
+This library allows you to efficiently compose an [IEnumerable&lt;T&gt;] in your [Entity Framework Core] queries when using the [SQL Server Database Provider]. This is accomplished by using the `AsQueryableValues` extension method available on the [DbContext] class. Everything is evaluated on the server with a single round trip, in a way that preserves the query's [execution plan], even when the values behind the [IEnumerable&lt;T&gt;] are changed on subsequent executions.
 
 The supported types for `T` are:
 - Simple Type: [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], and [String].
@@ -12,15 +17,165 @@ The supported types for `T` are:
   - Can be a user-defined class or struct with read/write properties and a public constructor.
   - Must have one or more simple type properties, including [Boolean].
 
-For a detailed explanation, please continue reading [here][readme-background].
+For a detailed explanation of the problem solved by QueryableValues, please continue reading [here][readme-background].
 
 ## When Should You Use It?
 The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. In such cases, the underlying SQL query will be efficient on subsequent executions.
 
 It provides a solution to the following long standing [EF Core issue](https://github.com/dotnet/efcore/issues/13617) and enables other currently unsupported scenarios; like the ability to efficiently create joins with in-memory data.
 
-## Benchmarks
-The following [benchmarks] consist of EF Core queries that have a dependency on a random sequence of [Int32] and [Guid] values via the `Contains` LINQ method. It shows the performance differences between not using and using QueryableValues.
+## Your Support is Appreciated!
+If you feel that this solution has provided you some value, please consider [buying me a ☕][BuyMeACoffee].
+
+[![Buy me a coffee][BuyMeACoffeeButton]][BuyMeACoffee]
+
+Your ⭐ on [this repository](https://github.com/yv989c/BlazarTech.QueryableValues) also helps! Thanks! 🖖🙂
+
+# Getting Started
+
+## Installation
+QueryableValues is distributed as a [NuGet Package]. The major version number of this library is aligned with the version of [Entity Framework Core] by which it's supported (e.g. If you are using EF Core 5, then you must use version 5 of QueryableValues).
+
+Please choose the appropriate command below to install it using the NuGet Package Manager Console window in Visual Studio:
+
+EF Core | Command
+:---: | ---
+3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.4.0`
+5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.4.0`
+6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.4.0`
+
+## Configuration
+Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method as shown in the following simplified examples:
+
+When using the `OnConfiguring` method inside your [DbContext]:
+```c#
+using BlazarTech.QueryableValues;
+
+public class MyDbContext : DbContext
+{
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseSqlServer(
+            "MyConnectionString",
+            sqlServerOptionsBuilder =>
+            {
+                sqlServerOptionsBuilder.UseQueryableValues();
+            }
+        );
+    }
+}
+```
+When setting up the [DbContext] at registration time using dependency injection:
+```c#
+using BlazarTech.QueryableValues;
+
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddDbContext<MyDbContext>(optionsBuilder => {
+            optionsBuilder.UseSqlServer(
+                "MyConnectionString",
+                sqlServerOptionsBuilder =>
+                {
+                    sqlServerOptionsBuilder.UseQueryableValues();
+                }
+            );
+        });
+    }
+}
+```
+
+## How Do You Use It?
+The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace; therefore, you must add the following `using` directive to your source code file for it to appear as a method of your [DbContext] instance:
+```
+using BlazarTech.QueryableValues;
+```
+
+Below are a few examples composing a query using the values provided by an [IEnumerable&lt;T&gt;].
+
+### Simple Type Examples
+Using the [Contains][ContainsQueryable] LINQ method:
+
+```c#
+// Sample values.
+IEnumerable<int> values = Enumerable.Range(1, 10);
+
+// Example #1 (LINQ method syntax)
+var myQuery1 = dbContext.MyEntities
+    .Where(i => dbContext
+        .AsQueryableValues(values)
+        .Contains(i.MyEntityID)
+    )
+    .Select(i => new
+    {
+        i.MyEntityID,
+        i.PropA
+    });
+
+// Example #2 (LINQ query syntax)
+var myQuery2 = 
+    from i in dbContext.MyEntities
+    where dbContext
+        .AsQueryableValues(values)
+        .Contains(i.MyEntityID)
+    select new
+    {
+        i.MyEntityID,
+        i.PropA
+    };
+```
+Using the [Join] LINQ method:
+```c#
+// Sample values.
+IEnumerable<int> values = Enumerable.Range(1, 10);
+
+// Example #1 (LINQ method syntax)
+var myQuery1 = dbContext.MyEntities
+    .Join(
+        dbContext.AsQueryableValues(values),
+        i => i.MyEntityID,
+        v => v,
+        (i, v) => new
+        {
+            i.MyEntityID,
+            i.PropA
+        }
+    );
+
+// Example #2 (LINQ query syntax)
+var myQuery2 = 
+    from i in dbContext.MyEntities
+    join v in dbContext.AsQueryableValues(values) on i.MyEntityID equals v 
+    select new
+    {
+        i.MyEntityID,
+        i.PropA
+    };
+```
+### Complex Type Example
+```c#
+// Performance Tip:
+// If your IEnumerable<T> item type (T) has many properties, project only 
+// the ones you need to a new variable and use it in your query.
+var projectedItems = items.Select(i => new { i.CategoryId, i.ColorName });
+
+var myQuery = 
+    from p in dbContext.Product
+    join pi in dbContext.AsQueryableValues(projectedItems) on new { p.CategoryId, p.ColorName } equals new { pi.CategoryId, pi.ColorName }
+    select new
+    {
+        p.ProductId,
+        p.Description
+    };
+```
+**About Complex Types**
+> :warning: All the data provided by this type is transmitted to the server; therefore, ensure that it only contains the properties you need for your query. Not following this recommendation will degrade the query's performance.
+
+> :warning: There is a limit of up to 10 properties for any given simple type (e.g. cannot have more than 10 [Int32] properties). Exceeding that limit will cause an exception and may also suggest that you should rethink your strategy.
+
+# Benchmarks
+The following [benchmarks] consist of simple EF Core queries that have a dependency on a random sequence of [Int32] and [Guid] values via the `Contains` LINQ method. It shows the performance differences between not using and using QueryableValues. In practice, the benefits of using QueryableValues will be more dramatic on complex EF Core queries and busy environments.
 
 ### Benchmarked Libraries
 | Package | Version |
@@ -120,156 +275,13 @@ Express Edition (64-bit) on Windows 10 Pro 10.0 <X64> (Build 19042: ) (Hyperviso
 
 </details>
 
-# Getting Started
-
-## Installation
-QueryableValues is distributed as a [NuGet Package]. The major version number of this library is aligned with the version of [Entity Framework Core] by which it's supported (e.g. If you are using EF Core 5, then you must use version 5 of QueryableValues).
-
-Please choose the appropriate command below to install it using the NuGet Package Manager Console window in Visual Studio:
-
-EF Core | Command
-:---: | ---
-3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.3.0`
-5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.3.0`
-6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.3.0`
-
-## Configuration
-Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method as shown in the following simplified examples:
-
-When using the `OnConfiguring` method inside your [DbContext]:
-```c#
-using BlazarTech.QueryableValues;
-
-public class MyDbContext : DbContext
-{
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseSqlServer(
-            "MyConnectionString",
-            sqlServerOptionsBuilder =>
-            {
-                sqlServerOptionsBuilder.UseQueryableValues();
-            }
-        );
-    }
-}
-```
-When setting up the [DbContext] at registration time using dependency injection:
-```c#
-using BlazarTech.QueryableValues;
-
-public class Startup
-{
-    public void ConfigureServices(IServiceCollection services)
-    {
-        services.AddDbContext<MyDbContext>(optionsBuilder => {
-            optionsBuilder.UseSqlServer(
-                "MyConnectionString",
-                sqlServerOptionsBuilder =>
-                {
-                    sqlServerOptionsBuilder.UseQueryableValues();
-                }
-            );
-        });
-    }
-}
-```
-
-## How Do You Use It?
-The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace; therefore, you must add the following `using` directive to your source code file for it to appear as a method of your [DbContext] instance:
-```
-using BlazarTech.QueryableValues;
-```
-
-Below are a few examples composing a query using the values provided by an [IEnumerable\<T\>].
-
-### Simple Type Examples
-Using the [Contains][ContainsQueryable] LINQ method:
-
-```c#
-// Sample values.
-IEnumerable<int> values = Enumerable.Range(1, 10);
-
-// Example #1 (LINQ method syntax)
-var myQuery1 = dbContext.MyEntities
-    .Where(i => dbContext
-        .AsQueryableValues(values)
-        .Contains(i.MyEntityID)
-    )
-    .Select(i => new
-    {
-        i.MyEntityID,
-        i.PropA
-    });
-
-// Example #2 (LINQ query syntax)
-var myQuery2 = 
-    from i in dbContext.MyEntities
-    where dbContext
-        .AsQueryableValues(values)
-        .Contains(i.MyEntityID)
-    select new
-    {
-        i.MyEntityID,
-        i.PropA
-    };
-```
-Using the [Join] LINQ method:
-```c#
-// Sample values.
-IEnumerable<int> values = Enumerable.Range(1, 10);
-
-// Example #1 (LINQ method syntax)
-var myQuery1 = dbContext.MyEntities
-    .Join(
-        dbContext.AsQueryableValues(values),
-        i => i.MyEntityID,
-        v => v,
-        (i, v) => new
-        {
-            i.MyEntityID,
-            i.PropA
-        }
-    );
-
-// Example #2 (LINQ query syntax)
-var myQuery2 = 
-    from i in dbContext.MyEntities
-    join v in dbContext.AsQueryableValues(values) on i.MyEntityID equals v 
-    select new
-    {
-        i.MyEntityID,
-        i.PropA
-    };
-```
-### Complex Type Example
-```c#
-// Performance Tip:
-// If your IEnumerable<T> item type (T) has many properties, project only 
-// the ones you need to a new variable and use it in your query.
-var projectedItems = items.Select(i => new { i.CategoryId, i.ColorName });
-
-var myQuery = 
-    from p in dbContext.Product
-    join pi in dbContext.AsQueryableValues(projectedItems) on new { p.CategoryId, p.ColorName } equals new { pi.CategoryId, pi.ColorName }
-    select new
-    {
-        p.ProductId,
-        p.Description
-    };
-```
-**About Complex Types**
-> :warning: All the data provided by this type is transmitted to the server; therefore, ensure that it only contains the properties you need for your query. Not following this recommendation will degrade the query's performance.
-
-> :warning: There is a limit of up to 10 properties for any given simple type (e.g. cannot have more than 10 [Int32] properties). Exceeding that limit will cause an exception and may also suggest that you should rethink your strategy.
-
 ---
 
 ## Background 📚
 When [Entity Framework Core] is set up to use the [SQL Server Database Provider] and it detects the use of variables in a query, in *most cases* it provides its values as parameters to an internal [SqlCommand] object that will execute the translated SQL statement. This is done efficiently by using the [sp_executesql] stored procedure behind the scenes, so if the same SQL statement is executed a second time, the SQL Server instance will likely have a computed [execution plan] in its cache, thereby saving time and system resources.
 
 ## The Problem 🤔
-We have been in the situation where we need to build a query that must return one or more items based on a sequence of values. The common pattern to do this makes use of the [Contains][ContainsEnumerable] LINQ extension method on the [IEnumerable\<T\>] interface, then we pass the property of the entity that must match any of the values in the sequence. This way we can retrieve multiple items with a single round trip to the database as shown in the following example:
+We have been in the situation where we need to build a query that must return one or more items based on a sequence of values. The common pattern to do this makes use of the [Contains][ContainsEnumerable] LINQ extension method on the [IEnumerable&lt;T&gt;] interface, then we pass the property of the entity that must match any of the values in the sequence. This way we can retrieve multiple items with a single round trip to the database as shown in the following example:
 
 ```c#
 var myQuery = dbContext.MyEntities
@@ -378,7 +390,7 @@ QueryableValues makes use of the XML parsing capabilities in SQL Server, which a
 This is a technique that I have not seen being used by other popular libraries that aim to solve this problem. It is superior from a latency standpoint because it resolves the query with a single round trip to the database and most importantly, it preserves the query's [execution plan] even when the content of the XML is changed.
 
 ## One More Thing 👀
-The `AsQueryableValues` extension method allows you to treat a sequence of values as you normally would if these were another entity in your [DbContext]. The type returned by the extension is an [IQueryable\<T\>] that can be composed with other entities in your query.
+The `AsQueryableValues` extension method allows you to treat a sequence of values as you normally would if these were another entity in your [DbContext]. The type returned by the extension is an [IQueryable&lt;T&gt;] that can be composed with other entities in your query.
 
 For example, you can do one or more joins like this and it is totally fine:
 ```c#
@@ -404,8 +416,8 @@ PRs are welcome! 🙂
 [UseSqlServer]: https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.sqlserverdbcontextoptionsextensions.usesqlserver
 [sp_executesql]: https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-executesql-transact-sql
 [SqlCommand]: https://docs.microsoft.com/en-us/dotnet/api/microsoft.data.sqlclient.sqlcommand
-[IEnumerable\<T\>]: https://docs.microsoft.com/en-us/dotnet/api/system.collections.ienumerable
-[IQueryable\<T\>]: https://docs.microsoft.com/en-us/dotnet/api/system.linq.iqueryable-1
+[IEnumerable&lt;T&gt;]: https://docs.microsoft.com/en-us/dotnet/api/system.collections.ienumerable
+[IQueryable&lt;T&gt;]: https://docs.microsoft.com/en-us/dotnet/api/system.linq.iqueryable-1
 [NuGet Package]: https://www.nuget.org/packages/BlazarTech.QueryableValues.SqlServer/
 [readme-background]: #background-
 [execution plan]: https://docs.microsoft.com/en-us/sql/relational-databases/query-processing-architecture-guide?#execution-plan-caching-and-reuse
@@ -422,6 +434,9 @@ PRs are welcome! 🙂
 [Guid]: https://docs.microsoft.com/en-us/dotnet/api/system.guid
 [Char]: https://docs.microsoft.com/en-us/dotnet/api/system.char
 [String]: https://docs.microsoft.com/en-us/dotnet/api/system.string
+[BuyMeACoffee]: https://www.buymeacoffee.com/yv989c
+[BuyMeACoffeeButton]: /docs/images/bmc-48.svg
+
 [benchmarks]: /benchmarks/QueryableValues.SqlServer.Benchmarks
 [BenchmarksInt32]: /docs/images/benchmarks/int32-v6.3.0.png
 [BenchmarksGuid]: /docs/images/benchmarks/guid-v6.3.0.png
