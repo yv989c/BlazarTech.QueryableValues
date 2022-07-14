@@ -1,8 +1,8 @@
 # QueryableValues
 
-[![Nuget Downloads](https://badgen.net/nuget/dt/BlazarTech.QueryableValues.SqlServer?icon=nuget)][NuGet Package]
-[![GitHub Stars](https://badgen.net/github/stars/yv989c/BlazarTech.QueryableValues?icon=github)](https://github.com/yv989c/BlazarTech.QueryableValues/stargazers)
 [![MIT License](https://badgen.net/badge/license/MIT/blue)](https://github.com/yv989c/BlazarTech.QueryableValues/blob/main/LICENSE.md)
+[![GitHub Stars](https://badgen.net/github/stars/yv989c/BlazarTech.QueryableValues?icon=github)][Repository]
+[![Nuget Downloads](https://badgen.net/nuget/dt/BlazarTech.QueryableValues.SqlServer?icon=nuget)][NuGet Package]
 
 This library allows you to efficiently compose an [IEnumerable&lt;T&gt;] in your [Entity Framework Core] queries when using the [SQL Server Database Provider]. This is accomplished by using the `AsQueryableValues` extension method available on the [DbContext] class. Everything is evaluated on the server with a single round trip, in a way that preserves the query's [execution plan], even when the values behind the [IEnumerable&lt;T&gt;] are changed on subsequent executions.
 
@@ -25,7 +25,7 @@ If you feel that this solution has provided you some value, please consider [buy
 
 [![Buy me a coffee][BuyMeACoffeeButton]][BuyMeACoffee]
 
-Your ⭐ on [this repository](https://github.com/yv989c/BlazarTech.QueryableValues) also helps! Thanks! 🖖🙂
+Your ⭐ on [this repository][Repository] also helps! Thanks! 🖖🙂
 
 # Getting Started
 
@@ -171,7 +171,7 @@ var myQuery =
 > :warning: There is a limit of up to 10 properties for any given simple type (e.g. cannot have more than 10 [Int32] properties). Exceeding that limit will cause an exception and may also suggest that you should rethink your strategy.
 
 ## Do You Want To Know More? 📚
-Please take a look at the [repository](https://github.com/yv989c/BlazarTech.QueryableValues).
+Please take a look at the [repository][Repository].
 
 
 [Entity Framework Core]: https://docs.microsoft.com/en-us/ef/core/
@@ -203,3 +203,4 @@ Please take a look at the [repository](https://github.com/yv989c/BlazarTech.Quer
 [String]: https://docs.microsoft.com/en-us/dotnet/api/system.string
 [BuyMeACoffee]: https://www.buymeacoffee.com/yv989c
 [BuyMeACoffeeButton]: https://raw.githubusercontent.com/yv989c/BlazarTech.QueryableValues/develop/docs/images/bmc-48.svg
+[Repository]: https://github.com/yv989c/BlazarTech.QueryableValues
