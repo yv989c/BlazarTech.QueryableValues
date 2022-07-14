@@ -11,10 +11,12 @@ namespace BlazarTech.QueryableValues
     public static class QueryableValuesDbContextOptionsBuilderExtensions
     {
         /// <summary>
-        /// Configures QueryableValues so the <c>AsQueryableValues</c> extension method can be used on a <see cref="DbContext"/> class.
+        /// Configures QueryableValues so the <c>AsQueryableValues</c> extension method can be used on the <see cref="DbContext"/> class.
         /// </summary>
+        /// <param name="optionsBuilder">The builder being used to configure QueryableValues.</param>
+        /// <param name="options">An optional action to allow additional configuration.</param>
         /// <returns>The <paramref name="optionsBuilder"/> so subsequent configurations can be chained.</returns>
-        public static SqlServerDbContextOptionsBuilder UseQueryableValues(this SqlServerDbContextOptionsBuilder optionsBuilder)
+        public static SqlServerDbContextOptionsBuilder UseQueryableValues(this SqlServerDbContextOptionsBuilder optionsBuilder, Action<QueryableValuesSqlServerOptions>? options = null)
         {
             if (optionsBuilder is null)
             {
@@ -22,7 +24,9 @@ namespace BlazarTech.QueryableValues
             }
 
             var coreOptionsBuilder = ((IRelationalDbContextOptionsBuilderInfrastructure)optionsBuilder).OptionsBuilder;
-            var extension = coreOptionsBuilder.Options.FindExtension<DbContextOptionsExtension>() ?? new DbContextOptionsExtension();
+            var extension = coreOptionsBuilder.Options.FindExtension<QueryableValuesSqlServerExtension>() ?? new QueryableValuesSqlServerExtension();
+
+            options?.Invoke(extension.Options);
 
             ((IDbContextOptionsBuilderInfrastructure)coreOptionsBuilder).AddOrUpdateExtension(extension);
 

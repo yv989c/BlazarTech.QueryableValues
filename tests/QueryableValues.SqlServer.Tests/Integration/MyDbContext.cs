@@ -1,31 +1,30 @@
 ﻿#if TESTS
-using Microsoft.EntityFrameworkCore;
-
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
+    internal static class DatabaseName
+    {
 #if EFCORE3
-    public class MyDbContext : MyDbContextBase
-    {
-        public MyDbContext() : base("QueryableValuesTestsEFCore3") { }
-    }
+        public const string Name = "QueryableValuesTestsEFCore3";
 #elif EFCORE5
-    public class MyDbContext : MyDbContextBase
-    {
-        public MyDbContext() : base("QueryableValuesTestsEFCore5") { }
-    }
+        public const string Name = "QueryableValuesTestsEFCore5";
 #elif EFCORE6
+        public const string Name = "QueryableValuesTestsEFCore6";
+#endif
+    }
+
     public class MyDbContext : MyDbContextBase
     {
-        public MyDbContext() : base("QueryableValuesTestsEFCore6") { }
+        public MyDbContext() : base(DatabaseName.Name) { }
     }
-#endif
 
-    public class MyBadDbContext : MyDbContext
+    public class NotConfiguredDbContext : MyDbContextBase
     {
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlServer("BadConnectionString");
-        }
+        public NotConfiguredDbContext() : base(DatabaseName.Name, useQueryableValues: false) { }
+    }
+
+    public class NotOptimizedDbContext : MyDbContextBase
+    {
+        public NotOptimizedDbContext() : base(DatabaseName.Name, useSelectTopOptimization: false) { }
     }
 }
 #endif
