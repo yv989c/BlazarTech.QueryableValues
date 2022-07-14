@@ -1,8 +1,10 @@
 MIT License
 
-Copyright (c) 2021 Carlos Villegas
+Copyright (c) Carlos Villegas
 
-Contains portions of LINQKit (https://github.com/scottksmith95/LINQKit). Copyright (c) 2007-2019 Joseph Albahari, Tomas Petricek, Scott Smith.
+Contains portions of:
+- [LINQKit](https://github.com/scottksmith95/LINQKit). Copyright (c) 2007-2019 Joseph Albahari, Tomas Petricek, Scott Smith.
+- [.NET Runtime](https://github.com/dotnet/runtime). Copyright (c) .NET Foundation and Contributors.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

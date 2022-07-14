@@ -16,7 +16,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests
 
             services.AddTransient<IModelCustomizer, FakeModelCustomizer>();
 
-            var extension = new DbContextOptionsExtension();
+            var extension = new QueryableValuesSqlServerExtension();
 
             extension.ApplyServices(services);
 

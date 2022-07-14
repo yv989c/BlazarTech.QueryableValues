@@ -9,9 +9,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="..\QueryableValues.SqlServer.Tests\*.cs" />
 		<Compile Include="..\QueryableValues.SqlServer.Tests\Integration\**\*.cs">
 			<Link>Integration\%(RecursiveDir)\%(FileName)%(Extension)</Link>
 		</Compile>
-		<Compile Include="..\QueryableValues.SqlServer.Tests\*.cs" />
+		<Compile Include="..\QueryableValues.SqlServer.Tests\Serializers\**\*.cs">
+			<Link>Serializers\%(RecursiveDir)\%(FileName)%(Extension)</Link>
+		</Compile>
 	</ItemGroup>
 </Project>
