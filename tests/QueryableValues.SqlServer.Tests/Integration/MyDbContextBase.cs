@@ -11,7 +11,9 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         private readonly bool _useQueryableValues;
         private readonly bool _useSelectTopOptimization;
 
+#if !EFCORE3
         public event Action<string>? LogEntryEmitted;
+#endif
 
         public DbSet<TestDataEntity> TestData { get; set; } = null!;
 
