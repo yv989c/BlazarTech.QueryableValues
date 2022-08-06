@@ -15,6 +15,9 @@ The supported types for `T` are:
 
 For a detailed explanation of the problem solved by QueryableValues, please continue reading [here][readme-background].
 
+> 💡 Still on Entity Framework 6 (non-core)?
+> [This Stack Overflow answer](https://stackoverflow.com/a/70587979/2206145) may be helpful.
+
 ## When Should You Use It?
 The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. In such cases, the underlying SQL query will be efficient on subsequent executions.
 
@@ -26,9 +29,6 @@ If you feel that this solution has provided you some value, please consider [buy
 [![Buy me a coffee][BuyMeACoffeeButton]][BuyMeACoffee]
 
 Your ⭐ on [this repository][Repository] also helps! Thanks! 🖖🙂
-
-> 💡 Still on Entity Framework 6 (non-core)?
-> [This Stack Overflow answer](https://stackoverflow.com/a/70587979/2206145) may be helpful.
 
 # Getting Started
 
