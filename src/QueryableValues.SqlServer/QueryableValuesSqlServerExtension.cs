@@ -80,7 +80,7 @@ namespace BlazarTech.QueryableValues
             {
             }
 
-#if EFCORE6
+#if EFCORE6 || EFCORE7 
             public override int GetServiceProviderHashCode() => 0;
             public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other) => true;
 #else
