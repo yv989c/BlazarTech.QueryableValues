@@ -57,5 +57,6 @@
 		<InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore3" />
 		<InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore5" />
 		<InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore6" />
+		<InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore7" />
 	</ItemGroup>
 </Project>

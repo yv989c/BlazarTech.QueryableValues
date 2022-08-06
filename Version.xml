@@ -3,5 +3,6 @@
 		<VersionEFCore3>3.4.0</VersionEFCore3>
 		<VersionEFCore5>5.4.0</VersionEFCore5>
 		<VersionEFCore6>6.4.0</VersionEFCore6>
+		<VersionEFCore7>7.0.0-preview.1</VersionEFCore7>
 	</PropertyGroup>
 </Project>
