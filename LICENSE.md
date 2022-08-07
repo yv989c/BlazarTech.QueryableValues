@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) Carlos Villegas
+Copyright (c) Carlos Villegas ([yv989c](https://github.com/yv989c))
 
 Contains portions of:
 - [LINQKit](https://github.com/scottksmith95/LINQKit). Copyright (c) 2007-2019 Joseph Albahari, Tomas Petricek, Scott Smith.

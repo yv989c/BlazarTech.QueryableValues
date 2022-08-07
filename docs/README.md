@@ -15,6 +15,9 @@ The supported types for `T` are:
 
 For a detailed explanation of the problem solved by QueryableValues, please continue reading [here][readme-background].
 
+> 💡 Still on Entity Framework 6 (non-core)?
+> [This Stack Overflow answer](https://stackoverflow.com/a/70587979/2206145) may be helpful.
+
 ## When Should You Use It?
 The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. In such cases, the underlying SQL query will be efficient on subsequent executions.
 
@@ -39,6 +42,7 @@ EF Core | Command
 3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.4.0`
 5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.4.0`
 6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.4.0`
+7.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 7.0.0-preview.1`
 
 ## Configuration
 Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method as shown in the following simplified examples:

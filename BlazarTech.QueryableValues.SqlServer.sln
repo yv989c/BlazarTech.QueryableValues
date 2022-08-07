@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Version.xml = Version.xml
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryableValues.SqlServer.EFCore7", "src\QueryableValues.SqlServer.EFCore7\QueryableValues.SqlServer.EFCore7.csproj", "{F7FFB4FE-1E81-41EF-B93E-5EEDA30C2A99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +50,12 @@ Global
 		{563842B7-B73A-458B-8CC0-381108E36155}.Release|Any CPU.Build.0 = Release|Any CPU
 		{563842B7-B73A-458B-8CC0-381108E36155}.Test|Any CPU.ActiveCfg = Test|Any CPU
 		{563842B7-B73A-458B-8CC0-381108E36155}.Test|Any CPU.Build.0 = Test|Any CPU
+		{F7FFB4FE-1E81-41EF-B93E-5EEDA30C2A99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7FFB4FE-1E81-41EF-B93E-5EEDA30C2A99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7FFB4FE-1E81-41EF-B93E-5EEDA30C2A99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7FFB4FE-1E81-41EF-B93E-5EEDA30C2A99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7FFB4FE-1E81-41EF-B93E-5EEDA30C2A99}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{F7FFB4FE-1E81-41EF-B93E-5EEDA30C2A99}.Test|Any CPU.Build.0 = Test|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
