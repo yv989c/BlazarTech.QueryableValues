@@ -15,45 +15,46 @@ on:
   release:
     types:
       - published
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
 env:
-  # Stop wasting time caching packages
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-  # Disable sending usage data to Microsoft
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  # Project name to pack and publish
-  PROJECT_NAME: BlazarTech.QueryableValues.SqlServer
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+ 
   # GitHub Packages Feed settings
   GITHUB_FEED: https://nuget.pkg.github.com/yv989c/index.json
   GITHUB_USER: yv989c
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LOCAL_NUGET_PAT: ${{ secrets.LOCAL_NUGET_PAT }}
+
   # Official NuGet Feed settings
   NUGET_FEED: https://api.nuget.org/v3/index.json
   NUGET_USER: yv989c
   NUGET_TOKEN: ${{ secrets.NUGET_KEY }}
+
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ windows-latest ]
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Setup .NET 6
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 6.0.x
+          
       - name: Restore
         run: dotnet restore BlazarTech.QueryableValues.sln
+
       - name: Test All
         run: dotnet test BlazarTech.QueryableValues.sln -c Test_All --no-restore
+
       - name: PreRelease-Pack
         if: github.event_name != 'release'
         run: dotnet build BlazarTech.QueryableValues.SqlServer.sln -c Release --no-restore --version-suffix=build.$env:GITHUB_RUN_NUMBER
       - name: Release-Pack
         if: github.event_name == 'release'
         run: dotnet build BlazarTech.QueryableValues.SqlServer.sln -c Release --no-restore
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
         with:
