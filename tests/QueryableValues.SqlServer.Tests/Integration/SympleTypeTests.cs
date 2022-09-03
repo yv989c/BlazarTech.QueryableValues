@@ -11,7 +11,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     [Collection("DbContext")]
     public class SympleTypeTests
     {
-        private readonly MyDbContext _db;
+        private readonly IMyDbContext _db;
 
         public SympleTypeTests(DbContextFixture contextFixture)
         {

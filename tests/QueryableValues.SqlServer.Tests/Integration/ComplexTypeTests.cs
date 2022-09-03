@@ -11,7 +11,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     [Collection("DbContext")]
     public class ComplexTypeTests
     {
-        private readonly MyDbContext _db;
+        private readonly IMyDbContext _db;
 
         public class TestType
         {

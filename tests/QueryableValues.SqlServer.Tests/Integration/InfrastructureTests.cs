@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xunit;
@@ -39,6 +38,19 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.DoesNotContain(nameof(QueryableValuesEntity<object>), script, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain(nameof(QueryableValuesEntity), script, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("QueryableValues", script, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void OnlyWorksOnDbContext()
+        {
+            var db = new NotADbContext();
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+            {
+                _ = db.AsQueryableValues(new[] { 1 }).ToList();
+            });
+
+            Assert.Contains("QueryableValues only works on a Microsoft.EntityFrameworkCore.DbContext type.", exception.Message);
         }
 
 #if !EFCORE3
@@ -86,6 +98,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             }
         }
 #endif
+    }
+
+    class NotADbContext : IQueryableValuesEnabledDbContext
+    {
     }
 }
 #endif
