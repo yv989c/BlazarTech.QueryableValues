@@ -42,10 +42,10 @@ Please choose the appropriate command below to install it using the NuGet Packag
 
 EF Core | Command
 :---: | ---
-3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.4.0`
-5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.4.0`
-6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.4.0`
-7.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 7.0.0-preview.1`
+3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.5.0`
+5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.5.0`
+6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.5.0`
+7.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 7.0.0-preview.2`
 
 ## Configuration
 Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method as shown in the following simplified examples:
