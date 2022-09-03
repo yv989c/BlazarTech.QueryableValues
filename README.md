@@ -1,5 +1,5 @@
 ﻿<p align="center">
-    <img src="https://raw.githubusercontent.com/yv989c/BlazarTech.QueryableValues/develop/docs/images/icon.png" alt="Logo" style="width: 80px;">
+    <img src="/docs/images/icon.png" alt="Logo" style="width: 80px;">
 </p>
 
 # QueryableValues
@@ -19,8 +19,7 @@ The supported types for `T` are:
 
 For a detailed explanation of the problem solved by QueryableValues, please continue reading [here][readme-background].
 
-> 💡 Still on Entity Framework 6 (non-core)?
-> [This Stack Overflow answer](https://stackoverflow.com/a/70587979/2206145) may be helpful.
+> 💡 Still on Entity Framework 6 (non-core)? Then [QueryableValues `EF6 Edition`](https://github.com/yv989c/BlazarTech.QueryableValues.EF6) is what you need.
 
 ## When Should You Use It?
 The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. In such cases, the underlying SQL query will be efficient on subsequent executions.
