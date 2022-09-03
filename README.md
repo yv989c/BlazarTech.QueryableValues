@@ -91,9 +91,11 @@ public class Startup
 
 ## How Do You Use It?
 The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace; therefore, you must add the following `using` directive to your source code file for it to appear as a method of your [DbContext] instance:
-```
+```c#
 using BlazarTech.QueryableValues;
 ```
+
+> 💡 If you access your [DbContext] via an interface, you can also make the `AsQueryableValues` extension methods available on it by inheriting from the `IQueryableValuesEnabledDbContext` interface.
 
 Below are a few examples composing a query using the values provided by an [IEnumerable&lt;T&gt;].
 
