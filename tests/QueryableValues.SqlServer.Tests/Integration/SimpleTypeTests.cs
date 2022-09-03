@@ -9,11 +9,11 @@ using Xunit;
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
     [Collection("DbContext")]
-    public class SympleTypeTests
+    public class SimpleTypeTests
     {
         private readonly IMyDbContext _db;
 
-        public SympleTypeTests(DbContextFixture contextFixture)
+        public SimpleTypeTests(DbContextFixture contextFixture)
         {
             _db = contextFixture.Db;
         }
