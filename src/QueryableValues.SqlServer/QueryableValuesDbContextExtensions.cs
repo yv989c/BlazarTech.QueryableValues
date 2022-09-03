@@ -181,11 +181,11 @@ namespace BlazarTech.QueryableValues
         /// </summary>
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
         /// <param name="values">The sequence of values to compose.</param>
-        /// <param name="isUnicode">If <c>true</c>, will cast the <paramref name="values"/> as <c>nvarchar</c>, otherwise, <c>varchar</c>.</param>
+        /// <param name="isUnicode">If <see langword="true"/>, will cast the <paramref name="values"/> as <c>nvarchar</c>, otherwise, <c>varchar</c>.</param>
         /// <returns>An <see cref="IQueryable{Char}">IQueryable&lt;char&gt;</see> that can be composed with other entities in the query.</returns>
         /// <remarks>
         /// About Performance: If the result is going to be composed against the property of an entity that uses 
-        /// unicode (<c>nvarchar</c>), then <paramref name="isUnicode"/> should be <c>true</c>.
+        /// unicode (<c>nvarchar</c>), then <paramref name="isUnicode"/> should be <see langword="true"/>.
         /// Failing to do this may force SQL Server's query engine to do an implicit casting, which results 
         /// in a scan instead of an index seek (assuming there's a covering index).
         /// </remarks>
@@ -202,11 +202,11 @@ namespace BlazarTech.QueryableValues
         /// </summary>
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
         /// <param name="values">The sequence of values to compose.</param>
-        /// <param name="isUnicode">If <c>true</c>, will cast the <paramref name="values"/> as <c>nvarchar</c>, otherwise, <c>varchar</c>.</param>
+        /// <param name="isUnicode">If <see langword="true"/>, will cast the <paramref name="values"/> as <c>nvarchar</c>, otherwise, <c>varchar</c>.</param>
         /// <returns>An <see cref="IQueryable{String}">IQueryable&lt;string&gt;</see> that can be composed with other entities in the query.</returns>
         /// <remarks>
         /// About Performance: If the result is going to be composed against the property of an entity that uses 
-        /// unicode (<c>nvarchar</c>), then <paramref name="isUnicode"/> should be <c>true</c>.
+        /// unicode (<c>nvarchar</c>), then <paramref name="isUnicode"/> should be <see langword="true"/>.
         /// Failing to do this may force SQL Server's query engine to do an implicit casting, which results 
         /// in a scan instead of an index seek (assuming there's a covering index).
         /// </remarks>

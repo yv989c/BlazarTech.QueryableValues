@@ -16,7 +16,6 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
         public void Dispose()
         {
-            Db.Dispose();
         }
 
         public async Task InitializeAsync()
@@ -88,9 +87,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             await Db.SaveChangesAsync();
         }
 
-        public Task DisposeAsync()
+        public async Task DisposeAsync()
         {
-            return Task.CompletedTask;
+            await Db.Database.EnsureDeletedAsync();
+            Db.Dispose();
         }
     }
 

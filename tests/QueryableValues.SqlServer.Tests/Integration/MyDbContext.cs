@@ -1,4 +1,6 @@
 ﻿#if TESTS
+using Microsoft.EntityFrameworkCore;
+
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
     internal static class DatabaseName
@@ -14,9 +16,14 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 #endif
     }
 
-    public class MyDbContext : MyDbContextBase
+    public class MyDbContext : MyDbContextBase, IMyDbContext
     {
         public MyDbContext() : base(DatabaseName.Name) { }
+    }
+
+    public interface IMyDbContext : IQueryableValuesEnabledDbContext
+    {
+        DbSet<TestDataEntity> TestData { get; set; }
     }
 
     public class NotConfiguredDbContext : MyDbContextBase
