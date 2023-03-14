@@ -2,7 +2,7 @@
 	<Import Project="../SharedTestProjectProperties.xml" />
 
 	<PropertyGroup>
-		<TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+		<TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
 		<AssemblyName>BlazarTech.QueryableValues.SqlServer.Tests.EFCore5</AssemblyName>
 		<DefineConstants>$(DefineConstants);TESTS;EFCORE5</DefineConstants>
 	</PropertyGroup>
