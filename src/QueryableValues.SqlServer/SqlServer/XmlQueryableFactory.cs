@@ -82,8 +82,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             var xmlParameter = new SqlParameter(null, SqlDbType.Xml)
             {
                 // DeferredValues allows us to defer the enumeration of values until the query is materialized.
-                // Uses deferredValues.ToString() at evaluation time.
-                Value = deferredValues
+                Value = _options.WithUseDeferredEnumeration ? deferredValues : deferredValues.ToString(null)
             };
 
             if (UseSelectTopOptimization(deferredValues))
@@ -91,8 +90,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                 // bigint to avoid implicit casting by the TOP operation (observed in the execution plan).
                 var countParameter = new SqlParameter(null, SqlDbType.BigInt)
                 {
-                    // Uses deferredValues.ToInt64() at evaluation time.
-                    Value = deferredValues
+                    Value = _options.WithUseDeferredEnumeration ? deferredValues : deferredValues.ToInt64(null)
                 };
 
                 sqlParameters = new[] { xmlParameter, countParameter };
