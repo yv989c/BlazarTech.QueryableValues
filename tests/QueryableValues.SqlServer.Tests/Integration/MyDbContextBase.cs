@@ -10,6 +10,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         private readonly string _databaseName;
         private readonly bool _useQueryableValues;
         private readonly bool _useSelectTopOptimization;
+        private readonly bool _useUseDeferredEnumeration;
 
 #if !EFCORE3
         public event Action<string>? LogEntryEmitted;
@@ -20,12 +21,14 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public MyDbContextBase(
             string databaseName,
             bool useQueryableValues = true,
-            bool useSelectTopOptimization = true
+            bool useSelectTopOptimization = true,
+            bool useUseDeferredEnumeration = true
             )
         {
             _databaseName = databaseName;
             _useQueryableValues = useQueryableValues;
             _useSelectTopOptimization = useSelectTopOptimization;
+            _useUseDeferredEnumeration = useUseDeferredEnumeration;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -34,7 +37,8 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
 #if !EFCORE3
             optionsBuilder.LogTo(
-                logEntry => {
+                logEntry =>
+                {
                     LogEntryEmitted?.Invoke(logEntry);
                 },
                 Microsoft.Extensions.Logging.LogLevel.Information);
@@ -46,7 +50,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 {
                     if (_useQueryableValues)
                     {
-                        var applyOptions = !_useSelectTopOptimization;
+                        var applyOptions = !_useSelectTopOptimization || !_useUseDeferredEnumeration;
 
                         if (applyOptions)
                         {
@@ -56,6 +60,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                                 {
                                     options.UseSelectTopOptimization(false);
                                 }
+
+#if !EFCORE3
+                                if (!_useUseDeferredEnumeration)
+                                {
+                                    options.UseDeferredEnumeration(false);
+                                }
+#endif
                             });
                         }
                         else

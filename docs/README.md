@@ -34,15 +34,6 @@ Your ⭐ on [this repository][Repository] also helps! Thanks! 🖖🙂
 ## Installation
 QueryableValues is distributed as a [NuGet Package]. The major version number of this library is aligned with the version of [Entity Framework Core] by which it's supported (e.g. If you are using EF Core 5, then you must use version 5 of QueryableValues).
 
-Please choose the appropriate command below to install it using the NuGet Package Manager Console window in Visual Studio:
-
-EF Core | Command
-:---: | ---
-3.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 3.5.0`
-5.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 5.5.0`
-6.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 6.5.0`
-7.x | `Install-Package BlazarTech.QueryableValues.SqlServer -Version 7.0.0`
-
 ## Configuration
 Look for the place in your code where you are setting up your [DbContext] and calling the [UseSqlServer] extension method, then use a lambda expression to access the `SqlServerDbContextOptionsBuilder` provided by it. It is on this builder that you must call the `UseQueryableValues` extension method as shown in the following simplified examples:
 
