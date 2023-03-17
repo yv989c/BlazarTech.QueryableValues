@@ -1,5 +1,6 @@
 ﻿using Microsoft.IO;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
@@ -99,9 +100,9 @@ namespace BlazarTech.QueryableValues.Serializers
 
             static string GetJson(IEnumerable<T> values, Action<Utf8JsonWriter, T> writeValue, Func<T, bool>? mustSkipValue = null)
             {
-                using var stream = MemoryStreamManager.GetStream();
+                using var stream = (RecyclableMemoryStream)MemoryStreamManager.GetStream();
 
-                using (var jsonWriter = new Utf8JsonWriter(stream))
+                using (var jsonWriter = new Utf8JsonWriter((IBufferWriter<byte>)stream))
                 {
                     jsonWriter.WriteStartArray();
 
@@ -122,12 +123,11 @@ namespace BlazarTech.QueryableValues.Serializers
                     jsonWriter.WriteEndArray();
                 }
 
-                var streamInt32Length = (int)stream.Length;
 #if NETSTANDARD2_0
+                var streamInt32Length = (int)stream.Length;
                 return Encoding.UTF8.GetString(stream.GetBuffer(), 0, streamInt32Length);
 #else
-                var streamBufferSpan = stream.GetBuffer().AsSpan(0, streamInt32Length);
-                return Encoding.UTF8.GetString(streamBufferSpan);
+                return Encoding.UTF8.GetString(stream.GetSpan());
 #endif
             }
         }
