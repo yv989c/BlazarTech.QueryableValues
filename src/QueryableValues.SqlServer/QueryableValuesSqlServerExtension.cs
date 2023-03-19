@@ -49,13 +49,28 @@ namespace BlazarTech.QueryableValues
             }
 
             services.AddSingleton<Serializers.IXmlSerializer, Serializers.XmlSerializer>();
+            services.AddSingleton<Serializers.IJsonSerializer, Serializers.JsonSerializer>();
 
             services.AddScoped<IQueryableFactory>(sp =>
             {
                 var options = sp.GetRequiredService<IDbContextOptions>();
                 var extension = options.FindExtension<QueryableValuesSqlServerExtension>() ?? throw new InvalidOperationException();
-                var xmlSerializer = sp.GetRequiredService<Serializers.IXmlSerializer>();
-                return new SqlServer.XmlQueryableFactory(xmlSerializer, extension.Options);
+
+                switch (extension.Options.WithSerializationOptions)
+                {
+                    case SerializationOptions.UseJson:
+                        {
+                            var serializer = sp.GetRequiredService<Serializers.IJsonSerializer>();
+                            return new SqlServer.JsonQueryableFactory(serializer, extension.Options);
+                        }
+                    case SerializationOptions.UseXml:
+                        {
+                            var serializer = sp.GetRequiredService<Serializers.IXmlSerializer>();
+                            return new SqlServer.XmlQueryableFactory(serializer, extension.Options);
+                        }
+                    default:
+                        throw new NotImplementedException();
+                }
             });
         }
 
