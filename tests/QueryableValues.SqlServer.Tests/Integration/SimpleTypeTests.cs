@@ -16,6 +16,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public SimpleTypeTests(DbContextFixture contextFixture)
         {
             _db = contextFixture.Db;
+            //_db.Options.Serialization(SerializationOptions.UseJson);
         }
 
         [Fact]
@@ -209,16 +210,36 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         {
             var values = new[] { 'A', 'a', 'ᴭ', ' ', '\n', '\0', '\u0001' };
 
+            if (_db.Options.WithSerializationOptions == SerializationOptions.UseXml)
             {
-                var expected = new[] { 'A', 'a', '?', ' ', '\n', '?', '?' };
-                var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
-                Assert.Equal(expected, actual);
-            }
+                {
+                    var expected = new[] { 'A', 'a', '?', ' ', '\n', '?', '?' };
+                    var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
+                    Assert.Equal(expected, actual);
+                }
 
+                {
+                    var expected = new[] { 'A', 'a', 'ᴭ', ' ', '\n', '?', '?' };
+                    var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
+                    Assert.Equal(expected, actual);
+                }
+            }
+            else if (_db.Options.WithSerializationOptions == SerializationOptions.UseJson)
             {
-                var expected = new[] { 'A', 'a', 'ᴭ', ' ', '\n', '?', '?' };
-                var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
-                Assert.Equal(expected, actual);
+                {
+                    var expected = new[] { 'A', 'a', '?', ' ', '\n', '\0', '\u0001' };
+                    var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
+                    Assert.Equal(expected, actual);
+                }
+
+                {
+                    var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
+                    Assert.Equal(values, actual);
+                }
+            }
+            else
+            {
+                throw new NotImplementedException();
             }
 
             {
@@ -233,29 +254,55 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         {
             var values = new[] { "\0 ", "\u0001", "Test 1", "Test <2>", "Test &3", "😀", "ᴭ", "", " ", "\n", " \n", " \n ", "\r", "\r ", " Test\t1 ", "\U00010330" };
 
+            if (_db.Options.WithSerializationOptions == SerializationOptions.UseXml)
             {
-                var expected = new string[values.Length];
-                values.CopyTo(expected, 0);
-                expected[0] = "? ";
-                expected[1] = "?";
-                expected[5] = "??";
-                expected[6] = "?";
-                expected[15] = "??";
+                {
+                    var expected = new string[values.Length];
+                    values.CopyTo(expected, 0);
+                    expected[0] = "? ";
+                    expected[1] = "?";
+                    expected[5] = "??";
+                    expected[6] = "?";
+                    expected[15] = "??";
 
-                var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
+                    var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
 
-                Assert.Equal(expected, actual);
+                    Assert.Equal(expected, actual);
+                }
+
+                {
+                    var expected = new string[values.Length];
+                    values.CopyTo(expected, 0);
+                    expected[0] = "? ";
+                    expected[1] = "?";
+
+                    var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
+
+                    Assert.Equal(expected, actual);
+                }
             }
-
+            else if (_db.Options.WithSerializationOptions == SerializationOptions.UseJson)
             {
-                var expected = new string[values.Length];
-                values.CopyTo(expected, 0);
-                expected[0] = "? ";
-                expected[1] = "?";
+                {
+                    var expected = new string[values.Length];
+                    values.CopyTo(expected, 0);
+                    expected[5] = "??";
+                    expected[6] = "?";
+                    expected[15] = "??";
 
-                var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
+                    var actual = await _db.AsQueryableValues(values, isUnicode: false).ToListAsync();
 
-                Assert.Equal(expected, actual);
+                    Assert.Equal(expected, actual);
+                }
+
+                {
+                    var actual = await _db.AsQueryableValues(values, isUnicode: true).ToListAsync();
+                    Assert.Equal(values, actual);
+                }
+            }
+            else
+            {
+                throw new NotImplementedException();
             }
         }
 
