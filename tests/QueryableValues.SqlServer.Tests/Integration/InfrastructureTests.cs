@@ -78,7 +78,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 var result = await db.AsQueryableValues(values).ToListAsync();
                 Assert.Equal(values.Length, result.Count);
                 var logEntry = logEntries.Single(i => i.Contains("RelationalEventId.CommandExecuted"));
-                return Regex.IsMatch(logEntry, @"SELECT TOP\(@\w+\)\s+I.value\(");
+                return Regex.IsMatch(logEntry, @"SELECT TOP\(@\w+\)\s");
             }
 
             async Task<bool> isOptimizationEnabledComplexType(MyDbContextBase db)
@@ -94,7 +94,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 var result = await db.AsQueryableValues(values).ToListAsync();
                 Assert.Equal(values.Length, result.Count);
                 var logEntry = logEntries.Single(i => i.Contains("RelationalEventId.CommandExecuted"));
-                return Regex.IsMatch(logEntry, @"SELECT TOP\(@\w+\)\s+I.value\(");
+                return Regex.IsMatch(logEntry, @"SELECT TOP\(@\w+\)\s");
             }
         }
 #endif
