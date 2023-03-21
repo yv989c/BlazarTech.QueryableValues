@@ -2,6 +2,7 @@
 using BlazarTech.QueryableValues.Builders;
 using BlazarTech.QueryableValues.Serializers;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,8 +11,8 @@ namespace BlazarTech.QueryableValues.SqlServer
 {
     internal sealed class JsonQueryableFactory : QueryableFactory
     {
-        public JsonQueryableFactory(IJsonSerializer serializer, QueryableValuesSqlServerOptions options)
-            : base(serializer, options)
+        public JsonQueryableFactory(IJsonSerializer serializer, IDbContextOptions dbContextOptions)
+            : base(serializer, dbContextOptions)
         {
         }
 

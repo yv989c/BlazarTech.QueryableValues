@@ -1,5 +1,6 @@
 ﻿#if EFCORE
 using BlazarTech.QueryableValues.Builders;
+using BlazarTech.QueryableValues.SqlServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using System;
@@ -44,7 +45,7 @@ namespace BlazarTech.QueryableValues
 
         private static IQueryableFactory GetQueryableFactory(DbContext dbContext)
         {
-            return dbContext.GetService<IQueryableFactory>();
+            return dbContext.GetService<QueryableFactoryFactory>().Create();
         }
 
         /// <summary>

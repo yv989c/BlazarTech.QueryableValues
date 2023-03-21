@@ -50,28 +50,9 @@ namespace BlazarTech.QueryableValues
 
             services.AddSingleton<Serializers.IXmlSerializer, Serializers.XmlSerializer>();
             services.AddSingleton<Serializers.IJsonSerializer, Serializers.JsonSerializer>();
-
-            services.AddScoped<IQueryableFactory>(sp =>
-            {
-                var options = sp.GetRequiredService<IDbContextOptions>();
-                var extension = options.FindExtension<QueryableValuesSqlServerExtension>() ?? throw new InvalidOperationException();
-
-                switch (extension.Options.WithSerializationOptions)
-                {
-                    case SerializationOptions.UseJson:
-                        {
-                            var serializer = sp.GetRequiredService<Serializers.IJsonSerializer>();
-                            return new SqlServer.JsonQueryableFactory(serializer, extension.Options);
-                        }
-                    case SerializationOptions.UseXml:
-                        {
-                            var serializer = sp.GetRequiredService<Serializers.IXmlSerializer>();
-                            return new SqlServer.XmlQueryableFactory(serializer, extension.Options);
-                        }
-                    default:
-                        throw new NotImplementedException();
-                }
-            });
+            services.AddScoped<SqlServer.XmlQueryableFactory>();
+            services.AddScoped<SqlServer.JsonQueryableFactory>();
+            services.AddScoped<SqlServer.QueryableFactoryFactory>();
         }
 
         public void Validate(IDbContextOptions options)
@@ -95,11 +76,11 @@ namespace BlazarTech.QueryableValues
             {
             }
 
-#if EFCORE6 || EFCORE7 
+#if EFCORE3 || EFCORE5
+            public override long GetServiceProviderHashCode() => 0;
+#else
             public override int GetServiceProviderHashCode() => 0;
             public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other) => true;
-#else
-            public override long GetServiceProviderHashCode() => 0;
 #endif
         }
     }

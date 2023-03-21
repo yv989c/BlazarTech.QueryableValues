@@ -2,6 +2,7 @@
 using BlazarTech.QueryableValues.Builders;
 using BlazarTech.QueryableValues.Serializers;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,8 +11,8 @@ namespace BlazarTech.QueryableValues.SqlServer
 {
     internal sealed class XmlQueryableFactory : QueryableFactory
     {
-        public XmlQueryableFactory(IXmlSerializer serializer, QueryableValuesSqlServerOptions options)
-            : base(serializer, options)
+        public XmlQueryableFactory(IXmlSerializer serializer, IDbContextOptions dbContextOptions)
+            : base(serializer, dbContextOptions)
         {
         }
 

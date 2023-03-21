@@ -3,6 +3,7 @@ using BlazarTech.QueryableValues.Builders;
 using BlazarTech.QueryableValues.Serializers;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.ObjectPool;
 using System;
 using System.Collections.Concurrent;
@@ -33,20 +34,22 @@ namespace BlazarTech.QueryableValues.SqlServer
         private readonly ISerializer _serializer;
         private readonly QueryableValuesSqlServerOptions _options;
 
-        public QueryableFactory(ISerializer serializer, QueryableValuesSqlServerOptions options)
+        public QueryableFactory(ISerializer serializer, IDbContextOptions dbContextOptions)
         {
             if (serializer is null)
             {
                 throw new ArgumentNullException(nameof(serializer));
             }
 
-            if (options is null)
+            if (dbContextOptions is null)
             {
-                throw new ArgumentNullException(nameof(options));
+                throw new ArgumentNullException(nameof(dbContextOptions));
             }
 
+            var extension = dbContextOptions.FindExtension<QueryableValuesSqlServerExtension>() ?? throw new InvalidOperationException($"{nameof(QueryableValuesSqlServerExtension)} not found.");
+
             _serializer = serializer;
-            _options = options;
+            _options = extension.Options;
         }
 
         /// <summary>
