@@ -1,5 +1,6 @@
 ﻿#if TESTS
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
@@ -18,11 +19,17 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
     public class MyDbContext : MyDbContextBase, IMyDbContext
     {
-        public MyDbContext() : base(DatabaseName.Name) { }
+        public QueryableValuesSqlServerOptions Options { get; }
+
+        public MyDbContext() : base(DatabaseName.Name)
+        {
+            Options = this.GetService<IDbContextOptions>().FindExtension<QueryableValuesSqlServerExtension>()!.Options;
+        }
     }
 
     public interface IMyDbContext : IQueryableValuesEnabledDbContext
     {
+        QueryableValuesSqlServerOptions Options { get; }
         DbSet<TestDataEntity> TestData { get; set; }
     }
 
