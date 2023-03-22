@@ -8,15 +8,13 @@ using Xunit;
 
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
-    [Collection("DbContext")]
-    public class SimpleTypeTests
+    public abstract class SimpleTypeTests
     {
-        private readonly IMyDbContext _db;
+        protected readonly IMyDbContext _db;
 
         public SimpleTypeTests(DbContextFixture contextFixture)
         {
             _db = contextFixture.Db;
-            //_db.Options.Serialization(SerializationOptions.UseJson);
         }
 
         [Fact]
@@ -729,6 +727,24 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 var actualItemCount = await _db.AsQueryableValues<T>(values).CountAsync();
                 Assert.Equal(expectedItemCount, actualItemCount);
             }
+        }
+    }
+
+    [Collection("DbContext")]
+    public class JsonSimpleTypeTests : SimpleTypeTests
+    {
+        public JsonSimpleTypeTests(DbContextFixture contextFixture) : base(contextFixture)
+        {
+            _db.Options.Serialization(SerializationOptions.UseJson);
+        }
+    }
+
+    [Collection("DbContext")]
+    public class XmlSimpleTypeTests : SimpleTypeTests
+    {
+        public XmlSimpleTypeTests(DbContextFixture contextFixture) : base(contextFixture)
+        {
+            _db.Options.Serialization(SerializationOptions.UseXml);
         }
     }
 }

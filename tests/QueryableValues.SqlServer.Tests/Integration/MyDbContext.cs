@@ -21,7 +21,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     {
         public QueryableValuesSqlServerOptions Options { get; }
 
-        public MyDbContext() : base(DatabaseName.Name)
+        public MyDbContext(bool useSelectTopOptimization = true) : base(DatabaseName.Name, useSelectTopOptimization: useSelectTopOptimization)
         {
             Options = this.GetService<IDbContextOptions>().FindExtension<QueryableValuesSqlServerExtension>()!.Options;
         }
@@ -38,9 +38,9 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public NotConfiguredDbContext() : base(DatabaseName.Name, useQueryableValues: false) { }
     }
 
-    public class NotOptimizedDbContext : MyDbContextBase
+    public class NotOptimizedMyDbContext : MyDbContext
     {
-        public NotOptimizedDbContext() : base(DatabaseName.Name, useSelectTopOptimization: false) { }
+        public NotOptimizedMyDbContext() : base(useSelectTopOptimization: false) { }
     }
 }
 #endif

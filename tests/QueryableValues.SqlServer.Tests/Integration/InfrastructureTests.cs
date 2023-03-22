@@ -1,5 +1,6 @@
 ﻿#if TESTS && TEST_ALL
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -54,19 +55,23 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
 #if !EFCORE3
-        [Fact]
-        public async Task MustControlSelectTopOptimization()
+        [Theory]
+        [InlineData(SerializationOptions.UseJson)]
+        [InlineData(SerializationOptions.UseXml)]
+        public async Task MustControlSelectTopOptimization(SerializationOptions serializationOptions)
         {
             var services = new ServiceCollection();
             services.AddDbContext<MyDbContext>();
-            services.AddDbContext<NotOptimizedDbContext>();
+            services.AddDbContext<NotOptimizedMyDbContext>();
             using var serviceProvider = services.BuildServiceProvider();
 
             var optimizedDb = serviceProvider.GetRequiredService<MyDbContext>();
+            optimizedDb.Options.Serialization(serializationOptions);
             Assert.True(await isOptimizationEnabledSimpleType(optimizedDb));
             Assert.True(await isOptimizationEnabledComplexType(optimizedDb));
 
-            var notOptimizedDb = serviceProvider.GetRequiredService<NotOptimizedDbContext>();
+            var notOptimizedDb = serviceProvider.GetRequiredService<NotOptimizedMyDbContext>();
+            notOptimizedDb.Options.Serialization(serializationOptions);
             Assert.False(await isOptimizationEnabledComplexType(notOptimizedDb));
             Assert.False(await isOptimizationEnabledSimpleType(notOptimizedDb));
 
@@ -98,6 +103,36 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             }
         }
 #endif
+
+        [Theory]
+        [InlineData(SerializationOptions.UseJson)]
+        [InlineData(SerializationOptions.UseXml)]
+        public void MustCreateQueryableFactory(SerializationOptions serializationOptions)
+        {
+            var services = new ServiceCollection();
+            services.AddDbContext<MyDbContext>();
+
+            using var serviceProvider = services.BuildServiceProvider();
+
+            var dbContext = serviceProvider.GetRequiredService<MyDbContext>();
+            dbContext.Options.Serialization(serializationOptions);
+
+            var queryableFactory = dbContext.GetService<QueryableFactoryFactory>().Create();
+
+            Assert.NotNull(queryableFactory);
+
+            switch (serializationOptions)
+            {
+                case SerializationOptions.UseJson:
+                    Assert.IsType<JsonQueryableFactory>(queryableFactory);
+                    break;
+                case SerializationOptions.UseXml:
+                    Assert.IsType<XmlQueryableFactory>(queryableFactory);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+        }
     }
 
     class NotADbContext : IQueryableValuesEnabledDbContext
