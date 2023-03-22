@@ -42,7 +42,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             var sqlTypeArguments = precisionScale.HasValue ? $"({precisionScale.Value.Precision},{precisionScale.Value.Scale})" : null;
 
             sql =
-                $"{sqlPrefix} I.value('. cast as xs:{xmlType}?', '{sqlType}{sqlTypeArguments}') AS V " +
+                $"{sqlPrefix} I.value('. cast as xs:{xmlType}?', '{sqlType}{sqlTypeArguments}') [V] " +
                 "FROM {0}.nodes('/R/V') N(I)";
 
             SqlCache.TryAdd(cacheKey, sql);

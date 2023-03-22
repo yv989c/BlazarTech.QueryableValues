@@ -41,7 +41,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             var sqlTypeArguments = precisionScale.HasValue ? $"({precisionScale.Value.Precision},{precisionScale.Value.Scale})" : null;
 
             sql =
-                $"{sqlPrefix} V " +
+                $"{sqlPrefix} [V] " +
                 $"FROM OPENJSON({{0}}) WITH ([V] {sqlType}{sqlTypeArguments} '$')";
 
             SqlCache.TryAdd(cacheKey, sql);
@@ -138,7 +138,6 @@ namespace BlazarTech.QueryableValues.SqlServer
 
                 sb.AppendLine();
                 sb.Append("FROM OPENJSON({0}) WITH (");
-                sb.AppendLine();
 
                 for (var i = 0; i < mappings.Count; i++)
                 {
@@ -147,12 +146,12 @@ namespace BlazarTech.QueryableValues.SqlServer
 
                     if (i > 0)
                     {
-                        sb.Append(',').AppendLine();
+                        sb.Append(", ");
                     }
 
                     var targetName = mapping.Target.Name;
 
-                    sb.Append("\t[").Append(targetName).Append("] ");
+                    sb.Append('[').Append(targetName).Append("] ");
 
                     switch (mapping.TypeName)
                     {
@@ -217,7 +216,6 @@ namespace BlazarTech.QueryableValues.SqlServer
                     }
                 }
 
-                sb.AppendLine();
                 sb.Append(')');
 
                 return sb.ToString();
