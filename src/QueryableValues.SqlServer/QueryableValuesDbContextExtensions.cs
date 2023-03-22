@@ -14,20 +14,6 @@ namespace BlazarTech.QueryableValues
     /// </summary>
     public static class QueryableValuesDbContextExtensions
     {
-        private static void EnsureConfigured(DbContext dbContext)
-        {
-            var options = dbContext.GetService<IDbContextOptions>();
-            var extension = options.FindExtension<QueryableValuesSqlServerExtension>();
-
-            if (extension is null)
-            {
-                var message = $"{nameof(QueryableValues)} have not been configured for {dbContext.GetType().Name}. " +
-                    "More info: https://github.com/yv989c/BlazarTech.QueryableValues#configuration";
-
-                throw new InvalidOperationException(message);
-            }
-        }
-
         private static void ValidateParameters<T>(DbContext dbContext, IEnumerable<T> values)
         {
             if (dbContext is null)
@@ -39,13 +25,21 @@ namespace BlazarTech.QueryableValues
             {
                 throw new ArgumentNullException(nameof(values));
             }
-
-            EnsureConfigured(dbContext);
         }
 
         private static IQueryableFactory GetQueryableFactory(DbContext dbContext)
         {
-            return dbContext.GetService<QueryableFactoryFactory>().Create();
+            try
+            {
+                return dbContext.GetService<QueryableFactoryFactory>()?.Create() ?? throw new InvalidOperationException();
+            }
+            catch (InvalidOperationException)
+            {
+                var message = $"{nameof(QueryableValues)} have not been configured for {dbContext.GetType().Name}. " +
+                    "More info: https://github.com/yv989c/BlazarTech.QueryableValues#configuration";
+
+                throw new InvalidOperationException(message);
+            }
         }
 
         /// <summary>

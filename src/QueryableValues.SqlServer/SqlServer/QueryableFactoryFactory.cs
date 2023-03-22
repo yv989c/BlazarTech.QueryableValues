@@ -12,9 +12,8 @@ namespace BlazarTech.QueryableValues.SqlServer
 
         public QueryableFactoryFactory(IServiceProvider serviceProvider, IDbContextOptions dbContextOptions)
         {
-            var extension = dbContextOptions.FindExtension<QueryableValuesSqlServerExtension>() ?? throw new InvalidOperationException($"{nameof(QueryableValuesSqlServerExtension)} not found.");
-            _options = extension.Options;
             _serviceProvider = serviceProvider;
+            _options = (dbContextOptions.FindExtension<QueryableValuesSqlServerExtension>()?.Options) ?? throw new InvalidOperationException();
         }
 
         public IQueryableFactory Create()
