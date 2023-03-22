@@ -33,6 +33,7 @@ namespace BlazarTech.QueryableValues.SqlServer
 
         private readonly ISerializer _serializer;
         private readonly QueryableValuesSqlServerOptions _options;
+        private readonly string _cacheScopeName;
 
         public QueryableFactory(ISerializer serializer, IDbContextOptions dbContextOptions)
         {
@@ -50,6 +51,16 @@ namespace BlazarTech.QueryableValues.SqlServer
 
             _serializer = serializer;
             _options = extension.Options;
+            _cacheScopeName = GetType().Name ?? throw new InvalidOperationException();
+        }
+
+        protected object GetCacheKey(object properties)
+        {
+            return new
+            {
+                Scope = _cacheScopeName,
+                Properties = properties
+            };
         }
 
         /// <summary>
@@ -264,11 +275,13 @@ namespace BlazarTech.QueryableValues.SqlServer
                     entityOptions = new EntityOptionsBuilder<TSource>();
                 }
 
-                var cacheKey = new
+                var cacheKeyProperties = new
                 {
                     Options = entityOptions,
                     UseSelectTopOptimization = useSelectTopOptimization
                 };
+
+                var cacheKey = GetCacheKey(cacheKeyProperties);
 
                 if (SqlCache.TryGetValue(cacheKey, out string? sqlFromCache))
                 {

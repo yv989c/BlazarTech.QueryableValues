@@ -25,13 +25,15 @@ namespace BlazarTech.QueryableValues.SqlServer
             where T : notnull
         {
             var useSelectTopOptimization = UseSelectTopOptimization(deferredValues);
-            var cacheKey = new
+            var cacheKeyProperties = new
             {
                 XmlType = xmlType,
                 SqlType = sqlType,
                 UseSelectTopOptimization = useSelectTopOptimization,
                 PrecisionScale = precisionScale
             };
+
+            var cacheKey = GetCacheKey(cacheKeyProperties);
 
             if (SqlCache.TryGetValue(cacheKey, out string? sql))
             {
