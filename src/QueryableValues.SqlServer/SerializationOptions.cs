@@ -6,6 +6,14 @@
     public enum SerializationOptions
     {
         /// <summary>
+        /// Use the JSON serializer if possible; otherwise, it will use XML.
+        /// </summary>
+        /// <remarks>
+        /// This option causes an additional roundtrip to the database to check if JSON serialization is supported. This only happens once per connection string uniqueness.
+        /// </remarks>
+        Auto = 0,
+
+        /// <summary>
         /// Use the JSON serializer.
         /// </summary>
         /// <remarks>

@@ -1,4 +1,5 @@
 ﻿#if EFCORE
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -53,6 +54,7 @@ namespace BlazarTech.QueryableValues
             services.AddScoped<SqlServer.XmlQueryableFactory>();
             services.AddScoped<SqlServer.JsonQueryableFactory>();
             services.AddScoped<SqlServer.QueryableFactoryFactory>();
+            services.AddScoped<IInterceptor, SqlServer.JsonSupportConnectionInterceptor>();
         }
 
         public void Validate(IDbContextOptions options)

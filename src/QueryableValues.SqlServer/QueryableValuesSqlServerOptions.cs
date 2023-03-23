@@ -10,7 +10,7 @@ namespace BlazarTech.QueryableValues
     {
         internal bool WithUseSelectTopOptimization { get; private set; } = true;
         internal bool WithUseDeferredEnumeration { get; private set; } = true;
-        internal SerializationOptions WithSerializationOptions { get; private set; } = SerializationOptions.UseXml;
+        internal SerializationOptions WithSerializationOptions { get; private set; } = SerializationOptions.Auto;
 
         /// <summary>
         /// When possible, uses a <c>TOP(n)</c> clause in the underlying <c>SELECT</c> statement to assist SQL Server memory grant estimation. The default is <see langword="true"/>.
@@ -28,11 +28,11 @@ namespace BlazarTech.QueryableValues
         }
 
         /// <summary>
-        /// Configures serialization options. The default is <see cref="SerializationOptions.UseXml"/>.
+        /// Configures serialization options. The default is <see cref="SerializationOptions.Auto"/>.
         /// </summary>
         /// <param name="options">Serialization options.</param>
         /// <returns>The same <see cref="QueryableValuesSqlServerOptions"/> instance so subsequent configurations can be chained.</returns>
-        public QueryableValuesSqlServerOptions Serialization(SerializationOptions options = SerializationOptions.UseXml)
+        public QueryableValuesSqlServerOptions Serialization(SerializationOptions options = SerializationOptions.Auto)
         {
             if (Enum.IsDefined(typeof(SerializationOptions), options))
             {

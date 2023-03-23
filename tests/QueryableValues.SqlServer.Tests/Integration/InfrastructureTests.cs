@@ -107,6 +107,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         [Theory]
         [InlineData(SerializationOptions.UseJson)]
         [InlineData(SerializationOptions.UseXml)]
+        [InlineData(SerializationOptions.Auto)]
         public void MustCreateQueryableFactory(SerializationOptions serializationOptions)
         {
             var services = new ServiceCollection();
@@ -117,13 +118,14 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             var dbContext = serviceProvider.GetRequiredService<MyDbContext>();
             dbContext.Options.Serialization(serializationOptions);
 
-            var queryableFactory = dbContext.GetService<QueryableFactoryFactory>().Create();
+            var queryableFactory = dbContext.GetService<QueryableFactoryFactory>().Create(dbContext);
 
             Assert.NotNull(queryableFactory);
 
             switch (serializationOptions)
             {
                 case SerializationOptions.UseJson:
+                case SerializationOptions.Auto:
                     Assert.IsType<JsonQueryableFactory>(queryableFactory);
                     break;
                 case SerializationOptions.UseXml:

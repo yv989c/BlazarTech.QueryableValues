@@ -1,4 +1,5 @@
 ﻿#if EFCORE
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -16,9 +17,17 @@ namespace BlazarTech.QueryableValues.SqlServer
             _options = (dbContextOptions.FindExtension<QueryableValuesSqlServerExtension>()?.Options) ?? throw new InvalidOperationException();
         }
 
-        public IQueryableFactory Create()
+        public IQueryableFactory Create(DbContext dbContext)
         {
-            if (_options.WithSerializationOptions == SerializationOptions.UseJson)
+            var useJson = _options.WithSerializationOptions switch
+            {
+                SerializationOptions.Auto => JsonSupportConnectionInterceptor.HasJsonSupport(dbContext),
+                SerializationOptions.UseJson => true,
+                SerializationOptions.UseXml => false,
+                _ => throw new NotImplementedException(),
+            };
+
+            if (useJson)
             {
                 return _serviceProvider.GetRequiredService<JsonQueryableFactory>();
             }

@@ -31,7 +31,7 @@ namespace BlazarTech.QueryableValues
         {
             try
             {
-                return dbContext.GetService<QueryableFactoryFactory>()?.Create() ?? throw new InvalidOperationException();
+                return dbContext.GetService<QueryableFactoryFactory>()?.Create(dbContext) ?? throw new InvalidOperationException();
             }
             catch (InvalidOperationException)
             {
