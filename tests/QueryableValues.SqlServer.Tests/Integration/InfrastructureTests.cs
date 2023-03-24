@@ -159,6 +159,32 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 }
             }
         }
+
+        [Fact]
+        public async Task MustDetectJsonSupport()
+        {
+            var services = new ServiceCollection();
+            services.AddDbContext<MyDbContext>();
+
+            using var serviceProvider = services.BuildServiceProvider();
+
+            var db = serviceProvider.GetRequiredService<MyDbContext>();
+
+            forceJsonDetection();
+            Assert.False(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+            await db.TestData.FirstAsync();
+            Assert.True(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+
+            forceJsonDetection();
+            Assert.False(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+            db.TestData.First();
+            Assert.True(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+
+            void forceJsonDetection()
+            {
+                db.Database.SetConnectionString(db.Database.GetConnectionString() + ";");
+            }
+        }
 #endif
 
         [Theory]
