@@ -102,6 +102,63 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 return Regex.IsMatch(logEntry, @"SELECT TOP\(@\w+\)\s");
             }
         }
+
+        [Theory]
+        [InlineData(SerializationOptions.UseJson)]
+        [InlineData(SerializationOptions.UseXml)]
+        public async Task MustControlSerializationFormat(SerializationOptions serializationOptions)
+        {
+            var services = new ServiceCollection();
+            services.AddDbContext<MyDbContext>();
+
+            using var serviceProvider = services.BuildServiceProvider();
+
+            var db = serviceProvider.GetRequiredService<MyDbContext>();
+            db.Options.Serialization(serializationOptions);
+
+            Assert.True(await isRightSerializationFormatSimpleType(db));
+            Assert.True(await isRightSerializationFormatComplexType(db));
+
+            async Task<bool> isRightSerializationFormatSimpleType(MyDbContextBase db)
+            {
+                var values = new[] { 1, 2, 3 };
+                var logEntries = new List<string>();
+                db.LogEntryEmitted += logEntry => logEntries.Add(logEntry);
+                var result = await db.AsQueryableValues(values).ToListAsync();
+                Assert.Equal(values.Length, result.Count);
+                var logEntry = logEntries.Single(i => i.Contains("RelationalEventId.CommandExecuted"));
+                return isRightFormat(logEntry);
+            }
+
+            async Task<bool> isRightSerializationFormatComplexType(MyDbContextBase db)
+            {
+                var values = new[]
+                {
+                    new { Id = 1 },
+                    new { Id = 2 },
+                    new { Id = 3 }
+                };
+                var logEntries = new List<string>();
+                db.LogEntryEmitted += logEntry => logEntries.Add(logEntry);
+                var result = await db.AsQueryableValues(values).ToListAsync();
+                Assert.Equal(values.Length, result.Count);
+                var logEntry = logEntries.Single(i => i.Contains("RelationalEventId.CommandExecuted"));
+                return isRightFormat(logEntry);
+            }
+
+            bool isRightFormat(string logEntry)
+            {
+                switch (serializationOptions)
+                {
+                    case SerializationOptions.UseJson:
+                        return logEntry.Contains("OPENJSON(");
+                    case SerializationOptions.UseXml:
+                        return logEntry.Contains(".nodes(");
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+        }
 #endif
 
         [Theory]
