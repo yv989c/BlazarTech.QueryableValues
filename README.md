@@ -175,103 +175,120 @@ var myQuery =
 > :warning: There is a limit of up to 10 properties for any given simple type (e.g. cannot have more than 10 [Int32] properties). Exceeding that limit will cause an exception and may also suggest that you should rethink your strategy.
 
 # Benchmarks
-The following [benchmarks] consist of simple EF Core queries that have a dependency on a random sequence of [Int32] and [Guid] values via the `Contains` LINQ method. It shows the performance differences between not using and using QueryableValues. In practice, the benefits of using QueryableValues will be more dramatic on complex EF Core queries and busy environments.
+The following [benchmarks] consist of simple EF Core queries that have a dependency on a random sequence of [Int32], [Guid], and [String] values via the `Contains` LINQ method. It shows the performance differences between not using and using QueryableValues. In practice, the benefits of using QueryableValues are more dramatic on complex EF Core queries and busy environments.
 
 ### Benchmarked Libraries
 | Package | Version |
 | ------- |:-------:|
-| Microsoft.EntityFrameworkCore.SqlServer | 6.0.1 |
-| BlazarTech.QueryableValues.SqlServer | 6.3.0 |
+| Microsoft.EntityFrameworkCore.SqlServer | 7.0.4 |
+| BlazarTech.QueryableValues.SqlServer | 7.2.0 |
 
-### BenchmarkDotNet Configuration and System Specs
+### BenchmarkDotNet System Specs and Configuration
 ```
-BenchmarkDotNet=v0.13.1, OS=Windows 10.0.19042.1466 (20H2/October2020Update)
-Intel Core i7-8650U CPU 1.90GHz (Kaby Lake R), 1 CPU, 8 logical and 4 physical cores
-.NET SDK=6.0.101
-  [Host]     : .NET 6.0.1 (6.0.121.56705), X64 RyuJIT
-  Job-GMTUEM : .NET 6.0.1 (6.0.121.56705), X64 RyuJIT
+BenchmarkDotNet=v0.13.5, OS=Windows 11 (10.0.22621.1413/22H2/2022Update/SunValley2)
+AMD Ryzen 9 6900HS Creator Edition, 1 CPU, 16 logical and 8 physical cores
+.NET SDK=7.0.202
+  [Host]     : .NET 6.0.15 (6.0.1523.11507), X64 RyuJIT AVX2
+  Job-OFVMJD : .NET 6.0.15 (6.0.1523.11507), X64 RyuJIT AVX2
 
 Server=True  InvocationCount=200  IterationCount=25
 RunStrategy=Monitoring  UnrollFactor=1  WarmupCount=1
 ```
 ### SQL Server Instance Specs
 ```
-Microsoft SQL Server 2017 (RTM-GDR) (KB4583456) - 14.0.2037.2 (X64)
-Nov  2 2020 19:19:59
-Copyright (C) 2017 Microsoft Corporation
-Express Edition (64-bit) on Windows 10 Pro 10.0 <X64> (Build 19042: ) (Hypervisor)
+Microsoft SQL Server 2022 (RTM) - 16.0.1000.6 (X64)
+Oct  8 2022 05:58:25
+Copyright (C) 2022 Microsoft Corporation
+Express Edition (64-bit) on Windows 10 Pro 10.0 <X64> (Build 22621: ) (Hypervisor)
 ```
-- The SQL Server instance was running in the same system where the benchmark was executed.
+- The SQL Server instance was running in the same system where the benchmarks were executed.
 - Shared Memory is the only network protocol that's enabled on this instance.
 
+### Query Duration - Without vs. With (XML) vs. With (JSON)
 
-### Results for Int32
+**Legend:**
 
-![Benchmarks Int32 Values][BenchmarksInt32]
+- **Without:** Plain EF.
+- **With (XML):** EF with QueryableValues using the XML serializer.
+- **With (JSON):** EF with QueryableValues using the JSON serializer.
 
-<details>
-
-| Method  | Values |  Mean (us)   |  Error (us)  |  Std Dev (us)  |  Median (us)  | Ratio | RatioSD | Allocated | 
-|---------|--------|--------------|--------------|----------------|---------------|-------|---------|-----------| 
-| Without | 2      |  921.20      |  31.30       |  41.78         |  903.80       | 1.00  | 0.00    | 20 KB     | 
-| With    | 2      |  734.30      |  45.28       |  60.44         |  696.10       | 0.80  | 0.04    | 51 KB     | 
-| Without | 4      |  997.80      |  31.79       |  42.44         |  981.10       | 1.00  | 0.00    | 21 KB     | 
-| With    | 4      |  779.40      |  47.22       |  63.04         |  738.70       | 0.78  | 0.05    | 51 KB     | 
-| Without | 8      |  1,081.00    |  31.26       |  41.74         |  1,061.30     | 1.00  | 0.00    | 21 KB     | 
-| With    | 8      |  814.20      |  47.34       |  63.20         |  775.70       | 0.75  | 0.04    | 51 KB     | 
-| Without | 16     |  1,331.70    |  88.81       |  118.56        |  1,283.40     | 1.00  | 0.00    | 23 KB     | 
-| With    | 16     |  872.70      |  42.46       |  56.68         |  840.30       | 0.66  | 0.06    | 52 KB     | 
-| Without | 32     |  1,731.40    |  40.59       |  54.18         |  1,732.60     | 1.00  | 0.00    | 26 KB     | 
-| With    | 32     |  1,006.00    |  47.61       |  63.56         |  973.60       | 0.58  | 0.03    | 53 KB     | 
-| Without | 64     |  2,615.40    |  103.77      |  138.53        |  2,540.20     | 1.00  | 0.00    | 31 KB     | 
-| With    | 64     |  1,264.20    |  36.95       |  49.33         |  1,239.90     | 0.48  | 0.03    | 55 KB     | 
-| Without | 128    |  5,687.30    |  200.05      |  267.06        |  5,588.20     | 1.00  | 0.00    | 41 KB     | 
-| With    | 128    |  1,917.00    |  34.06       |  45.47         |  1,897.90     | 0.34  | 0.02    | 60 KB     | 
-| Without | 256    |  10,565.00   |  186.05      |  248.37        |  10,473.00    | 1.00  | 0.00    | 63 KB     | 
-| With    | 256    |  2,977.00    |  29.38       |  39.23         |  2,964.50     | 0.28  | 0.01    | 69 KB     | 
-| Without | 512    |  20,110.50   |  452.28      |  603.79        |  20,108.30    | 1.00  | 0.00    | 106 KB    | 
-| With    | 512    |  5,313.10    |  47.66       |  63.62         |  5,340.80     | 0.26  | 0.01    | 88 KB     | 
-| Without | 1024   |  46,599.30   |  4,286.13    |  5,721.87      |  48,194.20    | 1.00  | 0.00    | 192 KB    | 
-| With    | 1024   |  11,614.40   |  85.81       |  114.55        |  11,619.80    | 0.25  | 0.03    | 128 KB    | 
-| Without | 2048   |  105,096.90  |  5,359.60    |  7,154.92      |  106,405.10   | 1.00  | 0.00    | 363 KB    | 
-| With    | 2048   |  19,481.40   |  66.66       |  88.99         |  19,474.80    | 0.19  | 0.01    | 213 KB    | 
-| Without | 4096   |  177,245.80  |  1,812.40    |  2,419.51      |  176,767.90   | 1.00  | 0.00    | 706 KB    | 
-| With    | 4096   |  38,743.00   |  2,422.07    |  3,233.40      |  37,414.70    | 0.22  | 0.02    | 368 KB    | 
-
-</details>
-
-### Results for Guid
-
-![Benchmarks Guid Values][BenchmarksGuid]
+![BenchmarksChart][BenchmarksChart]
 
 <details>
 
-| Method  | Values |  Mean (us)   |  Error (us)  |  Std Dev (us)  |  Median (us)  | Ratio | RatioSD | Allocated | 
-|---------|--------|--------------|--------------|----------------|---------------|-------|---------|-----------| 
-| Without | 2      |  895.60      |  30.64       |  40.91         |  877.90       | 1.00  | 0.00    | 21 KB     | 
-| With    | 2      |  741.80      |  46.44       |  62.00         |  704.40       | 0.83  | 0.04    | 51 KB     | 
-| Without | 4      |  968.90      |  33.69       |  44.97         |  950.40       | 1.00  | 0.00    | 22 KB     | 
-| With    | 4      |  727.00      |  43.20       |  57.68         |  689.80       | 0.75  | 0.04    | 52 KB     | 
-| Without | 8      |  1,075.50    |  34.88       |  46.57         |  1,054.90     | 1.00  | 0.00    | 23 KB     | 
-| With    | 8      |  773.10      |  42.45       |  56.67         |  737.10       | 0.72  | 0.04    | 53 KB     | 
-| Without | 16     |  1,372.60    |  66.21       |  88.39         |  1,383.80     | 1.00  | 0.00    | 26 KB     | 
-| With    | 16     |  808.90      |  40.12       |  53.55         |  777.80       | 0.59  | 0.06    | 55 KB     | 
-| Without | 32     |  1,710.70    |  26.25       |  35.04         |  1,699.90     | 1.00  | 0.00    | 33 KB     | 
-| With    | 32     |  869.80      |  49.27       |  65.78         |  830.40       | 0.51  | 0.03    | 59 KB     | 
-| Without | 64     |  2,656.60    |  30.28       |  40.43         |  2,652.30     | 1.00  | 0.00    | 47 KB     | 
-| With    | 64     |  1,038.70    |  58.99       |  78.75         |  994.40       | 0.39  | 0.03    | 67 KB     | 
-| Without | 128    |  5,415.90    |  45.76       |  61.09         |  5,417.00     | 1.00  | 0.00    | 74 KB     | 
-| With    | 128    |  1,456.30    |  53.76       |  71.77         |  1,424.10     | 0.27  | 0.02    | 84 KB     | 
-| Without | 256    |  9,461.50    |  45.09       |  60.20         |  9,469.10     | 1.00  | 0.00    | 128 KB    | 
-| With    | 256    |  2,156.00    |  36.01       |  48.07         |  2,139.30     | 0.23  | 0.00    | 120 KB    | 
-| Without | 512    |  18,015.10   |  117.47      |  156.82        |  17,946.50    | 1.00  | 0.00    | 219 KB    | 
-| With    | 512    |  3,511.30    |  62.41       |  83.32         |  3,460.80     | 0.19  | 0.00    | 197 KB    | 
-| Without | 1024   |  44,525.60   |  754.94      |  1,007.82      |  44,601.80    | 1.00  | 0.00    | 419 KB    | 
-| With    | 1024   |  7,825.80    |  72.45       |  96.72         |  7,808.20     | 0.18  | 0.00    | 319 KB    | 
-| Without | 2048   |  83,843.30   |  778.80      |  1,039.68      |  83,954.70    | 1.00  | 0.00    | 801 KB    | 
-| With    | 2048   |  12,372.40   |  207.91      |  277.55        |  12,232.20    | 0.15  | 0.00    | 596 KB    | 
-| Without | 4096   |  217,255.80  |  3,458.95    |  4,617.60      |  216,353.20   | 1.00  | 0.00    | 1,566 KB  | 
-| With    | 4096   |  24,981.10   |  274.10      |  365.92        |  25,116.70    | 0.12  | 0.00    | 1,132 KB  | 
+|   Method |   Type | NumberOfValues |         Mean |     Error |    StdDev |       Median | Ratio | RatioSD |   Gen0 |   Gen1 |   Gen2 |  Allocated | Alloc Ratio |
+|--------- |------- |--------------- |-------------:|----------:|----------:|-------------:|------:|--------:|-------:|-------:|-------:|-----------:|------------:|
+|  Without |  Int32 |              2 |     824.3 us |  26.03 us |  34.75 us |     808.9 us |  1.00 |    0.00 |      - |      - |      - |   20.26 KB |        1.00 |
+|  WithXml |  Int32 |              2 |     508.7 us |  32.46 us |  43.34 us |     504.3 us |  0.62 |    0.04 |      - |      - |      - |   41.37 KB |        2.04 |
+| WithJson |  Int32 |              2 |     431.7 us |  35.52 us |  47.41 us |     446.8 us |  0.52 |    0.05 |      - |      - |      - |    41.5 KB |        2.05 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |  Int32 |              8 |     964.8 us |  25.05 us |  33.44 us |     954.6 us |  1.00 |    0.00 |      - |      - |      - |   21.17 KB |        1.00 |
+|  WithXml |  Int32 |              8 |     548.2 us |  34.29 us |  45.78 us |     537.0 us |  0.57 |    0.04 |      - |      - |      - |   41.33 KB |        1.95 |
+| WithJson |  Int32 |              8 |     445.1 us |  34.28 us |  45.76 us |     453.6 us |  0.46 |    0.04 |      - |      - |      - |   41.56 KB |        1.96 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |  Int32 |             32 |   1,519.3 us |  34.23 us |  45.69 us |   1,494.4 us |  1.00 |    0.00 |      - |      - |      - |   25.45 KB |        1.00 |
+|  WithXml |  Int32 |             32 |     687.5 us |  32.29 us |  43.10 us |     664.9 us |  0.45 |    0.03 |      - |      - |      - |   41.52 KB |        1.63 |
+| WithJson |  Int32 |             32 |     448.1 us |  38.22 us |  51.03 us |     425.9 us |  0.30 |    0.04 |      - |      - |      - |   41.61 KB |        1.63 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |  Int32 |            128 |   5,470.2 us |  25.34 us |  33.83 us |   5,473.2 us |  1.00 |    0.00 |      - |      - |      - |   41.18 KB |        1.00 |
+|  WithXml |  Int32 |            128 |   1,334.4 us |  37.80 us |  50.47 us |   1,316.5 us |  0.24 |    0.01 |      - |      - |      - |   44.02 KB |        1.07 |
+| WithJson |  Int32 |            128 |     498.9 us |  33.69 us |  44.97 us |     498.1 us |  0.09 |    0.01 |      - |      - |      - |   42.53 KB |        1.03 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |  Int32 |            512 |  17,572.2 us |  68.50 us |  91.45 us |  17,566.4 us |  1.00 |    0.00 |      - |      - |      - |  105.67 KB |        1.00 |
+|  WithXml |  Int32 |            512 |   4,016.2 us |  30.74 us |  41.04 us |   4,014.4 us |  0.23 |    0.00 |      - |      - |      - |   52.18 KB |        0.49 |
+| WithJson |  Int32 |            512 |     685.0 us |  30.40 us |  40.59 us |     661.9 us |  0.04 |    0.00 |      - |      - |      - |   46.37 KB |        0.44 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |  Int32 |           2048 |  71,616.8 us | 677.00 us | 903.77 us |  71,227.6 us |  1.00 |    0.00 |      - |      - |      - |  363.17 KB |        1.00 |
+|  WithXml |  Int32 |           2048 |  14,045.8 us |  50.55 us |  67.48 us |  14,029.9 us |  0.20 |    0.00 |      - |      - |      - |   84.85 KB |        0.23 |
+| WithJson |  Int32 |           2048 |   1,577.1 us |  32.17 us |  42.95 us |   1,564.8 us |  0.02 |    0.00 |      - |      - |      - |   61.07 KB |        0.17 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |   Guid |              2 |     788.9 us |  20.31 us |  27.11 us |     778.1 us |  1.00 |    0.00 |      - |      - |      - |   20.74 KB |        1.00 |
+|  WithXml |   Guid |              2 |     487.6 us |  30.51 us |  40.74 us |     487.7 us |  0.62 |    0.04 |      - |      - |      - |   41.23 KB |        1.99 |
+| WithJson |   Guid |              2 |     434.7 us |  33.42 us |  44.61 us |     443.3 us |  0.55 |    0.04 |      - |      - |      - |   41.19 KB |        1.99 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |   Guid |              8 |     939.1 us |  29.24 us |  39.04 us |     921.1 us |  1.00 |    0.00 |      - |      - |      - |   23.49 KB |        1.00 |
+|  WithXml |   Guid |              8 |     515.1 us |  32.95 us |  43.99 us |     509.2 us |  0.55 |    0.04 |      - |      - |      - |   42.23 KB |        1.80 |
+| WithJson |   Guid |              8 |     450.0 us |  33.55 us |  44.79 us |     461.4 us |  0.48 |    0.04 |      - |      - |      - |   41.98 KB |        1.79 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |   Guid |             32 |   1,566.2 us |  43.12 us |  57.56 us |   1,551.3 us |  1.00 |    0.00 |      - |      - |      - |   33.24 KB |        1.00 |
+|  WithXml |   Guid |             32 |     607.3 us |  33.01 us |  44.07 us |     587.0 us |  0.39 |    0.03 |      - |      - |      - |   43.58 KB |        1.31 |
+| WithJson |   Guid |             32 |     488.4 us |  32.86 us |  43.87 us |     487.3 us |  0.31 |    0.03 |      - |      - |      - |   43.48 KB |        1.31 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |   Guid |            128 |   5,140.0 us |  52.22 us |  69.71 us |   5,138.2 us |  1.00 |    0.00 |      - |      - |      - |   74.11 KB |        1.00 |
+|  WithXml |   Guid |            128 |     987.8 us |  37.30 us |  49.79 us |     965.0 us |  0.19 |    0.01 |      - |      - |      - |   51.97 KB |        0.70 |
+| WithJson |   Guid |            128 |     665.9 us |  38.37 us |  51.23 us |     636.8 us |  0.13 |    0.01 |      - |      - |      - |   51.12 KB |        0.69 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |   Guid |            512 |  16,031.0 us |  74.08 us |  98.89 us |  16,023.7 us |  1.00 |    0.00 |      - |      - |      - |   219.5 KB |        1.00 |
+|  WithXml |   Guid |            512 |   2,528.8 us |  38.80 us |  51.79 us |   2,517.7 us |  0.16 |    0.00 |      - |      - |      - |   84.36 KB |        0.38 |
+| WithJson |   Guid |            512 |   1,368.8 us |  22.42 us |  29.93 us |   1,355.1 us |  0.09 |    0.00 |      - |      - |      - |   80.08 KB |        0.36 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without |   Guid |           2048 |  71,956.6 us | 688.35 us | 918.93 us |  72,148.6 us |  1.00 |    0.00 |      - |      - |      - |  801.13 KB |        1.00 |
+|  WithXml |   Guid |           2048 |   9,399.9 us |  76.33 us | 101.90 us |   9,359.8 us |  0.13 |    0.00 | 5.0000 | 5.0000 | 5.0000 |  213.42 KB |        0.27 |
+| WithJson |   Guid |           2048 |   4,463.6 us |  36.90 us |  49.26 us |   4,442.6 us |  0.06 |    0.00 |      - |      - |      - |   197.4 KB |        0.25 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without | String |              2 |     858.7 us |  23.34 us |  31.16 us |     846.2 us |  1.00 |    0.00 |      - |      - |      - |   21.44 KB |        1.00 |
+|  WithXml | String |              2 |     637.4 us |  35.57 us |  47.48 us |     626.0 us |  0.74 |    0.04 |      - |      - |      - |   55.52 KB |        2.59 |
+| WithJson | String |              2 |     534.5 us |  30.81 us |  41.13 us |     528.7 us |  0.62 |    0.03 |      - |      - |      - |   42.83 KB |        2.00 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without | String |              8 |   1,028.9 us |  24.07 us |  32.13 us |   1,015.2 us |  1.00 |    0.00 |      - |      - |      - |   25.55 KB |        1.00 |
+|  WithXml | String |              8 |     737.8 us |  44.23 us |  59.05 us |     727.5 us |  0.72 |    0.04 |      - |      - |      - |   56.98 KB |        2.23 |
+| WithJson | String |              8 |     641.8 us |  34.63 us |  46.23 us |     640.1 us |  0.62 |    0.04 |      - |      - |      - |   43.64 KB |        1.71 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without | String |             32 |   1,692.5 us |  23.43 us |  31.27 us |   1,684.7 us |  1.00 |    0.00 |      - |      - |      - |   41.84 KB |        1.00 |
+|  WithXml | String |             32 |   1,016.7 us |  56.75 us |  75.76 us |     976.6 us |  0.60 |    0.04 |      - |      - |      - |   60.35 KB |        1.44 |
+| WithJson | String |             32 |     871.5 us |  39.02 us |  52.10 us |     843.8 us |  0.51 |    0.03 |      - |      - |      - |   47.29 KB |        1.13 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without | String |            128 |   7,665.5 us |  28.53 us |  38.09 us |   7,662.0 us |  1.00 |    0.00 |      - |      - |      - |  103.65 KB |        1.00 |
+|  WithXml | String |            128 |   2,392.2 us |  35.64 us |  47.57 us |   2,379.7 us |  0.31 |    0.01 |      - |      - |      - |   74.85 KB |        0.72 |
+| WithJson | String |            128 |   2,063.6 us |  26.61 us |  35.53 us |   2,063.5 us |  0.27 |    0.01 |      - |      - |      - |    61.2 KB |        0.59 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without | String |            512 |  26,444.7 us | 102.44 us | 136.75 us |  26,421.0 us |  1.00 |    0.00 |      - |      - |      - |  343.51 KB |        1.00 |
+|  WithXml | String |            512 |   8,134.2 us |  32.51 us |  43.41 us |   8,125.8 us |  0.31 |    0.00 |      - |      - |      - |  132.34 KB |        0.39 |
+| WithJson | String |            512 |   7,210.9 us |  33.10 us |  44.18 us |   7,199.6 us |  0.27 |    0.00 |      - |      - |      - |  116.42 KB |        0.34 |
+|          |        |                |              |           |           |              |       |         |        |        |        |            |             |
+|  Without | String |           2048 | 112,512.8 us | 443.78 us | 592.43 us | 112,461.1 us |  1.00 |    0.00 | 5.0000 |      - |      - | 1310.32 KB |        1.00 |
+|  WithXml | String |           2048 |  32,080.3 us | 138.18 us | 184.47 us |  32,075.1 us |  0.29 |    0.00 |      - |      - |      - |  361.05 KB |        0.28 |
+| WithJson | String |           2048 |  28,929.1 us |  84.67 us | 113.03 us |  28,917.8 us |  0.26 |    0.00 |      - |      - |      - |  336.47 KB |        0.26 |
 
 </details>
 
@@ -385,14 +402,17 @@ As expected, none of the queries in the orange section hit the cache. On the oth
 Now, focus your attention to the first query of the green section. Here you can observe that there's a cost associated with this technique, but this cost can be offset in the long run, especially when your queries are not trivial like the ones in these examples.
 
 ## What Makes This Work? 🤓
+
+> 🎉 QueryableValues now supports JSON serialization, which improves its performance compared to using XML. By default, QueryableValues will attempt to use JSON if it is supported.
+
 QueryableValues makes use of the XML parsing capabilities in SQL Server, which are available in all the supported versions of SQL Server to date. The provided sequence of values are serialized as XML and embedded in the underlying SQL query using a native XML parameter, then it uses SQL Server's XML type methods to project the query in a way that can be mapped by [Entity Framework Core].
 
 This is a technique that I have not seen being used by other popular libraries that aim to solve this problem. It is superior from a latency standpoint because it resolves the query with a single round trip to the database and most importantly, it preserves the query's [execution plan] even when the content of the XML is changed.
 
 ## One More Thing 👀
-The `AsQueryableValues` extension method allows you to treat a sequence of values as you normally would if these were another entity in your [DbContext]. The type returned by the extension is an [IQueryable&lt;T&gt;] that can be composed with other entities in your query.
+The `AsQueryableValues` extension method allows you to treat a sequence of values as you normally would if they were another entity in your [DbContext]. The type returned by the extension is an [IQueryable&lt;T&gt;] that can be composed with other entities in your query.
 
-For example, you can do one or more joins like this and it is totally fine:
+For example, you can perform one or more joins like this and it is completely fine:
 ```c#
 var myQuery =
     from i in dbContext.MyEntities
@@ -404,6 +424,9 @@ var myQuery =
         i.PropA
     };
 ```
+
+Isn't that great? 🥰
+
 ## Did You Find a 🐛 or Have an 💡?
 PRs are welcome! 🙂
 
@@ -439,5 +462,4 @@ PRs are welcome! 🙂
 [Repository]: https://github.com/yv989c/BlazarTech.QueryableValues
 
 [benchmarks]: /benchmarks/QueryableValues.SqlServer.Benchmarks
-[BenchmarksInt32]: /docs/images/benchmarks/int32-v6.3.0.png
-[BenchmarksGuid]: /docs/images/benchmarks/guid-v6.3.0.png
+[BenchmarksChart]: /docs/images/benchmarks/v7.2.0.png
