@@ -44,7 +44,7 @@ namespace BlazarTech.QueryableValues.SqlServer
 
             sql =
                 $"{sqlPrefix} [V] " +
-                $"FROM OPENJSON({{0}}) WITH ([V] {sqlType}{sqlTypeArguments} '$')";
+                $"FROM OPENJSON({{0}}) WITH ([V] {sqlType}{sqlTypeArguments} '$', [_] BIT '$._') ORDER BY [_]";
 
             SqlCache.TryAdd(cacheKey, sql);
 
@@ -218,7 +218,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                     }
                 }
 
-                sb.Append(')');
+                sb.Append(", [_] BIT '$._') ORDER BY [_]");
 
                 return sb.ToString();
             }

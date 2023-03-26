@@ -18,7 +18,7 @@ namespace BlazarTech.QueryableValues.SqlServer
 {
     internal abstract class QueryableFactory : IQueryableFactory
     {
-        protected const string SqlSelect = "SELECT";
+        protected const string SqlSelect = "SELECT TOP(2147483647)";
         protected const string SqlSelectTop = "SELECT TOP({1})";
 
         protected static readonly ConcurrentDictionary<object, string> SqlCache = new();
