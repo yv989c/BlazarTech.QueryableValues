@@ -160,8 +160,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             }
         }
 
-        [Fact]
-        public async Task MustDetectJsonSupport()
+        [Theory]
+        [InlineData(SerializationOptions.Auto)]
+        [InlineData(SerializationOptions.UseJson)]
+        [InlineData(SerializationOptions.UseXml)]
+        public async Task JsonSupportDetection(SerializationOptions serializationOptions)
         {
             var services = new ServiceCollection();
             services.AddDbContext<MyDbContext>();
@@ -169,20 +172,39 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             using var serviceProvider = services.BuildServiceProvider();
 
             var db = serviceProvider.GetRequiredService<MyDbContext>();
+            db.Options.Serialization(serializationOptions);
 
-            forceJsonDetection();
-            Assert.False(JsonSupportConnectionInterceptor.HasJsonSupport(db));
-            await db.TestData.FirstAsync();
-            Assert.True(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+            switch (serializationOptions)
+            {
+                case SerializationOptions.Auto:
+                    {
+                        forceJsonDetection();
+                        Assert.Null(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+                        await db.TestData.FirstAsync();
+                        Assert.True(JsonSupportConnectionInterceptor.HasJsonSupport(db));
 
-            forceJsonDetection();
-            Assert.False(JsonSupportConnectionInterceptor.HasJsonSupport(db));
-            db.TestData.First();
-            Assert.True(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+                        forceJsonDetection();
+                        Assert.Null(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+                        db.TestData.First();
+                        Assert.True(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+                    }
+                    break;
+                case SerializationOptions.UseJson:
+                case SerializationOptions.UseXml:
+                    {
+                        forceJsonDetection();
+                        Assert.Null(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+                        db.TestData.First();
+                        Assert.Null(JsonSupportConnectionInterceptor.HasJsonSupport(db));
+                    }
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
 
             void forceJsonDetection()
             {
-                db.Database.SetConnectionString(db.Database.GetConnectionString() + ";");
+                db.Database.SetConnectionString(db.Database.GetConnectionString() + $";Application Name={Guid.NewGuid()};");
             }
         }
 #endif
