@@ -78,8 +78,8 @@ public class ContainsBenchmarks
     {
         Console.WriteLine("Initializing...");
 
-        var dbContextXml = new MyDbContext(SerializationOptions.UseXml);
-        var dbContextJson = new MyDbContext(SerializationOptions.UseJson);
+        var dbContextXml = new MyDbContext(SqlServerSerialization.UseXml);
+        var dbContextJson = new MyDbContext(SqlServerSerialization.UseJson);
 
         #region Init db
         {

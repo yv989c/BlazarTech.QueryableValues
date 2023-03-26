@@ -18,11 +18,11 @@ namespace BlazarTech.QueryableValues.SqlServer
 
         public IQueryableFactory Create(DbContext dbContext)
         {
-            var useJson = _options.WithSerializationOptions switch
+            var useJson = _options.WithSerializationOption switch
             {
-                SerializationOptions.Auto => JsonSupportConnectionInterceptor.HasJsonSupport(dbContext).GetValueOrDefault(),
-                SerializationOptions.UseJson => true,
-                SerializationOptions.UseXml => false,
+                SqlServerSerialization.Auto => JsonSupportConnectionInterceptor.HasJsonSupport(dbContext).GetValueOrDefault(),
+                SqlServerSerialization.UseJson => true,
+                SqlServerSerialization.UseXml => false,
                 _ => throw new NotImplementedException(),
             };
 

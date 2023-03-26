@@ -208,7 +208,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         {
             var values = new[] { 'A', 'a', 'ᴭ', ' ', '\n', '\0', '\u0001' };
 
-            if (_db.Options.WithSerializationOptions == SerializationOptions.UseXml)
+            if (_db.Options.WithSerializationOption == SqlServerSerialization.UseXml)
             {
                 {
                     var expected = new[] { 'A', 'a', '?', ' ', '\n', '?', '?' };
@@ -222,7 +222,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     Assert.Equal(expected, actual);
                 }
             }
-            else if (_db.Options.WithSerializationOptions == SerializationOptions.UseJson)
+            else if (_db.Options.WithSerializationOption == SqlServerSerialization.UseJson)
             {
                 {
                     var expected = new[] { 'A', 'a', '?', ' ', '\n', '\0', '\u0001' };
@@ -252,7 +252,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         {
             var values = new[] { "\0 ", "\u0001", "Test 1", "Test <2>", "Test &3", "😀", "ᴭ", "", " ", "\n", " \n", " \n ", "\r", "\r ", " Test\t1 ", "\U00010330" };
 
-            if (_db.Options.WithSerializationOptions == SerializationOptions.UseXml)
+            if (_db.Options.WithSerializationOption == SqlServerSerialization.UseXml)
             {
                 {
                     var expected = new string[values.Length];
@@ -279,7 +279,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     Assert.Equal(expected, actual);
                 }
             }
-            else if (_db.Options.WithSerializationOptions == SerializationOptions.UseJson)
+            else if (_db.Options.WithSerializationOption == SqlServerSerialization.UseJson)
             {
                 {
                     var expected = new string[values.Length];
@@ -735,7 +735,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     {
         public JsonSimpleTypeTests(DbContextFixture contextFixture) : base(contextFixture)
         {
-            _db.Options.Serialization(SerializationOptions.UseJson);
+            _db.Options.Serialization(SqlServerSerialization.UseJson);
         }
     }
 
@@ -744,7 +744,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     {
         public XmlSimpleTypeTests(DbContextFixture contextFixture) : base(contextFixture)
         {
-            _db.Options.Serialization(SerializationOptions.UseXml);
+            _db.Options.Serialization(SqlServerSerialization.UseXml);
         }
     }
 }

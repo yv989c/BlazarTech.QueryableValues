@@ -56,9 +56,9 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
 #if !EFCORE3
         [Theory]
-        [InlineData(SerializationOptions.UseJson)]
-        [InlineData(SerializationOptions.UseXml)]
-        public async Task MustControlSelectTopOptimization(SerializationOptions serializationOptions)
+        [InlineData(SqlServerSerialization.UseJson)]
+        [InlineData(SqlServerSerialization.UseXml)]
+        public async Task MustControlSelectTopOptimization(SqlServerSerialization serializationOption)
         {
             var services = new ServiceCollection();
             services.AddDbContext<MyDbContext>();
@@ -66,12 +66,12 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             using var serviceProvider = services.BuildServiceProvider();
 
             var optimizedDb = serviceProvider.GetRequiredService<MyDbContext>();
-            optimizedDb.Options.Serialization(serializationOptions);
+            optimizedDb.Options.Serialization(serializationOption);
             Assert.True(await isOptimizationEnabledSimpleType(optimizedDb));
             Assert.True(await isOptimizationEnabledComplexType(optimizedDb));
 
             var notOptimizedDb = serviceProvider.GetRequiredService<NotOptimizedMyDbContext>();
-            notOptimizedDb.Options.Serialization(serializationOptions);
+            notOptimizedDb.Options.Serialization(serializationOption);
             Assert.False(await isOptimizationEnabledComplexType(notOptimizedDb));
             Assert.False(await isOptimizationEnabledSimpleType(notOptimizedDb));
 
@@ -104,9 +104,9 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Theory]
-        [InlineData(SerializationOptions.UseJson)]
-        [InlineData(SerializationOptions.UseXml)]
-        public async Task MustControlSerializationFormat(SerializationOptions serializationOptions)
+        [InlineData(SqlServerSerialization.UseJson)]
+        [InlineData(SqlServerSerialization.UseXml)]
+        public async Task MustControlSerializationFormat(SqlServerSerialization serializationOption)
         {
             var services = new ServiceCollection();
             services.AddDbContext<MyDbContext>();
@@ -114,7 +114,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             using var serviceProvider = services.BuildServiceProvider();
 
             var db = serviceProvider.GetRequiredService<MyDbContext>();
-            db.Options.Serialization(serializationOptions);
+            db.Options.Serialization(serializationOption);
 
             Assert.True(await isRightSerializationFormatSimpleType(db));
             Assert.True(await isRightSerializationFormatComplexType(db));
@@ -148,11 +148,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             bool isRightFormat(string logEntry)
             {
-                switch (serializationOptions)
+                switch (serializationOption)
                 {
-                    case SerializationOptions.UseJson:
+                    case SqlServerSerialization.UseJson:
                         return logEntry.Contains("OPENJSON(");
-                    case SerializationOptions.UseXml:
+                    case SqlServerSerialization.UseXml:
                         return logEntry.Contains(".nodes(");
                     default:
                         throw new NotImplementedException();
@@ -161,10 +161,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Theory]
-        [InlineData(SerializationOptions.Auto)]
-        [InlineData(SerializationOptions.UseJson)]
-        [InlineData(SerializationOptions.UseXml)]
-        public async Task JsonSupportDetection(SerializationOptions serializationOptions)
+        [InlineData(SqlServerSerialization.Auto)]
+        [InlineData(SqlServerSerialization.UseJson)]
+        [InlineData(SqlServerSerialization.UseXml)]
+        public async Task JsonSupportDetection(SqlServerSerialization serializationOption)
         {
             var services = new ServiceCollection();
             services.AddDbContext<MyDbContext>();
@@ -172,11 +172,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             using var serviceProvider = services.BuildServiceProvider();
 
             var db = serviceProvider.GetRequiredService<MyDbContext>();
-            db.Options.Serialization(serializationOptions);
+            db.Options.Serialization(serializationOption);
 
-            switch (serializationOptions)
+            switch (serializationOption)
             {
-                case SerializationOptions.Auto:
+                case SqlServerSerialization.Auto:
                     {
                         forceJsonDetection();
                         Assert.Null(JsonSupportConnectionInterceptor.HasJsonSupport(db));
@@ -189,8 +189,8 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                         Assert.True(JsonSupportConnectionInterceptor.HasJsonSupport(db));
                     }
                     break;
-                case SerializationOptions.UseJson:
-                case SerializationOptions.UseXml:
+                case SqlServerSerialization.UseJson:
+                case SqlServerSerialization.UseXml:
                     {
                         forceJsonDetection();
                         Assert.Null(JsonSupportConnectionInterceptor.HasJsonSupport(db));
@@ -210,10 +210,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 #endif
 
         [Theory]
-        [InlineData(SerializationOptions.UseJson)]
-        [InlineData(SerializationOptions.UseXml)]
-        [InlineData(SerializationOptions.Auto)]
-        public void MustCreateQueryableFactory(SerializationOptions serializationOptions)
+        [InlineData(SqlServerSerialization.UseJson)]
+        [InlineData(SqlServerSerialization.UseXml)]
+        [InlineData(SqlServerSerialization.Auto)]
+        public void MustCreateQueryableFactory(SqlServerSerialization serializationOption)
         {
             var services = new ServiceCollection();
             services.AddDbContext<MyDbContext>();
@@ -221,19 +221,19 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             using var serviceProvider = services.BuildServiceProvider();
 
             var dbContext = serviceProvider.GetRequiredService<MyDbContext>();
-            dbContext.Options.Serialization(serializationOptions);
+            dbContext.Options.Serialization(serializationOption);
 
             var queryableFactory = dbContext.GetService<QueryableFactoryFactory>().Create(dbContext);
 
             Assert.NotNull(queryableFactory);
 
-            switch (serializationOptions)
+            switch (serializationOption)
             {
-                case SerializationOptions.UseJson:
-                case SerializationOptions.Auto:
+                case SqlServerSerialization.UseJson:
+                case SqlServerSerialization.Auto:
                     Assert.IsType<JsonQueryableFactory>(queryableFactory);
                     break;
-                case SerializationOptions.UseXml:
+                case SqlServerSerialization.UseXml:
                     Assert.IsType<XmlQueryableFactory>(queryableFactory);
                     break;
                 default:

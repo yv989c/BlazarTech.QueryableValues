@@ -802,7 +802,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     {
         public JsonComplexTypeTests(DbContextFixture contextFixture) : base(contextFixture)
         {
-            _db.Options.Serialization(SerializationOptions.UseJson);
+            _db.Options.Serialization(SqlServerSerialization.UseJson);
         }
     }
 
@@ -811,7 +811,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     {
         public XmlComplexTypeTests(DbContextFixture contextFixture) : base(contextFixture)
         {
-            _db.Options.Serialization(SerializationOptions.UseXml);
+            _db.Options.Serialization(SqlServerSerialization.UseXml);
         }
     }
 }

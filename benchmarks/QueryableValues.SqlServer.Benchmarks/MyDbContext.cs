@@ -6,22 +6,22 @@ namespace QueryableValues.SqlServer.Benchmarks
 {
     public class MyDbContext : DbContext
     {
-        private readonly SerializationOptions _serializationOptions;
+        private readonly SqlServerSerialization _serializationOption;
 
         public DbSet<Int32Entity> Int32Entities { get; set; } = default!;
         public DbSet<GuidEntity> GuidEntities { get; set; } = default!;
         public DbSet<StringEntity> StringEntities { get; set; } = default!;
 
-        public MyDbContext(SerializationOptions serializationOptions)
+        public MyDbContext(SqlServerSerialization serializationOption)
         {
-            _serializationOptions = serializationOptions;
+            _serializationOption = serializationOption;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlServer(
                 @"Server=.\SQLEXPRESS;Integrated Security=true;Database=QueryableValuesBenchmarks;Encrypt=False;",
-                builder => builder.UseQueryableValues(options => options.Serialization(_serializationOptions))
+                builder => builder.UseQueryableValues(options => options.Serialization(_serializationOption))
                 );
         }
 

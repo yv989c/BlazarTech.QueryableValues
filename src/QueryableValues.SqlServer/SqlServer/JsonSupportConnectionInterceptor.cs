@@ -44,7 +44,7 @@ namespace BlazarTech.QueryableValues.SqlServer
         private bool MustDetect(DbConnection connection)
         {
             return
-                _options.WithSerializationOptions == SerializationOptions.Auto &&
+                _options.WithSerializationOption == SqlServerSerialization.Auto &&
                 !ConnectionStringJsonSupport.ContainsKey(GetKey(connection));
         }
 
