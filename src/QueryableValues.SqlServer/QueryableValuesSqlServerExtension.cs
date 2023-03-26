@@ -53,6 +53,7 @@ namespace BlazarTech.QueryableValues
             services.AddSingleton<Serializers.IJsonSerializer, Serializers.JsonSerializer>();
             services.AddScoped<SqlServer.XmlQueryableFactory>();
             services.AddScoped<SqlServer.JsonQueryableFactory>();
+            services.AddScoped<SqlServer.ExtensionOptions>();
             services.AddScoped<SqlServer.QueryableFactoryFactory>();
             services.AddScoped<IInterceptor, SqlServer.JsonSupportConnectionInterceptor>();
         }
