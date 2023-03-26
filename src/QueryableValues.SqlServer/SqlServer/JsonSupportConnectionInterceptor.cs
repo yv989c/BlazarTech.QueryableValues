@@ -16,10 +16,12 @@ namespace BlazarTech.QueryableValues.SqlServer
         private static readonly ConcurrentDictionary<string, bool> ConnectionStringJsonSupport = new();
 
         private readonly ILogger _logger;
+        private readonly QueryableValuesSqlServerOptions _options;
 
-        public JsonSupportConnectionInterceptor(ILoggerFactory loggerFactory)
+        public JsonSupportConnectionInterceptor(ILoggerFactory loggerFactory, ExtensionOptions extensionOptions)
         {
             _logger = loggerFactory.CreateLogger(new DbLoggerCategory.Database.Command());
+            _options = extensionOptions.Options;
         }
 
         private static string GetKey(DbConnection connection)
@@ -27,7 +29,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             return connection.ConnectionString;
         }
 
-        public static bool HasJsonSupport(DbContext dbContext)
+        public static bool? HasJsonSupport(DbContext dbContext)
         {
             var connection = dbContext.Database.GetDbConnection();
 
@@ -36,12 +38,14 @@ namespace BlazarTech.QueryableValues.SqlServer
                 return hasJsonSupport;
             }
 
-            return false;
+            return null;
         }
 
-        private static bool MustDetect(DbConnection connection)
+        private bool MustDetect(DbConnection connection)
         {
-            return !ConnectionStringJsonSupport.ContainsKey(GetKey(connection));
+            return
+                _options.WithSerializationOptions == SerializationOptions.Auto &&
+                !ConnectionStringJsonSupport.ContainsKey(GetKey(connection));
         }
 
         public override async Task ConnectionOpenedAsync(DbConnection connection, ConnectionEndEventData eventData, CancellationToken cancellationToken = default)
