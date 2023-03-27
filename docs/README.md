@@ -17,7 +17,7 @@ The supported types for `T` are:
 
 For a detailed explanation of the problem solved by QueryableValues, please continue reading [here][readme-background].
 
-> 💡 QueryableValues boasts over 120 integration tests that are executed on every supported version of EF. These tests ensure reliability and compatibility, giving you added confidence.
+> ✅ QueryableValues boasts over 120 integration tests that are executed on every supported version of EF. These tests ensure reliability and compatibility, giving you added confidence.
 
 > 💡 Still on Entity Framework 6 (non-core)? Then [QueryableValues `EF6 Edition`](https://github.com/yv989c/BlazarTech.QueryableValues.EF6) is what you need.
 
@@ -79,6 +79,7 @@ public class Startup
     }
 }
 ```
+> 💡 Pro-tip: `UseQueryableValues` offers an optional `options` delegate for additional configurations.
 
 ## How Do You Use It?
 The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace; therefore, you must add the following `using` directive to your source code file for it to appear as a method of your [DbContext] instance:
