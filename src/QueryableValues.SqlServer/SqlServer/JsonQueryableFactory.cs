@@ -9,25 +9,24 @@ using System.Data;
 
 namespace BlazarTech.QueryableValues.SqlServer
 {
-    internal sealed class XmlQueryableFactory : QueryableFactory
+    internal sealed class JsonQueryableFactory : QueryableFactory
     {
-        public XmlQueryableFactory(IXmlSerializer serializer, IDbContextOptions dbContextOptions)
+        public JsonQueryableFactory(IJsonSerializer serializer, IDbContextOptions dbContextOptions)
             : base(serializer, dbContextOptions)
         {
         }
 
         protected override SqlParameter GetValuesParameter()
         {
-            return new SqlParameter(null, SqlDbType.Xml);
+            return new SqlParameter(null, SqlDbType.NVarChar, -1);
         }
 
-        private string GetSqlForSimpleTypes<T>(string xmlType, string sqlType, DeferredValues<T> deferredValues, (int Precision, int Scale)? precisionScale = null)
+        private string GetSqlForSimpleTypes<T>(string sqlType, DeferredValues<T> deferredValues, (int Precision, int Scale)? precisionScale = null)
             where T : notnull
         {
             var useSelectTopOptimization = UseSelectTopOptimization(deferredValues);
             var cacheKeyProperties = new
             {
-                XmlType = xmlType,
                 SqlType = sqlType,
                 UseSelectTopOptimization = useSelectTopOptimization,
                 PrecisionScale = precisionScale
@@ -44,8 +43,8 @@ namespace BlazarTech.QueryableValues.SqlServer
             var sqlTypeArguments = precisionScale.HasValue ? $"({precisionScale.Value.Precision},{precisionScale.Value.Scale})" : null;
 
             sql =
-                $"{sqlPrefix} I.value('. cast as xs:{xmlType}?', '{sqlType}{sqlTypeArguments}') [V] " +
-                "FROM {0}.nodes('/R/V') N(I)";
+                $"{sqlPrefix} [V] " +
+                $"FROM OPENJSON({{0}}) WITH ([V] {sqlType}{sqlTypeArguments} '$', [_] BIT '$._') ORDER BY [_]";
 
             SqlCache.TryAdd(cacheKey, sql);
 
@@ -54,62 +53,62 @@ namespace BlazarTech.QueryableValues.SqlServer
 
         protected override string GetSqlForSimpleTypesByte(DeferredValues<byte> deferredValues)
         {
-            return GetSqlForSimpleTypes("unsignedByte", "tinyint", deferredValues);
+            return GetSqlForSimpleTypes("tinyint", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesInt16(DeferredValues<short> deferredValues)
         {
-            return GetSqlForSimpleTypes("short", "smallint", deferredValues);
+            return GetSqlForSimpleTypes("smallint", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesInt32(DeferredValues<int> deferredValues)
         {
-            return GetSqlForSimpleTypes("integer", "int", deferredValues);
+            return GetSqlForSimpleTypes("int", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesInt64(DeferredValues<long> deferredValues)
         {
-            return GetSqlForSimpleTypes("integer", "bigint", deferredValues);
+            return GetSqlForSimpleTypes("bigint", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesDecimal(DeferredValues<decimal> deferredValues, (int Precision, int Scale) precisionScale)
         {
-            return GetSqlForSimpleTypes("decimal", "decimal", deferredValues, precisionScale: precisionScale);
+            return GetSqlForSimpleTypes("decimal", deferredValues, precisionScale: precisionScale);
         }
 
         protected override string GetSqlForSimpleTypesSingle(DeferredValues<float> deferredValues)
         {
-            return GetSqlForSimpleTypes("float", "real", deferredValues);
+            return GetSqlForSimpleTypes("real", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesDouble(DeferredValues<double> deferredValues)
         {
-            return GetSqlForSimpleTypes("double", "float", deferredValues);
+            return GetSqlForSimpleTypes("float", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesDateTime(DeferredValues<DateTime> deferredValues)
         {
-            return GetSqlForSimpleTypes("dateTime", "datetime2", deferredValues);
+            return GetSqlForSimpleTypes("datetime2", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesDateTimeOffset(DeferredValues<DateTimeOffset> deferredValues)
         {
-            return GetSqlForSimpleTypes("dateTime", "datetimeoffset", deferredValues);
+            return GetSqlForSimpleTypes("datetimeoffset", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesChar(DeferredValues<char> deferredValues, bool isUnicode)
         {
-            return GetSqlForSimpleTypes("string", isUnicode ? "nvarchar(1)" : "varchar(1)", deferredValues);
+            return GetSqlForSimpleTypes(isUnicode ? "nvarchar(1)" : "varchar(1)", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesString(DeferredValues<string> deferredValues, bool isUnicode)
         {
-            return GetSqlForSimpleTypes("string", isUnicode ? "nvarchar(max)" : "varchar(max)", deferredValues);
+            return GetSqlForSimpleTypes(isUnicode ? "nvarchar(max)" : "varchar(max)", deferredValues);
         }
 
         protected override string GetSqlForSimpleTypesGuid(DeferredValues<Guid> deferredValues)
         {
-            return GetSqlForSimpleTypes("string", "uniqueidentifier", deferredValues);
+            return GetSqlForSimpleTypes("uniqueidentifier", deferredValues);
         }
 
         protected override string GetSqlForComplexTypes(IEntityOptionsBuilder entityOptions, bool useSelectTopOptimization, IReadOnlyList<EntityPropertyMapping> mappings)
@@ -127,89 +126,99 @@ namespace BlazarTech.QueryableValues.SqlServer
                     sb.Append(SqlSelect);
                 }
 
-                sb.AppendLine();
+                sb.Append(' ');
 
-                for (int i = 0; i < mappings.Count; i++)
+                for (var i = 0; i < mappings.Count; i++)
+                {
+                    if (i > 0)
+                    {
+                        sb.Append(", ");
+                    }
+
+                    sb.Append('[').Append(mappings[i].Target.Name).Append(']');
+                }
+
+                sb.AppendLine();
+                sb.Append("FROM OPENJSON({0}) WITH (");
+
+                for (var i = 0; i < mappings.Count; i++)
                 {
                     var mapping = mappings[i];
                     var propertyOptions = entityOptions.GetPropertyOptions(mapping.Source);
 
                     if (i > 0)
                     {
-                        sb.Append(',').AppendLine();
+                        sb.Append(", ");
                     }
 
                     var targetName = mapping.Target.Name;
 
-                    sb.Append("\tI.value('@").Append(targetName).Append("[1] cast as ");
+                    sb.Append('[').Append(targetName).Append("] ");
 
                     switch (mapping.TypeName)
                     {
                         case EntityPropertyTypeName.Boolean:
-                            sb.Append("xs:boolean?', 'bit'");
+                            sb.Append("bit");
                             break;
                         case EntityPropertyTypeName.Byte:
-                            sb.Append("xs:unsignedByte?', 'tinyint'");
+                            sb.Append("tinyint");
                             break;
                         case EntityPropertyTypeName.Int16:
-                            sb.Append("xs:short?', 'smallint'");
+                            sb.Append("smallint");
                             break;
                         case EntityPropertyTypeName.Int32:
-                            sb.Append("xs:integer?', 'int'");
+                            sb.Append("int");
                             break;
                         case EntityPropertyTypeName.Int64:
-                            sb.Append("xs:integer?', 'bigint'");
+                            sb.Append("bigint");
                             break;
                         case EntityPropertyTypeName.Decimal:
                             {
                                 var numberOfDecimals = propertyOptions?.NumberOfDecimals ?? entityOptions.DefaultForNumberOfDecimals;
-                                sb.Append("xs:decimal?', 'decimal(38, ").Append(numberOfDecimals).Append(")'");
+                                sb.Append("decimal(38, ").Append(numberOfDecimals).Append(')');
                             }
                             break;
                         case EntityPropertyTypeName.Single:
-                            sb.Append("xs:float?', 'real'");
+                            sb.Append("real");
                             break;
                         case EntityPropertyTypeName.Double:
-                            sb.Append("xs:double?', 'float'");
+                            sb.Append("float");
                             break;
                         case EntityPropertyTypeName.DateTime:
-                            sb.Append("xs:dateTime?', 'datetime2'");
+                            sb.Append("datetime2");
                             break;
                         case EntityPropertyTypeName.DateTimeOffset:
-                            sb.Append("xs:dateTime?', 'datetimeoffset'");
+                            sb.Append("datetimeoffset");
                             break;
                         case EntityPropertyTypeName.Guid:
-                            sb.Append("xs:string?', 'uniqueidentifier'");
+                            sb.Append("uniqueidentifier");
                             break;
                         case EntityPropertyTypeName.Char:
                             if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
                             {
-                                sb.Append("xs:string?', 'nvarchar(1)'");
+                                sb.Append("nvarchar(1)");
                             }
                             else
                             {
-                                sb.Append("xs:string?', 'varchar(1)'");
+                                sb.Append("varchar(1)");
                             }
                             break;
                         case EntityPropertyTypeName.String:
                             if ((propertyOptions?.IsUnicode ?? entityOptions.DefaultForIsUnicode) == true)
                             {
-                                sb.Append("xs:string?', 'nvarchar(max)'");
+                                sb.Append("nvarchar(max)");
                             }
                             else
                             {
-                                sb.Append("xs:string?', 'varchar(max)'");
+                                sb.Append("varchar(max)");
                             }
                             break;
                         default:
                             throw new NotImplementedException(mapping.TypeName.ToString());
                     }
-
-                    sb.Append(") AS [").Append(targetName).Append(']');
                 }
 
-                sb.AppendLine();
-                sb.Append("FROM {0}.nodes('/R/V') N(I)");
+                sb.Append(", [_] BIT '$._') ORDER BY [_]");
 
                 return sb.ToString();
             }

@@ -9,9 +9,9 @@ using Xunit;
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 {
     [Collection("DbContext")]
-    public class ComplexTypeTests
+    public abstract class ComplexTypeTests
     {
-        private readonly IMyDbContext _db;
+        protected readonly IMyDbContext _db;
 
         public class TestType
         {
@@ -794,6 +794,24 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             var actualItemCount = await _db.AsQueryableValues(values).CountAsync();
 
             Assert.Equal(expectedItemCount, actualItemCount);
+        }
+    }
+
+    [Collection("DbContext")]
+    public class JsonComplexTypeTests : ComplexTypeTests
+    {
+        public JsonComplexTypeTests(DbContextFixture contextFixture) : base(contextFixture)
+        {
+            _db.Options.Serialization(SqlServerSerialization.UseJson);
+        }
+    }
+
+    [Collection("DbContext")]
+    public class XmlComplexTypeTests : ComplexTypeTests
+    {
+        public XmlComplexTypeTests(DbContextFixture contextFixture) : base(contextFixture)
+        {
+            _db.Options.Serialization(SqlServerSerialization.UseXml);
         }
     }
 }
