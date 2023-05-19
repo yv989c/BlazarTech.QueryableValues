@@ -2,11 +2,6 @@
 
 namespace BlazarTech.QueryableValues
 {
-    internal class QueryableValuesEntity<T>
-    {
-        public T V { get; set; } = default!;
-    }
-
     internal class QueryableValuesEntity
     {
         public const string IndexPropertyName = nameof(X);

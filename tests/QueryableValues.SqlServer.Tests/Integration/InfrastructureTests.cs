@@ -36,7 +36,6 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var script = db.Database.GenerateCreateScript();
 
-            Assert.DoesNotContain(nameof(QueryableValuesEntity<object>), script, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain(nameof(QueryableValuesEntity), script, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("QueryableValues", script, StringComparison.OrdinalIgnoreCase);
         }
