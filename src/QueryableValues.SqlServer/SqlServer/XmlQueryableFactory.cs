@@ -41,7 +41,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                 sb
                     .Append("\tI.value('@")
                     .Append(QueryableValuesEntity.IndexPropertyName)
-                    .Append("[1] cast as xs:integer?', 'int') AS [")
+                    .Append(" cast as xs:integer?', 'int') AS [")
                     .Append(QueryableValuesEntity.IndexPropertyName)
                     .Append(']');
 
@@ -54,7 +54,7 @@ namespace BlazarTech.QueryableValues.SqlServer
 
                     var targetName = mapping.Target.Name;
 
-                    sb.Append("\tI.value('@").Append(targetName).Append("[1] cast as ");
+                    sb.Append("\tI.value('@").Append(targetName).Append(" cast as ");
 
                     switch (mapping.TypeName)
                     {
@@ -122,7 +122,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                 }
 
                 sb.AppendLine();
-                sb.Append("FROM {0}.nodes('/R/V') N(I)").AppendLine();
+                sb.Append("FROM {0}.nodes('/R[1]/V') N(I)").AppendLine();
                 sb.Append("ORDER BY [").Append(QueryableValuesEntity.IndexPropertyName).Append(']');
 
                 return sb.ToString();
