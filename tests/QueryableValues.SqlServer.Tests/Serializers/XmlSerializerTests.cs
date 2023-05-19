@@ -180,7 +180,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Serializers
             var values = new[] { testType };
             var mappings = EntityPropertyMapping.GetMappings(testType.GetType());
             var xml = _serializer.Serialize(values, mappings);
-            var expected = "<R><V Bool0=\"1\" Bool1=\"0\" Byte0=\"255\" Short0=\"32767\" Int0=\"2147483647\" Long0=\"9223372036854775807\" Decimal0=\"79228162514264337593543950335\" Float0=\"3.4028235E+38\" Double0=\"1.7976931348623157E+308\" DateTime0=\"9999-12-31T23:59:59.9999999\" DateTimeOffset0=\"9999-12-31T23:59:59.9999999Z\" Guid0=\"00000000-0000-0000-0000-000000000000\" Char0=\"☢\" String0=\"&#x20;Hi!&#xA;😀&quot;\" String2=\"\" /></R>";
+            var expected = "<R><V X=\"0\" B=\"1\" B1=\"0\" Y=\"255\" H=\"32767\" I=\"2147483647\" L=\"9223372036854775807\" M=\"79228162514264337593543950335\" F=\"3.4028235E+38\" D=\"1.7976931348623157E+308\" A=\"9999-12-31T23:59:59.9999999\" E=\"9999-12-31T23:59:59.9999999Z\" G=\"00000000-0000-0000-0000-000000000000\" C=\"☢\" S=\"&#x20;Hi!&#xA;😀&quot;\" S2=\"\" /></R>";
             Assert.Equal(expected, xml);
         }
 
