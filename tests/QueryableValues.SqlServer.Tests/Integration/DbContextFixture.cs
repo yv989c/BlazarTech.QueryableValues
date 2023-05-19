@@ -1,5 +1,6 @@
 ﻿#if TESTS
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -47,7 +48,12 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     StringUnicodeValue = "👋",
                     DateTimeValue = DateTime.MinValue,
                     DateTimeOffsetValue = DateTimeOffset.MinValue,
-                    GuidValue = Guid.Empty
+                    GuidValue = Guid.Empty,
+                    ChildEntity = new List<ChildEntity>
+                    {
+                        new ChildEntity(),
+                        new ChildEntity()
+                    }
                 },
                 new TestDataEntity
                 {
@@ -78,7 +84,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     StringUnicodeValue = "أهلا",
                     DateTimeValue = DateTime.MaxValue,
                     DateTimeOffsetValue = DateTimeOffset.MaxValue,
-                    GuidValue = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6")
+                    GuidValue = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6"),
+                    ChildEntity = new List<ChildEntity>
+                    {
+                        new ChildEntity()
+                    }
                 }
             };
 

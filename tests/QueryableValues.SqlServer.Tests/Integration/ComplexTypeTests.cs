@@ -795,6 +795,78 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             Assert.Equal(expectedItemCount, actualItemCount);
         }
+
+        [Fact]
+        public async Task JoinWithInclude()
+        {
+            var values = new[]
+            {
+                new { Id = 100, Value = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6") },
+                new { Id = 300, Value = Guid.Empty }
+            };
+
+            var query =
+                from td in _db.TestData.AsNoTracking().Include(p => p.ChildEntity)
+                join v in _db.AsQueryableValues(values) on td.GuidValue equals v.Value
+                orderby td.Id
+                select td;
+
+            var actual = await query.ToListAsync();
+            
+            Assert.Equal(2, actual.Count);
+
+            Assert.Equal(1, actual[0].Id);
+            Assert.Equal(2, actual[0].ChildEntity.Count);
+            
+            Assert.Equal(3, actual[1].Id);
+            Assert.Equal(1, actual[1].ChildEntity.Count);
+        }
+
+        [Fact]
+        public async Task JoinWithIncludeAndTake()
+        {
+            var values = new[]
+            {
+                new { Id = 100, Value = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6") },
+                new { Id = 300, Value = Guid.Empty }
+            };
+
+            var query =
+                from td in _db.TestData.AsNoTracking().Include(p => p.ChildEntity)
+                join v in _db.AsQueryableValues(values).Take(1) on td.GuidValue equals v.Value
+                orderby td.Id
+                select td;
+
+            var actual = await query.ToListAsync();
+
+            Assert.Single(actual);
+
+            Assert.Equal(3, actual[0].Id);
+            Assert.Equal(1, actual[0].ChildEntity.Count);
+        }
+
+        [Fact]
+        public async Task JoinWithIncludeAndSkip()
+        {
+            var values = new[]
+            {
+                new { Id = 100, Value = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6") },
+                new { Id = 300, Value = Guid.Empty }
+            };
+
+            var query =
+                from td in _db.TestData.AsNoTracking().Include(p => p.ChildEntity)
+                join v in _db.AsQueryableValues(values).Skip(1) on td.GuidValue equals v.Value
+                orderby td.Id
+                select td;
+
+            var actual = await query.ToListAsync();
+
+            Assert.Single(actual);
+
+            Assert.Equal(1, actual[0].Id);
+            Assert.Equal(2, actual[0].ChildEntity.Count);
+        }
     }
 
     [Collection("DbContext")]

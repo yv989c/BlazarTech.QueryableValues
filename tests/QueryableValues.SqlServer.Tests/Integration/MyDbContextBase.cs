@@ -1,6 +1,7 @@
 ﻿#if TESTS
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
@@ -17,6 +18,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 #endif
 
         public DbSet<TestDataEntity> TestData { get; set; } = null!;
+        public DbSet<ChildEntity> ChildEntity { get; set; } = null!;
 
         public MyDbContextBase(
             string databaseName,
@@ -102,6 +104,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 entity.Property(p => p.StringUnicodeValue)
                     .HasMaxLength(50)
                     .IsUnicode(true);
+
+                entity.HasMany(p => p.ChildEntity);
+            });
+
+            modelBuilder.Entity<ChildEntity>(entity =>
+            {
+                entity.HasKey(p => p.Id);
             });
         }
     }
@@ -124,6 +133,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public DateTime DateTimeValue { get; set; }
         public DateTimeOffset DateTimeOffsetValue { get; set; }
         public Guid GuidValue { get; set; }
+        public ICollection<ChildEntity> ChildEntity { get; set; } = default!;
+    }
+
+    public class ChildEntity
+    {
+        public int Id { get; set; }
+        public int TestDataEntityId { get; set; }
     }
 }
 #endif
