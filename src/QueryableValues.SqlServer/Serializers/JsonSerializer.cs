@@ -135,7 +135,16 @@ namespace BlazarTech.QueryableValues.Serializers
 #elif NETSTANDARD2_1_OR_GREATER
                 stream.Position = 0;
                 var streamInt32Length = (int)stream.Length;
-                return Encoding.UTF8.GetString(stream.GetSpan()[..streamInt32Length]);
+                var span = stream.GetSpan();
+
+                if (span.Length >= streamInt32Length)
+                {
+                    return Encoding.UTF8.GetString(span[..streamInt32Length]);
+                }
+                else
+                {
+                    return Encoding.UTF8.GetString(stream.GetBuffer(), 0, streamInt32Length);
+                }
 #else
                 return Encoding.UTF8.GetString(stream.GetReadOnlySequence());
 #endif
