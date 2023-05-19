@@ -10,6 +10,7 @@ namespace BlazarTech.QueryableValues.Serializers
     internal sealed class JsonSerializer : IJsonSerializer
     {
         private static readonly RecyclableMemoryStreamManager MemoryStreamManager = new RecyclableMemoryStreamManager();
+        private static readonly JsonEncodedText IndexPropertyName = JsonEncodedText.Encode(QueryableValuesEntity.IndexPropertyName);
 
         private static string SerializePrivate<T>(T values)
         {
@@ -106,6 +107,8 @@ namespace BlazarTech.QueryableValues.Serializers
                 {
                     jsonWriter.WriteStartArray();
 
+                    var index = 0;
+
                     foreach (var value in values)
                     {
                         if (mustSkipValue?.Invoke(value) == true)
@@ -114,6 +117,9 @@ namespace BlazarTech.QueryableValues.Serializers
                         }
 
                         jsonWriter.WriteStartObject();
+
+                        jsonWriter.WritePropertyName(IndexPropertyName);
+                        jsonWriter.WriteNumberValue(index++);
 
                         writeValue(jsonWriter, value);
 

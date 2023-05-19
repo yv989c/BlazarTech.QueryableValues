@@ -43,22 +43,22 @@ namespace BlazarTech.QueryableValues
             modelBuilder
                 .Entity<QueryableValuesEntity>(entity =>
                 {
-                    SetDefaultPrecision(entity.Property(p => p.Decimal0));
-                    SetDefaultPrecision(entity.Property(p => p.Decimal1));
-                    SetDefaultPrecision(entity.Property(p => p.Decimal2));
-                    SetDefaultPrecision(entity.Property(p => p.Decimal3));
-                    SetDefaultPrecision(entity.Property(p => p.Decimal4));
-                    SetDefaultPrecision(entity.Property(p => p.Decimal5));
-                    SetDefaultPrecision(entity.Property(p => p.Decimal6));
-                    SetDefaultPrecision(entity.Property(p => p.Decimal7));
-                    SetDefaultPrecision(entity.Property(p => p.Decimal8));
-                    SetDefaultPrecision(entity.Property(p => p.Decimal9));
+                    SetDefaultPrecision(entity.Property(p => p.M));
+                    SetDefaultPrecision(entity.Property(p => p.M1));
+                    SetDefaultPrecision(entity.Property(p => p.M2));
+                    SetDefaultPrecision(entity.Property(p => p.M3));
+                    SetDefaultPrecision(entity.Property(p => p.M4));
+                    SetDefaultPrecision(entity.Property(p => p.M5));
+                    SetDefaultPrecision(entity.Property(p => p.M6));
+                    SetDefaultPrecision(entity.Property(p => p.M7));
+                    SetDefaultPrecision(entity.Property(p => p.M8));
+                    SetDefaultPrecision(entity.Property(p => p.M9));
 
                     // By mapping to a fake view, we stop EF from including these entities during
                     // SQL generation in migrations and by the Create and Drop apis in DbContext.Database.
                     entity
                         .ToView(nameof(QueryableValuesEntity))
-                        .HasNoKey();
+                        .HasKey(i => i.X);
                 });
         }
 

@@ -35,6 +35,11 @@ namespace BlazarTech.QueryableValues.SqlServer
         private readonly QueryableValuesSqlServerOptions _options;
         private readonly string _cacheScopeName;
 
+        private class SimpleTypeValue<T>
+        {
+            public T V { get; set; } = default!;
+        }
+
         public QueryableFactory(ISerializer serializer, IDbContextOptions dbContextOptions)
         {
             if (serializer is null)
@@ -67,19 +72,18 @@ namespace BlazarTech.QueryableValues.SqlServer
         /// Used to optimize the generated SQL by providing a TOP(n) on the SELECT statement.
         /// In my tests, I observed improved memory grant estimation by SQL Server's query engine.
         /// </summary>
-        protected bool UseSelectTopOptimization<T>(DeferredValues<T> deferredValues)
-            where T : notnull
+        protected bool UseSelectTopOptimization(IDeferredValues deferredValues)
         {
 #if EFCORE3
-                // In my EF Core 3 tests, it seems that on the first execution of the query,
-                // it is caching the values from the parameters provided to the FromSqlRaw method.
-                // This imposes a problem when trying to optimize the SQL using the HasCount property in this class.
-                // It is critical to know the exact number of elements behind "values" at execution time,
-                // this is because the number of items behind "values" can change between executions of the query,
-                // therefore, this optimization cannot be done in a reliable way under EF Core 3.
-                //
-                // Under EF Core 5 and 6 this is not an issue. The parameters are always evaluated on each execution.
-                return false;
+            // In my EF Core 3 tests, it seems that on the first execution of the query,
+            // it is caching the values from the parameters provided to the FromSqlRaw method.
+            // This imposes a problem when trying to optimize the SQL using the HasCount property in this class.
+            // It is critical to know the exact number of elements behind "values" at execution time,
+            // this is because the number of items behind "values" can change between executions of the query,
+            // therefore, this optimization cannot be done in a reliable way under EF Core 3.
+            //
+            // Under EF Core 5 and 6 this is not an issue. The parameters are always evaluated on each execution.
+            return false;
 #else
             return
                 _options.WithUseSelectTopOptimization &&
@@ -89,8 +93,7 @@ namespace BlazarTech.QueryableValues.SqlServer
 
         protected abstract SqlParameter GetValuesParameter();
 
-        private SqlParameter[] GetSqlParameters<T>(DeferredValues<T> deferredValues)
-            where T : notnull
+        private SqlParameter[] GetSqlParameters(IDeferredValues deferredValues)
         {
             SqlParameter[] sqlParameters;
 
@@ -120,143 +123,24 @@ namespace BlazarTech.QueryableValues.SqlServer
             return sqlParameters;
         }
 
-        protected abstract string GetSqlForSimpleTypesByte(DeferredValues<byte> deferredValues);
-        protected abstract string GetSqlForSimpleTypesInt16(DeferredValues<short> deferredValues);
-        protected abstract string GetSqlForSimpleTypesInt32(DeferredValues<int> deferredValues);
-        protected abstract string GetSqlForSimpleTypesInt64(DeferredValues<long> deferredValues);
-        protected abstract string GetSqlForSimpleTypesDecimal(DeferredValues<decimal> deferredValues, (int Precision, int Scale) precisionScale);
-        protected abstract string GetSqlForSimpleTypesSingle(DeferredValues<float> deferredValues);
-        protected abstract string GetSqlForSimpleTypesDouble(DeferredValues<double> deferredValues);
-        protected abstract string GetSqlForSimpleTypesDateTime(DeferredValues<DateTime> deferredValues);
-        protected abstract string GetSqlForSimpleTypesDateTimeOffset(DeferredValues<DateTimeOffset> deferredValues);
-        protected abstract string GetSqlForSimpleTypesChar(DeferredValues<char> deferredValues, bool isUnicode);
-        protected abstract string GetSqlForSimpleTypesString(DeferredValues<string> deferredValues, bool isUnicode);
-        protected abstract string GetSqlForSimpleTypesGuid(DeferredValues<Guid> deferredValues);
-
-        private IQueryable<TValue> Create<TValue>(DbContext dbContext, string sql, DeferredValues<TValue> deferredValues)
-            where TValue : notnull
-        {
-            var sqlParameters = GetSqlParameters(deferredValues);
-
-            var queryableValues = dbContext
-                .Set<QueryableValuesEntity<TValue>>()
-                .FromSqlRaw(sql, sqlParameters);
-
-            return queryableValues.Select(i => i.V);
-        }
-
-        public IQueryable<byte> Create(DbContext dbContext, IEnumerable<byte> values)
-        {
-            var deferredValues = new DeferredByteValues(_serializer, values);
-            var sql = GetSqlForSimpleTypesByte(deferredValues);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<short> Create(DbContext dbContext, IEnumerable<short> values)
-        {
-            var deferredValues = new DeferredInt16Values(_serializer, values);
-            var sql = GetSqlForSimpleTypesInt16(deferredValues);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<int> Create(DbContext dbContext, IEnumerable<int> values)
-        {
-            var deferredValues = new DeferredInt32Values(_serializer, values);
-            var sql = GetSqlForSimpleTypesInt32(deferredValues);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<long> Create(DbContext dbContext, IEnumerable<long> values)
-        {
-            var deferredValues = new DeferredInt64Values(_serializer, values);
-            var sql = GetSqlForSimpleTypesInt64(deferredValues);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<decimal> Create(DbContext dbContext, IEnumerable<decimal> values, int numberOfDecimals = 4)
-        {
-            var deferredValues = new DeferredDecimalValues(_serializer, values);
-            var precisionScale = (38, numberOfDecimals);
-            var sql = GetSqlForSimpleTypesDecimal(deferredValues, precisionScale);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<float> Create(DbContext dbContext, IEnumerable<float> values)
-        {
-            var deferredValues = new DeferredSingleValues(_serializer, values);
-            var sql = GetSqlForSimpleTypesSingle(deferredValues);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<double> Create(DbContext dbContext, IEnumerable<double> values)
-        {
-            var deferredValues = new DeferredDoubleValues(_serializer, values);
-            var sql = GetSqlForSimpleTypesDouble(deferredValues);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<DateTime> Create(DbContext dbContext, IEnumerable<DateTime> values)
-        {
-            var deferredValues = new DeferredDateTimeValues(_serializer, values);
-            var sql = GetSqlForSimpleTypesDateTime(deferredValues);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<DateTimeOffset> Create(DbContext dbContext, IEnumerable<DateTimeOffset> values)
-        {
-            var deferredValues = new DeferredDateTimeOffsetValues(_serializer, values);
-            var sql = GetSqlForSimpleTypesDateTimeOffset(deferredValues);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<char> Create(DbContext dbContext, IEnumerable<char> values, bool isUnicode = false)
-        {
-            var deferredValues = new DeferredCharValues(_serializer, values);
-            var sql = GetSqlForSimpleTypesChar(deferredValues, isUnicode);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<string> Create(DbContext dbContext, IEnumerable<string> values, bool isUnicode = false)
-        {
-            var deferredValues = new DeferredStringValues(_serializer, values);
-            var sql = GetSqlForSimpleTypesString(deferredValues, isUnicode);
-            return Create(dbContext, sql, deferredValues);
-        }
-
-        public IQueryable<Guid> Create(DbContext dbContext, IEnumerable<Guid> values)
-        {
-            var deferredValues = new DeferredGuidValues(_serializer, values);
-            var sql = GetSqlForSimpleTypesGuid(deferredValues);
-            return Create(dbContext, sql, deferredValues);
-        }
-
         protected abstract string GetSqlForComplexTypes(
             IEntityOptionsBuilder entityOptions,
             bool useSelectTopOptimization,
             IReadOnlyList<EntityPropertyMapping> mappings
             );
 
-        public IQueryable<TSource> Create<TSource>(DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure)
+        private IQueryable<TSource> CreateForComplexType<TSource>(DbContext dbContext, IDeferredValues deferredValues, Action<EntityOptionsBuilder<TSource>>? configure)
             where TSource : notnull
         {
-            var simpleTypeQueryable = getSimpleTypeQueryable(dbContext, values);
-
-            if (simpleTypeQueryable != null)
-            {
-                return simpleTypeQueryable;
-            }
-
-            var mappings = EntityPropertyMapping.GetMappings<TSource>();
-            var deferredValues = new DeferredEntityValues<TSource>(_serializer, values, mappings);
             var useSelectTopOptimization = UseSelectTopOptimization(deferredValues);
-            var sql = getSql(mappings, configure, useSelectTopOptimization);
+            var sql = getSql(deferredValues.Mappings, configure, useSelectTopOptimization);
             var sqlParameters = GetSqlParameters(deferredValues);
 
             var source = dbContext
                 .Set<QueryableValuesEntity>()
                 .FromSqlRaw(sql, sqlParameters);
 
-            var projected = projectQueryable(source, mappings);
+            var projected = projectQueryable(source, deferredValues.Mappings);
 
             return projected;
 
@@ -411,6 +295,115 @@ namespace BlazarTech.QueryableValues.SqlServer
 
                 #endregion
             }
+        }
+
+        private IQueryable<TSource> CreateForSimpleType<TSource>(DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<SimpleTypeValue<TSource>>>? configure = null)
+            where TSource : notnull
+        {
+            var wrappedValues = new ValuesWrapper<TSource, SimpleTypeValue<TSource>>(
+                values,
+                values.Select(i => new SimpleTypeValue<TSource> { V = i })
+                );
+
+            var deferredValues = new DeferredValues<TSource, SimpleTypeValue<TSource>>(_serializer, wrappedValues);
+
+            return CreateForComplexType(
+                dbContext,
+                deferredValues,
+                configure: configure
+                )
+                .Select(i => i.V);
+        }
+
+        public IQueryable<byte> Create(DbContext dbContext, IEnumerable<byte> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<short> Create(DbContext dbContext, IEnumerable<short> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<int> Create(DbContext dbContext, IEnumerable<int> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<long> Create(DbContext dbContext, IEnumerable<long> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<decimal> Create(DbContext dbContext, IEnumerable<decimal> values, int numberOfDecimals = 4)
+        {
+            return CreateForSimpleType(
+                dbContext,
+                values,
+                configure => configure.DefaultForNumberOfDecimals(numberOfDecimals)
+                );
+        }
+
+        public IQueryable<float> Create(DbContext dbContext, IEnumerable<float> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<double> Create(DbContext dbContext, IEnumerable<double> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<DateTime> Create(DbContext dbContext, IEnumerable<DateTime> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<DateTimeOffset> Create(DbContext dbContext, IEnumerable<DateTimeOffset> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<char> Create(DbContext dbContext, IEnumerable<char> values, bool isUnicode = false)
+        {
+            return CreateForSimpleType(
+                dbContext,
+                values,
+                configure => configure.DefaultForIsUnicode(isUnicode)
+                );
+        }
+
+        public IQueryable<string> Create(DbContext dbContext, IEnumerable<string> values, bool isUnicode = false)
+        {
+            return CreateForSimpleType(
+                dbContext,
+                values,
+                configure => configure.DefaultForIsUnicode(isUnicode)
+                );
+        }
+
+        public IQueryable<Guid> Create(DbContext dbContext, IEnumerable<Guid> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<TSource> Create<TSource>(DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure)
+            where TSource : notnull
+        {
+            var simpleTypeQueryable = getSimpleTypeQueryable(dbContext, values);
+
+            if (simpleTypeQueryable != null)
+            {
+                return simpleTypeQueryable;
+            }
+
+            var deferredValues = new DeferredValues<TSource, TSource>(_serializer, new ValuesWrapper<TSource, TSource>(values, values));
+
+            return CreateForComplexType(
+                dbContext,
+                deferredValues,
+                configure
+                );
 
             IQueryable<TSource>? getSimpleTypeQueryable(DbContext dbContext, IEnumerable<TSource> values)
             {

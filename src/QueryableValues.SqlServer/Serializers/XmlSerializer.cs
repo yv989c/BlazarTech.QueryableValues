@@ -446,6 +446,8 @@ namespace BlazarTech.QueryableValues.Serializers
                 {
                     xmlWriter.WriteStartElement("R");
 
+                    var index = 0;
+
                     foreach (var value in values)
                     {
                         if (mustSkipValue?.Invoke(value) == true)
@@ -454,6 +456,10 @@ namespace BlazarTech.QueryableValues.Serializers
                         }
 
                         xmlWriter.WriteStartElement("V");
+
+                        xmlWriter.WriteStartAttribute(QueryableValuesEntity.IndexPropertyName);
+                        xmlWriter.WriteValue(index++);
+                        xmlWriter.WriteEndAttribute();
 
                         writeValue(xmlWriter, value);
 
