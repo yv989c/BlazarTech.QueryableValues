@@ -15,7 +15,7 @@ This library allows you to efficiently compose an [IEnumerable&lt;T&gt;] in your
 **Highlights**
 - ✨ Enables the composition of in-memory data within your queries, utilizing both simple and complex types.
 - 👌 Works with all versions of SQL Server supported by [Entity Framework Core].
-- ⚡ Automatically uses the most efficient strategy compatible with your SQL Server instance and database configuration.
+- ⚡ Automatically uses the most efficient strategy compatible with your SQL Server instance and configuration.
 - ✅ Boasts over 140 tests for reliability and compatibility, giving you added confidence.
 
 For a detailed explanation of the problem solved by QueryableValues, please continue reading [here][readme-background].
