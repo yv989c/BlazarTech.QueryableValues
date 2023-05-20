@@ -78,7 +78,7 @@ public class Startup
     }
 }
 ```
-> 💡 Pro-tip: `UseQueryableValues` offers an optional `options` delegate for additional configurations.
+> 💡 `UseQueryableValues` offers an optional `options` delegate for additional configurations.
 
 ## How Do You Use It?
 The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace; therefore, you must add the following `using` directive to your source code file for it to appear as a method of your [DbContext] instance:
@@ -92,8 +92,7 @@ Below are a few examples composing a query using the values provided by an [IEnu
 
 ### Simple Type Examples
 
-> 💡 Supported types:
-> [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], and [String].
+> 💡 Supports [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], and [String].
 
 Using the [Contains][ContainsQueryable] LINQ method:
 
@@ -155,10 +154,7 @@ var myQuery2 =
 ```
 ### Complex Type Example
 
-> 💡 Requirements:
-> - Can be an anonymous type.
-> - Can be a user-defined class or struct with read/write properties and a public constructor.
-> - Must have one or more simple type properties, including [Boolean].
+> 💡 Must be an anonymous or user-defined type with one or more simple type properties, including [Boolean].
 
 ```c#
 // Performance Tip:
@@ -166,7 +162,21 @@ var myQuery2 =
 // the ones you need to a new variable and use it in your query.
 var projectedItems = items.Select(i => new { i.CategoryId, i.ColorName });
 
-var myQuery = 
+// Example #1 (LINQ method syntax)
+var myQuery1 = dbContext.Product
+    .Join(
+        dbContext.AsQueryableValues(projectedItems),
+        p => new { p.CategoryId, p.ColorName },
+        pi => new { pi.CategoryId, pi.ColorName },
+        (p, pi) => new
+        {
+            p.ProductId,
+            p.Description
+        }
+    );
+
+// Example #2 (LINQ query syntax)
+var myQuery2 = 
     from p in dbContext.Product
     join pi in dbContext.AsQueryableValues(projectedItems) on new { p.CategoryId, p.ColorName } equals new { pi.CategoryId, pi.ColorName }
     select new
@@ -175,10 +185,11 @@ var myQuery =
         p.Description
     };
 ```
-**About Complex Types**
-> :warning: All the data provided by this type is transmitted to the server; therefore, ensure that it only contains the properties you need for your query. Not following this recommendation will degrade the query's performance.
 
-> :warning: There is a limit of up to 10 properties for any given simple type (e.g. cannot have more than 10 [Int32] properties). Exceeding that limit will cause an exception and may also suggest that you should rethink your strategy.
+**About Complex Types**
+> ⚠️ All the data provided by this type is transmitted to the server; therefore, ensure that it only contains the properties you need for your query. Not following this recommendation will degrade the query's performance.
+
+> ⚠️ There is a limit of up to 10 properties for any given simple type (e.g. cannot have more than 10 [Int32] properties). Exceeding that limit will cause an exception and may also suggest that you should rethink your strategy.
 
 # Benchmarks
 The following [benchmarks] consist of simple EF Core queries that have a dependency on a random sequence of [Int32], [Guid], and [String] values via the `Contains` LINQ method. It shows the performance differences between not using and using QueryableValues. In practice, the benefits of using QueryableValues are more dramatic on complex EF Core queries and busy environments.
