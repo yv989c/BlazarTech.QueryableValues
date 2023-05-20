@@ -10,25 +10,20 @@
 
 > 🤔💭 TLDR; By using QueryableValues, you can incorporate in-memory collections into your EF queries with outstanding performance and flexibility.
 
-This library allows you to efficiently compose an [IEnumerable&lt;T&gt;] in your [Entity Framework Core] queries when using the [SQL Server Database Provider]. This is accomplished by using the `AsQueryableValues` extension method available on the [DbContext] class. Everything is evaluated on the server with a single round trip, in a way that preserves the query's [execution plan], even when the values behind the [IEnumerable&lt;T&gt;] are changed on subsequent executions.
+This library allows you to efficiently compose an [IEnumerable&lt;T&gt;] in your [Entity Framework Core] queries when using the [SQL Server Database Provider]. You can accomplish this by using the `AsQueryableValues` extension method that's available on the [DbContext] class. The query is processed in a single round trip to the server, in a way that preserves its [execution plan], even when the values within the [IEnumerable&lt;T&gt;] are changed on subsequent executions.
 
-The supported types for `T` are:
-- Simple Type: [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], and [String].
-- Complex Type:
-  - Can be an anonymous type.
-  - Can be a user-defined class or struct with read/write properties and a public constructor.
-  - Must have one or more simple type properties, including [Boolean].
+**Highlights**
+- ✨ Enables the composition of in-memory data within your queries, utilizing both simple and complex types.
+- 👌 Works with all versions of SQL Server supported by [Entity Framework Core].
+- ⚡ Automatically uses the most efficient strategy compatible with your SQL Server instance and database configuration.
+- ✅ Boasts over 140 tests for reliability and compatibility, giving you added confidence.
 
 For a detailed explanation of the problem solved by QueryableValues, please continue reading [here][readme-background].
-
-> ✅ QueryableValues boasts over 120 integration tests that are executed on every supported version of EF. These tests ensure reliability and compatibility, giving you added confidence.
 
 > 💡 Still on Entity Framework 6 (non-core)? Then [QueryableValues `EF6 Edition`](https://github.com/yv989c/BlazarTech.QueryableValues.EF6) is what you need.
 
 ## When Should You Use It?
-The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. In such cases, the underlying SQL query will be efficient on subsequent executions.
-
-It provides a solution to the following long standing [EF Core issue](https://github.com/dotnet/efcore/issues/13617) and enables other currently unsupported scenarios; like the ability to efficiently create joins with in-memory data.
+The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. It provides a solution to the following [EF Core issue](https://github.com/dotnet/efcore/issues/13617) and enables other currently unsupported scenarios; like the ability to efficiently create joins with in-memory data.
 
 ## Your Support is Appreciated!
 If you feel that this solution has provided you some value, please consider [buying me a ☕][BuyMeACoffee].
@@ -96,6 +91,10 @@ using BlazarTech.QueryableValues;
 Below are a few examples composing a query using the values provided by an [IEnumerable&lt;T&gt;].
 
 ### Simple Type Examples
+
+> 💡 Supported types:
+> [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], and [String].
+
 Using the [Contains][ContainsQueryable] LINQ method:
 
 ```c#
@@ -155,6 +154,12 @@ var myQuery2 =
     };
 ```
 ### Complex Type Example
+
+> 💡 Requirements:
+> - Can be an anonymous type.
+> - Can be a user-defined class or struct with read/write properties and a public constructor.
+> - Must have one or more simple type properties, including [Boolean].
+
 ```c#
 // Performance Tip:
 // If your IEnumerable<T> item type (T) has many properties, project only 
@@ -404,7 +409,7 @@ Now, focus your attention to the first query of the green section. Here you can 
 
 ## What Makes This Work? 🤓
 
-> 🎉 QueryableValues now supports JSON serialization, which improves its performance compared to using XML. By default, QueryableValues will attempt to use JSON if it is supported.
+> 🎉 QueryableValues now supports JSON serialization, which improves its performance compared to using XML. By default, QueryableValues will attempt to use JSON if it is supported by your SQL Server instance and database configuration.
 
 QueryableValues makes use of the XML parsing capabilities in SQL Server, which are available in all the supported versions of SQL Server to date. The provided sequence of values are serialized as XML and embedded in the underlying SQL query using a native XML parameter, then it uses SQL Server's XML type methods to project the query in a way that can be mapped by [Entity Framework Core].
 
