@@ -6,25 +6,20 @@
 
 > 🤔💭 TLDR; By using QueryableValues, you can incorporate in-memory collections into your EF queries with outstanding performance and flexibility.
 
-This library allows you to efficiently compose an [IEnumerable&lt;T&gt;] in your [Entity Framework Core] queries when using the [SQL Server Database Provider]. This is accomplished by using the `AsQueryableValues` extension method available on the [DbContext] class. Everything is evaluated on the server with a single round trip, in a way that preserves the query's [execution plan], even when the values behind the [IEnumerable&lt;T&gt;] are changed on subsequent executions.
+This library allows you to efficiently compose an [IEnumerable&lt;T&gt;] in your [Entity Framework Core] queries when using the [SQL Server Database Provider]. You can accomplish this by using the `AsQueryableValues` extension method that's available on the [DbContext] class. The query is processed in a single round trip to the server, in a way that preserves its [execution plan], even when the values within the [IEnumerable&lt;T&gt;] are changed on subsequent executions.
 
-The supported types for `T` are:
-- Simple Type: [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], and [String].
-- Complex Type:
-  - Can be an anonymous type.
-  - Can be a user-defined class or struct with read/write properties and a public constructor.
-  - Must have one or more simple type properties, including [Boolean].
+**Highlights**
+- ✨ Enables the composition of in-memory data within your queries, utilizing both simple and complex types.
+- 👌 Works with all versions of SQL Server supported by [Entity Framework Core].
+- ⚡ Automatically uses the most efficient strategy compatible with your SQL Server instance and configuration.
+- ✅ Boasts over 140 tests for reliability and compatibility, giving you added confidence.
 
 For a detailed explanation of the problem solved by QueryableValues, please continue reading [here][readme-background].
-
-> ✅ QueryableValues boasts over 120 integration tests that are executed on every supported version of EF. These tests ensure reliability and compatibility, giving you added confidence.
 
 > 💡 Still on Entity Framework 6 (non-core)? Then [QueryableValues `EF6 Edition`](https://github.com/yv989c/BlazarTech.QueryableValues.EF6) is what you need.
 
 ## When Should You Use It?
-The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. In such cases, the underlying SQL query will be efficient on subsequent executions.
-
-It provides a solution to the following long standing [EF Core issue](https://github.com/dotnet/efcore/issues/13617) and enables other currently unsupported scenarios; like the ability to efficiently create joins with in-memory data.
+The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. It provides a solution to the following [EF Core issue](https://github.com/dotnet/efcore/issues/13617) and enables other currently unsupported scenarios; like the ability to efficiently create joins with in-memory data.
 
 ## Your Support is Appreciated!
 If you feel that this solution has provided you some value, please consider [buying me a ☕][BuyMeACoffee].
@@ -79,7 +74,7 @@ public class Startup
     }
 }
 ```
-> 💡 Pro-tip: `UseQueryableValues` offers an optional `options` delegate for additional configurations.
+> 💡 `UseQueryableValues` offers an optional `options` delegate for additional configurations.
 
 ## How Do You Use It?
 The `AsQueryableValues` extension method is provided by the `BlazarTech.QueryableValues` namespace; therefore, you must add the following `using` directive to your source code file for it to appear as a method of your [DbContext] instance:
@@ -92,6 +87,9 @@ using BlazarTech.QueryableValues;
 Below are a few examples composing a query using the values provided by an [IEnumerable&lt;T&gt;].
 
 ### Simple Type Examples
+
+> 💡 Supports [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], and [String].
+
 Using the [Contains][ContainsQueryable] LINQ method:
 
 ```c#
@@ -151,13 +149,30 @@ var myQuery2 =
     };
 ```
 ### Complex Type Example
+
+> 💡 Must be an anonymous or user-defined type with one or more simple type properties, including [Boolean].
+
 ```c#
 // Performance Tip:
 // If your IEnumerable<T> item type (T) has many properties, project only 
 // the ones you need to a new variable and use it in your query.
 var projectedItems = items.Select(i => new { i.CategoryId, i.ColorName });
 
-var myQuery = 
+// Example #1 (LINQ method syntax)
+var myQuery1 = dbContext.Product
+    .Join(
+        dbContext.AsQueryableValues(projectedItems),
+        p => new { p.CategoryId, p.ColorName },
+        pi => new { pi.CategoryId, pi.ColorName },
+        (p, pi) => new
+        {
+            p.ProductId,
+            p.Description
+        }
+    );
+
+// Example #2 (LINQ query syntax)
+var myQuery2 = 
     from p in dbContext.Product
     join pi in dbContext.AsQueryableValues(projectedItems) on new { p.CategoryId, p.ColorName } equals new { pi.CategoryId, pi.ColorName }
     select new
@@ -166,10 +181,11 @@ var myQuery =
         p.Description
     };
 ```
-**About Complex Types**
-> :warning: All the data provided by this type is transmitted to the server; therefore, ensure that it only contains the properties you need for your query. Not following this recommendation will degrade the query's performance.
 
-> :warning: There is a limit of up to 10 properties for any given simple type (e.g. cannot have more than 10 [Int32] properties). Exceeding that limit will cause an exception and may also suggest that you should rethink your strategy.
+**About Complex Types**
+> ⚠️ All the data provided by this type is transmitted to the server; therefore, ensure that it only contains the properties you need for your query. Not following this recommendation will degrade the query's performance.
+
+> ⚠️ There is a limit of up to 10 properties for any given simple type (e.g. cannot have more than 10 [Int32] properties). Exceeding that limit will cause an exception and may also suggest that you should rethink your strategy.
 
 ## Do You Want To Know More? 📚
 Please take a look at the [repository][Repository].

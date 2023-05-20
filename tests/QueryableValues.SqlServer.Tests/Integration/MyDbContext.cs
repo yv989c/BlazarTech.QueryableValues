@@ -31,6 +31,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     {
         QueryableValuesSqlServerOptions Options { get; }
         DbSet<TestDataEntity> TestData { get; set; }
+        DbSet<ChildEntity> ChildEntity { get; set; }
     }
 
     public class NotConfiguredDbContext : MyDbContextBase

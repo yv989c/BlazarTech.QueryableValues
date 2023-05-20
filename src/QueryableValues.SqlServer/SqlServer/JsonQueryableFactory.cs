@@ -21,96 +21,6 @@ namespace BlazarTech.QueryableValues.SqlServer
             return new SqlParameter(null, SqlDbType.NVarChar, -1);
         }
 
-        private string GetSqlForSimpleTypes<T>(string sqlType, DeferredValues<T> deferredValues, (int Precision, int Scale)? precisionScale = null)
-            where T : notnull
-        {
-            var useSelectTopOptimization = UseSelectTopOptimization(deferredValues);
-            var cacheKeyProperties = new
-            {
-                SqlType = sqlType,
-                UseSelectTopOptimization = useSelectTopOptimization,
-                PrecisionScale = precisionScale
-            };
-
-            var cacheKey = GetCacheKey(cacheKeyProperties);
-
-            if (SqlCache.TryGetValue(cacheKey, out string? sql))
-            {
-                return sql;
-            }
-
-            var sqlPrefix = useSelectTopOptimization ? SqlSelectTop : SqlSelect;
-            var sqlTypeArguments = precisionScale.HasValue ? $"({precisionScale.Value.Precision},{precisionScale.Value.Scale})" : null;
-
-            sql =
-                $"{sqlPrefix} [V] " +
-                $"FROM OPENJSON({{0}}) WITH ([V] {sqlType}{sqlTypeArguments} '$', [_] BIT '$._') ORDER BY [_]";
-
-            SqlCache.TryAdd(cacheKey, sql);
-
-            return sql;
-        }
-
-        protected override string GetSqlForSimpleTypesByte(DeferredValues<byte> deferredValues)
-        {
-            return GetSqlForSimpleTypes("tinyint", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesInt16(DeferredValues<short> deferredValues)
-        {
-            return GetSqlForSimpleTypes("smallint", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesInt32(DeferredValues<int> deferredValues)
-        {
-            return GetSqlForSimpleTypes("int", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesInt64(DeferredValues<long> deferredValues)
-        {
-            return GetSqlForSimpleTypes("bigint", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesDecimal(DeferredValues<decimal> deferredValues, (int Precision, int Scale) precisionScale)
-        {
-            return GetSqlForSimpleTypes("decimal", deferredValues, precisionScale: precisionScale);
-        }
-
-        protected override string GetSqlForSimpleTypesSingle(DeferredValues<float> deferredValues)
-        {
-            return GetSqlForSimpleTypes("real", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesDouble(DeferredValues<double> deferredValues)
-        {
-            return GetSqlForSimpleTypes("float", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesDateTime(DeferredValues<DateTime> deferredValues)
-        {
-            return GetSqlForSimpleTypes("datetime2", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesDateTimeOffset(DeferredValues<DateTimeOffset> deferredValues)
-        {
-            return GetSqlForSimpleTypes("datetimeoffset", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesChar(DeferredValues<char> deferredValues, bool isUnicode)
-        {
-            return GetSqlForSimpleTypes(isUnicode ? "nvarchar(1)" : "varchar(1)", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesString(DeferredValues<string> deferredValues, bool isUnicode)
-        {
-            return GetSqlForSimpleTypes(isUnicode ? "nvarchar(max)" : "varchar(max)", deferredValues);
-        }
-
-        protected override string GetSqlForSimpleTypesGuid(DeferredValues<Guid> deferredValues)
-        {
-            return GetSqlForSimpleTypes("uniqueidentifier", deferredValues);
-        }
-
         protected override string GetSqlForComplexTypes(IEntityOptionsBuilder entityOptions, bool useSelectTopOptimization, IReadOnlyList<EntityPropertyMapping> mappings)
         {
             var sb = StringBuilderPool.Get();
@@ -126,30 +36,22 @@ namespace BlazarTech.QueryableValues.SqlServer
                     sb.Append(SqlSelect);
                 }
 
-                sb.Append(' ');
+                sb.Append(" [").Append(QueryableValuesEntity.IndexPropertyName).Append(']');
 
                 for (var i = 0; i < mappings.Count; i++)
                 {
-                    if (i > 0)
-                    {
-                        sb.Append(", ");
-                    }
-
-                    sb.Append('[').Append(mappings[i].Target.Name).Append(']');
+                    sb.Append(", [").Append(mappings[i].Target.Name).Append(']');
                 }
 
                 sb.AppendLine();
-                sb.Append("FROM OPENJSON({0}) WITH (");
+                sb.Append("FROM OPENJSON({0}) WITH ([").Append(QueryableValuesEntity.IndexPropertyName).Append("] int");
 
                 for (var i = 0; i < mappings.Count; i++)
                 {
                     var mapping = mappings[i];
                     var propertyOptions = entityOptions.GetPropertyOptions(mapping.Source);
 
-                    if (i > 0)
-                    {
-                        sb.Append(", ");
-                    }
+                    sb.Append(", ");
 
                     var targetName = mapping.Target.Name;
 
@@ -218,7 +120,8 @@ namespace BlazarTech.QueryableValues.SqlServer
                     }
                 }
 
-                sb.Append(", [_] BIT '$._') ORDER BY [_]");
+                sb.Append(')').AppendLine();
+                sb.Append("ORDER BY [").Append(QueryableValuesEntity.IndexPropertyName).Append(']');
 
                 return sb.ToString();
             }

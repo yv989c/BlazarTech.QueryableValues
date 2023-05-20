@@ -10,71 +10,7 @@ namespace BlazarTech.QueryableValues.Serializers
     internal sealed class JsonSerializer : IJsonSerializer
     {
         private static readonly RecyclableMemoryStreamManager MemoryStreamManager = new RecyclableMemoryStreamManager();
-
-        private static string SerializePrivate<T>(T values)
-        {
-            return System.Text.Json.JsonSerializer.Serialize(values);
-        }
-
-        public string Serialize(IEnumerable<byte> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<short> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<int> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<long> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<decimal> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<float> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<double> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<DateTime> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<DateTimeOffset> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<Guid> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<char> values)
-        {
-            return SerializePrivate(values);
-        }
-
-        public string Serialize(IEnumerable<string> values)
-        {
-            return SerializePrivate(values);
-        }
+        private static readonly JsonEncodedText IndexPropertyName = JsonEncodedText.Encode(QueryableValuesEntity.IndexPropertyName);
 
         public string Serialize<T>(IEnumerable<T> values, IReadOnlyList<EntityPropertyMapping> propertyMappings)
             where T : notnull
@@ -106,6 +42,8 @@ namespace BlazarTech.QueryableValues.Serializers
                 {
                     jsonWriter.WriteStartArray();
 
+                    var index = 0;
+
                     foreach (var value in values)
                     {
                         if (mustSkipValue?.Invoke(value) == true)
@@ -114,6 +52,9 @@ namespace BlazarTech.QueryableValues.Serializers
                         }
 
                         jsonWriter.WriteStartObject();
+
+                        jsonWriter.WritePropertyName(IndexPropertyName);
+                        jsonWriter.WriteNumberValue(index++);
 
                         writeValue(jsonWriter, value);
 
@@ -129,7 +70,16 @@ namespace BlazarTech.QueryableValues.Serializers
 #elif NETSTANDARD2_1_OR_GREATER
                 stream.Position = 0;
                 var streamInt32Length = (int)stream.Length;
-                return Encoding.UTF8.GetString(stream.GetSpan()[..streamInt32Length]);
+                var span = stream.GetSpan();
+
+                if (span.Length >= streamInt32Length)
+                {
+                    return Encoding.UTF8.GetString(span[..streamInt32Length]);
+                }
+                else
+                {
+                    return Encoding.UTF8.GetString(stream.GetBuffer(), 0, streamInt32Length);
+                }
 #else
                 return Encoding.UTF8.GetString(stream.GetReadOnlySequence());
 #endif

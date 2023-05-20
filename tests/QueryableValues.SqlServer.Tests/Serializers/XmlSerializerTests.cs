@@ -16,70 +16,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Serializers
         }
 
         [Fact]
-        public void IsValidXmlForByte()
-        {
-            var values = new byte[] { byte.MinValue, byte.MaxValue };
-            var xml = _serializer.Serialize(values);
-            var expected = $"<R><V>{byte.MinValue}</V><V>{byte.MaxValue}</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForInt16()
-        {
-            var values = new short[] { short.MinValue, short.MaxValue, 0, 1, -1 };
-            var xml = _serializer.Serialize(values);
-            var expected = $"<R><V>{short.MinValue}</V><V>{short.MaxValue}</V><V>{0}</V><V>{1}</V><V>{-1}</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForInt32()
-        {
-            var values = new int[] { int.MinValue, int.MaxValue, 0, 1, -1 };
-            var xml = _serializer.Serialize(values);
-            var expected = $"<R><V>{int.MinValue}</V><V>{int.MaxValue}</V><V>{0}</V><V>{1}</V><V>{-1}</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForInt64()
-        {
-            var values = new long[] { long.MinValue, long.MaxValue, 0, 1, -1 };
-            var xml = _serializer.Serialize(values);
-            var expected = $"<R><V>{long.MinValue}</V><V>{long.MaxValue}</V><V>{0}</V><V>{1}</V><V>{-1}</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForDecimal()
-        {
-            var values = new decimal[] { decimal.MinValue, decimal.MaxValue, decimal.Zero, decimal.One, decimal.MinusOne };
-            var xml = _serializer.Serialize(values);
-            var expected = $"<R><V>{decimal.MinValue}</V><V>{decimal.MaxValue}</V><V>{decimal.Zero}</V><V>{decimal.One}</V><V>{decimal.MinusOne}</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForSingle()
-        {
-            var values = new float[] { float.MinValue, float.MaxValue, 0, 1, -1 };
-            var xml = _serializer.Serialize(values);
-            var expected = $"<R><V>{float.MinValue}</V><V>{float.MaxValue}</V><V>{0}</V><V>{1}</V><V>{-1}</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForDouble()
-        {
-            var values = new double[] { double.MinValue, double.MaxValue, 0, 1, -1 };
-            var xml = _serializer.Serialize(values);
-            var expected = $"<R><V>{double.MinValue}</V><V>{double.MaxValue}</V><V>{0}</V><V>{1}</V><V>{-1}</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForDateTime()
+        public void IsValidXmlForComplexType()
         {
             var now = DateTime.Now;
 
@@ -91,126 +28,112 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Serializers
             utcNow = new DateTime(utcNow.Ticks - (utcNow.Ticks % TimeSpan.TicksPerSecond), utcNow.Kind)
                 .AddMilliseconds(123);
 
-            var values = new[] {
-                DateTime.MinValue,
-                DateTime.MaxValue,
-                DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Local),
-                DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Local),
-                DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc),
-                DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc),
-                now,
-                utcNow
-            };
-
-            var xml = _serializer.Serialize(values);
             var nowString = DateTime.SpecifyKind(now, DateTimeKind.Unspecified).ToString("o").Substring(0, 23);
             var utcNowString = DateTime.SpecifyKind(utcNow, DateTimeKind.Unspecified).ToString("o").Substring(0, 23);
-            var expected = $"<R><V>0001-01-01T00:00:00</V><V>9999-12-31T23:59:59.9999999</V><V>0001-01-01T00:00:00</V><V>9999-12-31T23:59:59.9999999</V><V>0001-01-01T00:00:00</V><V>9999-12-31T23:59:59.9999999</V><V>{nowString}</V><V>{utcNowString}</V></R>";
-            Assert.Equal(expected, xml);
-        }
 
-        [Fact]
-        public void IsValidXmlForDateTimeOffset()
-        {
-            var values = new[] {
-                DateTimeOffset.MinValue,
-                DateTimeOffset.MaxValue,
-                new DateTimeOffset(2021, 1, 1, 1, 2, 3, 4, TimeSpan.FromHours(0)),
-                new DateTimeOffset(2021, 1, 1, 1, 2, 3, 4, TimeSpan.FromHours(5.5))
-            };
-
-            var xml = _serializer.Serialize(values);
-            var expected = "<R><V>0001-01-01T00:00:00Z</V><V>9999-12-31T23:59:59.9999999Z</V><V>2021-01-01T01:02:03.004Z</V><V>2021-01-01T01:02:03.004+05:30</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForGuid()
-        {
-            var values = new[] {
-                Guid.Empty,
-                Guid.Parse("b8f66b9f-a9ee-447a-bd10-6b6adb9bcfaf")
-            };
-            var xml = _serializer.Serialize(values);
-            var expected = "<R><V>00000000-0000-0000-0000-000000000000</V><V>b8f66b9f-a9ee-447a-bd10-6b6adb9bcfaf</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForChar()
-        {
-            var values = new[] { ' ', 'a', 'A', '1', '0', '\n', '\0', '☃' };
-            var xml = _serializer.Serialize(values);
-            var expected = "<R><V>&#x20;</V><V>a</V><V>A</V><V>1</V><V>0</V><V>&#xA;</V><V>?</V><V>☃</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForString()
-        {
-            var values = new[] { "Test 1", "Test <2>", "Test &3", "😀", "ᴭ", "", " " };
-            var xml = _serializer.Serialize(values);
-            var expected = "<R><V>Test&#x20;1</V><V>Test&#x20;&lt;2&gt;</V><V>Test&#x20;&amp;3</V><V>😀</V><V>ᴭ</V><V /><V>&#x20;</V></R>";
-            Assert.Equal(expected, xml);
-        }
-
-        [Fact]
-        public void IsValidXmlForComplexType()
-        {
             var testType = new
             {
                 BooleanTrueValue = true,
                 BooleanFalseValue = false,
-                ByteValue = byte.MaxValue,
-                Int16Value = short.MaxValue,
-                Int32Value = int.MaxValue,
-                Int64Value = long.MaxValue,
-                DecimalValue = decimal.MaxValue,
-                SingleValue = float.MaxValue,
-                DoubleValue = double.MaxValue,
-                DateTimeValue = DateTime.MaxValue,
-                DateTimeOffsetValue = DateTimeOffset.MaxValue,
-                GuidValue = Guid.Empty,
-                CharValue = '☢',
-                StringValue = " Hi!\n😀\"",
-                StringNullValue = (string?)null,
-                StringEmptyValue = ""
+
+                ByteMinValue = byte.MinValue,
+                ByteMaxValue = byte.MaxValue,
+
+                Int16MinValue = short.MinValue,
+                Int16MaxValue = short.MaxValue,
+                Int16Zero = (short)0,
+                Int16One = (short)1,
+                Int16MinusOne = (short)-1,
+
+                Int32MinValue = int.MinValue,
+                Int32MaxValue = int.MaxValue,
+                Int32Zero = 0,
+                Int32One = 1,
+                Int32MinusOne = -1,
+
+                Int64MinValue = long.MinValue,
+                Int64MaxValue = long.MaxValue,
+                Int64Zero = 0L,
+                Int64One = 1L,
+                Int64MinusOne = -1L,
+
+                DecimalMinValue = decimal.MinValue,
+                DecimalMaxValue = decimal.MaxValue,
+                DecimalZero = decimal.Zero,
+                DecimalOne = decimal.One,
+                DecimalMinusOne = decimal.MinusOne,
+                DecimalValue = 123.456789M,
+
+                SingleMinValue = float.MinValue,
+                SingleMaxValue = float.MaxValue,
+                SingleZero = 0F,
+                SingleOne = 1F,
+                SingleMinusOne = -1F,
+                SingleValue = 123.456789F,
+
+                DoubleMinValue = double.MinValue,
+                DoubleMaxValue = double.MaxValue,
+                DoubleZero = 0D,
+                DoubleOne = 1D,
+                DoubleMinusOne = -1D,
+                DoubleValue = 123.456789D,
+
+                DateTimeMinValue = DateTime.MinValue,
+                DateTimeMaxValue = DateTime.MaxValue,
+                DateTimeMinValueLocal = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Local),
+                DateTimeMaxValueLocal = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Local),
+                DateTimeMinValueUtc = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc),
+                DateTimeMaxValueUtc = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc),
+                DateTimeNow = now,
+                DateTimeUtcNow = utcNow,
+
+                DateTimeOffsetMinValue = DateTimeOffset.MinValue,
+                DateTimeOffsetMaxValue = DateTimeOffset.MaxValue,
+                DateTimeOffset1 = new DateTimeOffset(2021, 1, 1, 1, 2, 3, 4, TimeSpan.FromHours(0)),
+                DateTimeOffset2 = new DateTimeOffset(2021, 1, 1, 1, 2, 3, 4, TimeSpan.FromHours(5.5)),
+
+                Guid1 = Guid.Empty,
+                Guid2 = Guid.Parse("b8f66b9f-a9ee-447a-bd10-6b6adb9bcfaf"),
+
+                Char1 = ' ',
+                Char2 = 'a',
+                Char3 = 'A',
+                Char4 = '1',
+                Char5 = '0',
+                Char6 = '\n',
+                Char7 = '\0',
+                Char8 = '☃',
+
+                String1 = " Hi!\n😀\"",
+                String2 = "Test 1",
+                String3 = "Test <2>",
+                String4 = "Test &3",
+                String5 = (string?)null,
+                String6 = "😀",
+                String7 = "ᴭ",
+                String8 = "",
+                String9 = " ",
             };
 
             var values = new[] { testType };
             var mappings = EntityPropertyMapping.GetMappings(testType.GetType());
-            var xml = _serializer.Serialize(values, mappings);
-            var expected = "<R><V Bool0=\"1\" Bool1=\"0\" Byte0=\"255\" Short0=\"32767\" Int0=\"2147483647\" Long0=\"9223372036854775807\" Decimal0=\"79228162514264337593543950335\" Float0=\"3.4028235E+38\" Double0=\"1.7976931348623157E+308\" DateTime0=\"9999-12-31T23:59:59.9999999\" DateTimeOffset0=\"9999-12-31T23:59:59.9999999Z\" Guid0=\"00000000-0000-0000-0000-000000000000\" Char0=\"☢\" String0=\"&#x20;Hi!&#xA;😀&quot;\" String2=\"\" /></R>";
-            Assert.Equal(expected, xml);
-        }
+            var actual = _serializer.Serialize(values, mappings);
 
-        [Fact]
-        public void IsValidEmptyXmlForSimpleType()
-        {
-            var testCounter = 0;
+            var expectedByte = $@"Y=""{byte.MinValue}"" Y1=""{byte.MaxValue}""";
+            var expectedInt16 = $@"H=""{short.MinValue}"" H1=""{short.MaxValue}"" H2=""0"" H3=""1"" H4=""-1""";
+            var expectedInt32 = $@"I=""{int.MinValue}"" I1=""{int.MaxValue}"" I2=""0"" I3=""1"" I4=""-1""";
+            var expectedInt64 = $@"L=""{long.MinValue}"" L1=""{long.MaxValue}"" L2=""0"" L3=""1"" L4=""-1""";
+            var expectedDecimal = $@"M=""{decimal.MinValue}"" M1=""{decimal.MaxValue}"" M2=""{decimal.Zero}"" M3=""{decimal.One}"" M4=""{decimal.MinusOne}"" M5=""123.456789""";
+            var expectedSingle = $@"F=""{float.MinValue}"" F1=""{float.MaxValue}"" F2=""0"" F3=""1"" F4=""-1"" F5=""123.45679""";
+            var expectedDouble = $@"D=""{double.MinValue}"" D1=""{double.MaxValue}"" D2=""0"" D3=""1"" D4=""-1"" D5=""123.456789""";
+            var expectedDateTime = $@"A=""0001-01-01T00:00:00"" A1=""9999-12-31T23:59:59.9999999"" A2=""0001-01-01T00:00:00"" A3=""9999-12-31T23:59:59.9999999"" A4=""0001-01-01T00:00:00"" A5=""9999-12-31T23:59:59.9999999"" A6=""{nowString}"" A7=""{utcNowString}""";
+            var expectedDateTimeOffset = $@"E=""0001-01-01T00:00:00Z"" E1=""9999-12-31T23:59:59.9999999Z"" E2=""2021-01-01T01:02:03.004Z"" E3=""2021-01-01T01:02:03.004+05:30""";
+            var expectedGuid = $@"G=""00000000-0000-0000-0000-000000000000"" G1=""b8f66b9f-a9ee-447a-bd10-6b6adb9bcfaf""";
+            var expectedChar = $@"C=""&#x20;"" C1=""a"" C2=""A"" C3=""1"" C4=""0"" C5=""&#xA;"" C6=""?"" C7=""☃""";
+            var expectedString = $@"S=""&#x20;Hi!&#xA;😀&quot;"" S1=""Test&#x20;1"" S2=""Test&#x20;&lt;2&gt;"" S3=""Test&#x20;&amp;3"" S5=""😀"" S6=""ᴭ"" S7="""" S8=""&#x20;""";
 
-            AssertXml(_serializer.Serialize(Array.Empty<byte>()));
-            AssertXml(_serializer.Serialize(Array.Empty<short>()));
-            AssertXml(_serializer.Serialize(Array.Empty<int>()));
-            AssertXml(_serializer.Serialize(Array.Empty<long>()));
-            AssertXml(_serializer.Serialize(Array.Empty<decimal>()));
-            AssertXml(_serializer.Serialize(Array.Empty<float>()));
-            AssertXml(_serializer.Serialize(Array.Empty<double>()));
-            AssertXml(_serializer.Serialize(Array.Empty<DateTime>()));
-            AssertXml(_serializer.Serialize(Array.Empty<DateTimeOffset>()));
-            AssertXml(_serializer.Serialize(Array.Empty<Guid>()));
-            AssertXml(_serializer.Serialize(Array.Empty<char>()));
-            AssertXml(_serializer.Serialize(Array.Empty<string>()));
-
-            // Coverage check.
-            var expectedTestCount = EntityPropertyMapping.SimpleTypes.Count - 1;
-            Assert.Equal(expectedTestCount, testCounter);
-
-            void AssertXml(string xml)
-            {
-                testCounter++;
-                Assert.Equal("<R />", xml);
-            }
+            var expected = $@"<R><V X=""0"" B=""1"" B1=""0"" {expectedByte} {expectedInt16} {expectedInt32} {expectedInt64} {expectedDecimal} {expectedSingle} {expectedDouble} {expectedDateTime} {expectedDateTimeOffset} {expectedGuid} {expectedChar} {expectedString} /></R>";
+            Assert.Equal(expected, actual);
         }
 
         [Fact]

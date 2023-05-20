@@ -10,7 +10,7 @@ namespace BlazarTech.QueryableValues
     {
         internal static readonly IReadOnlyDictionary<Type, EntityPropertyTypeName> SimpleTypes;
 
-        private static readonly PropertyInfo[] EntityProperties = typeof(QueryableValuesEntity).GetProperties();
+        private static readonly PropertyInfo[] EntityProperties = typeof(QueryableValuesEntity).GetProperties().Where(i => i.Name != QueryableValuesEntity.IndexPropertyName).ToArray();
         private static readonly ConcurrentDictionary<Type, IReadOnlyList<EntityPropertyMapping>> MappingCache = new ConcurrentDictionary<Type, IReadOnlyList<EntityPropertyMapping>>();
 
         public PropertyInfo Source { get; }
