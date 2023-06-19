@@ -1,13 +1,6 @@
 # Adapted from: https://github.com/giraffe-fsharp/Giraffe/blob/master/.github/workflows/build.yml
 name: CI/CD Workflow
 on:
-  push:
-    branches:
-    - develop
-    - 'feature/**'
-    paths:
-      - 'src/**'
-      - 'Version.xml'
   pull_request:
     paths:
       - 'src/**'

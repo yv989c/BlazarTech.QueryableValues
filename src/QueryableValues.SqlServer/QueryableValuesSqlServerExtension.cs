@@ -1,8 +1,6 @@
 ﻿#if EFCORE
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Collections.Generic;
 
 namespace BlazarTech.QueryableValues
@@ -14,48 +12,7 @@ namespace BlazarTech.QueryableValues
 
         public void ApplyServices(IServiceCollection services)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
-
-            for (var index = services.Count - 1; index >= 0; index--)
-            {
-                var descriptor = services[index];
-                if (descriptor.ServiceType != typeof(IModelCustomizer))
-                {
-                    continue;
-                }
-
-                if (descriptor.ImplementationType is null)
-                {
-                    continue;
-                }
-
-                // Replace theirs with ours.
-                services[index] = new ServiceDescriptor(
-                    descriptor.ServiceType,
-                    typeof(ModelCustomizer<>).MakeGenericType(descriptor.ImplementationType),
-                    descriptor.Lifetime
-                );
-
-                // Add theirs as is, so we can inject it into ours.
-                services.Add(
-                    new ServiceDescriptor(
-                        descriptor.ImplementationType,
-                        descriptor.ImplementationType,
-                        descriptor.Lifetime
-                    )
-                );
-            }
-
-            services.AddSingleton<Serializers.IXmlSerializer, Serializers.XmlSerializer>();
-            services.AddSingleton<Serializers.IJsonSerializer, Serializers.JsonSerializer>();
-            services.AddScoped<SqlServer.XmlQueryableFactory>();
-            services.AddScoped<SqlServer.JsonQueryableFactory>();
-            services.AddScoped<SqlServer.ExtensionOptions>();
-            services.AddScoped<SqlServer.QueryableFactoryFactory>();
-            services.AddScoped<IInterceptor, SqlServer.JsonSupportConnectionInterceptor>();
+            services.AddQueryableValuesSqlServer();
         }
 
         public void Validate(IDbContextOptions options)
