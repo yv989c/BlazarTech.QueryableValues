@@ -43,18 +43,27 @@ namespace BlazarTech.QueryableValues
             Source = source;
             Target = target;
             NormalizedType = normalizedType;
+            TypeName = GetTypeName(normalizedType);
 
-            if (SimpleTypes.TryGetValue(normalizedType, out EntityPropertyTypeName typeName))
-            {
-                TypeName = typeName;
-            }
-            else
+            if (TypeName == EntityPropertyTypeName.Unknown)
             {
                 throw new NotSupportedException($"{source.PropertyType.FullName} is not supported.");
             }
         }
 
-        private static Type GetNormalizedType(Type type) => Nullable.GetUnderlyingType(type) ?? type;
+        public static EntityPropertyTypeName GetTypeName(Type type)
+        {
+            if (SimpleTypes.TryGetValue(type, out EntityPropertyTypeName typeName))
+            {
+                return typeName;
+            }
+            else
+            {
+                return EntityPropertyTypeName.Unknown;
+            }
+        }
+
+        public static Type GetNormalizedType(Type type) => Nullable.GetUnderlyingType(type) ?? type;
 
         public static bool IsSimpleType(Type type)
         {

@@ -2,6 +2,7 @@
 {
     internal enum EntityPropertyTypeName
     {
+        Unknown,
         Boolean,
         Byte,
         Int16,
