@@ -362,6 +362,110 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(expected, actual);
         }
 
+        enum MyByteEnum : byte
+        {
+            None,
+            A,
+            B,
+            C
+        }
+
+        enum MyInt16Enum : short
+        {
+            None,
+            A,
+            B,
+            C
+        }
+
+        enum MyInt32Enum
+        {
+            None,
+            A,
+            B,
+            C
+        }
+
+        enum MyInt64Enum : long
+        {
+            None,
+            A,
+            B,
+            C
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfEnumByte()
+        {
+            var expected = new[]
+            {
+                MyByteEnum.None,
+                MyByteEnum.A,
+                MyByteEnum.A,
+                MyByteEnum.B,
+                MyByteEnum.C,
+                MyByteEnum.A
+            };
+
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfEnumInt16()
+        {
+            var expected = new[]
+            {
+                MyInt16Enum.None,
+                MyInt16Enum.A,
+                MyInt16Enum.A,
+                MyInt16Enum.B,
+                MyInt16Enum.C,
+                MyInt16Enum.A
+            };
+
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfEnumInt32()
+        {
+            var expected = new[]
+            {
+                MyInt32Enum.A,
+                MyInt32Enum.A,
+                MyInt32Enum.B,
+                MyInt32Enum.C,
+                MyInt32Enum.A,
+                MyInt32Enum.None
+            };
+
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfEnumInt64()
+        {
+            var expected = new[]
+            {
+                MyInt64Enum.A,
+                MyInt64Enum.A,
+                MyInt64Enum.B,
+                MyInt64Enum.C,
+                MyInt64Enum.A,
+                MyInt64Enum.None
+            };
+
+            var actual = await _db.AsQueryableValues(expected).ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
         [Fact]
         public async Task QueryEntityByte()
         {
@@ -662,6 +766,27 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(expected, actual);
         }
 
+        [Fact]
+        public async Task QueryEntityEnum()
+        {
+            var values = new[] {
+                TestEnum.None,
+                TestEnum.Value1000
+            };
+
+            var expected = new[] { 1, 2 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.EnumValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
 
         [Fact]
         public async Task MustBeEmpty()
@@ -687,6 +812,29 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             async Task AssertEmpty<T>()
                 where T : notnull
+            {
+                testCounter++;
+                var actual = await _db.AsQueryableValues<T>(Array.Empty<T>()).ToListAsync();
+                Assert.Empty(actual);
+            }
+        }
+
+        [Fact]
+        public async Task MustBeEmptyEnum()
+        {
+            var testCounter = 0;
+
+            await AssertEmpty<MyByteEnum>();
+            await AssertEmpty<MyInt16Enum>();
+            await AssertEmpty<MyInt32Enum>();
+            await AssertEmpty<MyInt64Enum>();
+
+            // Coverage check.
+            var expectedTestCount = 4;
+            Assert.Equal(expectedTestCount, testCounter);
+
+            async Task AssertEmpty<T>()
+                where T : struct, Enum
             {
                 testCounter++;
                 var actual = await _db.AsQueryableValues<T>(Array.Empty<T>()).ToListAsync();
@@ -721,6 +869,32 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             async Task AssertCount<T>(Func<int, T> getValue)
                 where T : notnull
+            {
+                testCounter++;
+                var values = Enumerable.Range(0, expectedItemCount).Select(i => getValue(i));
+                var actualItemCount = await _db.AsQueryableValues<T>(values).CountAsync();
+                Assert.Equal(expectedItemCount, actualItemCount);
+            }
+        }
+
+        [Fact]
+        public async Task MustMatchCountEnum()
+        {
+            const int expectedItemCount = 2500;
+
+            var testCounter = 0;
+
+            await AssertCount(i => (MyByteEnum)(i % 4));
+            await AssertCount(i => (MyInt16Enum)(i % 4));
+            await AssertCount(i => (MyInt32Enum)(i % 4));
+            await AssertCount(i => (MyInt64Enum)(i % 4));
+
+            // Coverage check.
+            var expectedTestCount = 4;
+            Assert.Equal(expectedTestCount, testCounter);
+
+            async Task AssertCount<T>(Func<int, T> getValue)
+                where T : struct, Enum
             {
                 testCounter++;
                 var values = Enumerable.Range(0, expectedItemCount).Select(i => getValue(i));
