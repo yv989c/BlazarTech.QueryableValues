@@ -166,7 +166,13 @@ namespace BlazarTech.QueryableValues.Serializers
             {
                 if (_writeValue != null)
                 {
-                    var value = Mapping.Source.GetValue(entity);
+                    var value = Mapping.GetSourceNormalizedValue(entity);
+
+                    if (value is null)
+                    {
+                        return;
+                    }
+
                     _writeValue.Invoke(writer, value);
                 }
             }

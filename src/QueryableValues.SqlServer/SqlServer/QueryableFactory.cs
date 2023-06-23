@@ -1,5 +1,4 @@
-﻿#if EFCORE
-using BlazarTech.QueryableValues.Builders;
+﻿using BlazarTech.QueryableValues.Builders;
 using BlazarTech.QueryableValues.Serializers;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -387,6 +386,22 @@ namespace BlazarTech.QueryableValues.SqlServer
             return CreateForSimpleType(dbContext, values);
         }
 
+        public IQueryable<TEnum> Create<TEnum>(DbContext dbContext, IEnumerable<TEnum> values)
+            where TEnum : struct, Enum
+        {
+            var enumType = typeof(TEnum);
+            var normalizedType = EntityPropertyMapping.GetNormalizedType(enumType);
+
+            return EntityPropertyMapping.GetTypeName(normalizedType) switch
+            {
+                EntityPropertyTypeName.Int32 => CreateForSimpleType(dbContext, values.Select(i => (int)(object)i)).Select(i => (TEnum)(object)i),
+                EntityPropertyTypeName.Byte => CreateForSimpleType(dbContext, values.Select(i => (byte)(object)i)).Select(i => (TEnum)(object)i),
+                EntityPropertyTypeName.Int16 => CreateForSimpleType(dbContext, values.Select(i => (short)(object)i)).Select(i => (TEnum)(object)i),
+                EntityPropertyTypeName.Int64 => CreateForSimpleType(dbContext, values.Select(i => (long)(object)i)).Select(i => (TEnum)(object)i),
+                _ => throw new NotSupportedException($"The underlying type of {enumType.FullName} ({normalizedType.FullName}) is not supported.")
+            };
+        }
+
         public IQueryable<TSource> Create<TSource>(DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure)
             where TSource : notnull
         {
@@ -470,4 +485,3 @@ namespace BlazarTech.QueryableValues.SqlServer
         }
     }
 }
-#endif

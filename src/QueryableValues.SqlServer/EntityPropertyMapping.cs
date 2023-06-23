@@ -17,6 +17,7 @@ namespace BlazarTech.QueryableValues
         public PropertyInfo Target { get; }
         public Type NormalizedType { get; }
         public EntityPropertyTypeName TypeName { get; }
+        public bool IsSourceEnum { get; }
 
         static EntityPropertyMapping()
         {
@@ -38,23 +39,47 @@ namespace BlazarTech.QueryableValues
             };
         }
 
-        private EntityPropertyMapping(PropertyInfo source, PropertyInfo target, Type normalizedType)
+        private EntityPropertyMapping(PropertyInfo source, PropertyInfo target, Type normalizedType, bool isSourceEnum)
         {
             Source = source;
             Target = target;
             NormalizedType = normalizedType;
+            TypeName = GetTypeName(normalizedType);
+            IsSourceEnum = isSourceEnum;
 
-            if (SimpleTypes.TryGetValue(normalizedType, out EntityPropertyTypeName typeName))
-            {
-                TypeName = typeName;
-            }
-            else
+            if (TypeName == EntityPropertyTypeName.Unknown)
             {
                 throw new NotSupportedException($"{source.PropertyType.FullName} is not supported.");
             }
         }
 
-        private static Type GetNormalizedType(Type type) => Nullable.GetUnderlyingType(type) ?? type;
+        public static EntityPropertyTypeName GetTypeName(Type type)
+        {
+            if (SimpleTypes.TryGetValue(type, out EntityPropertyTypeName typeName))
+            {
+                return typeName;
+            }
+            else
+            {
+                return EntityPropertyTypeName.Unknown;
+            }
+        }
+
+        public static Type GetNormalizedType(Type type, out bool isEnum)
+        {
+            type = Nullable.GetUnderlyingType(type) ?? type;
+
+            isEnum = type.IsEnum;
+
+            if (isEnum)
+            {
+                type = Enum.GetUnderlyingType(type);
+            }
+
+            return type;
+        }
+
+        public static Type GetNormalizedType(Type type) => GetNormalizedType(type, out _);
 
         public static bool IsSimpleType(Type type)
         {
@@ -87,9 +112,9 @@ namespace BlazarTech.QueryableValues
 
             foreach (var sourceProperty in sourceProperties)
             {
-                var propertyType = GetNormalizedType(sourceProperty.PropertyType);
+                var sourcePropertyNormalizedType = GetNormalizedType(sourceProperty.PropertyType, out var isSourceEnum);
 
-                if (targetPropertiesByType.TryGetValue(propertyType, out Queue<PropertyInfo>? targetProperties))
+                if (targetPropertiesByType.TryGetValue(sourcePropertyNormalizedType, out Queue<PropertyInfo>? targetProperties))
                 {
                     if (targetProperties.Count == 0)
                     {
@@ -99,7 +124,8 @@ namespace BlazarTech.QueryableValues
                     var mapping = new EntityPropertyMapping(
                         sourceProperty,
                         targetProperties.Dequeue(),
-                        propertyType
+                        sourcePropertyNormalizedType,
+                        isSourceEnum
                         );
 
                     mappings.Add(mapping);
@@ -118,6 +144,39 @@ namespace BlazarTech.QueryableValues
         public static IReadOnlyList<EntityPropertyMapping> GetMappings<T>()
         {
             return GetMappings(typeof(T));
+        }
+
+        public object? GetSourceNormalizedValue(object objectInstance)
+        {
+            var value = Source.GetValue(objectInstance);
+
+            if (value is null)
+            {
+                return null;
+            }
+
+            if (IsSourceEnum)
+            {
+                switch (TypeName)
+                {
+                    case EntityPropertyTypeName.Int32:
+                        value = (int)value;
+                        break;
+                    case EntityPropertyTypeName.Byte:
+                        value = (byte)value;
+                        break;
+                    case EntityPropertyTypeName.Int16:
+                        value = (short)value;
+                        break;
+                    case EntityPropertyTypeName.Int64:
+                        value = (long)value;
+                        break;
+                    default:
+                        throw new NotSupportedException($"The underlying type of {NormalizedType.FullName} ({Enum.GetUnderlyingType(NormalizedType).FullName}) is not supported.");
+                }
+            }
+
+            return value;
         }
     }
 }

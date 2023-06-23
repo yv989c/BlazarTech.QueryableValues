@@ -88,7 +88,7 @@ Below are a few examples composing a query using the values provided by an [IEnu
 
 ### Simple Type Examples
 
-> 💡 Supports [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], and [String].
+> 💡 Supports [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], [String], and [Enum].
 
 Using the [Contains][ContainsQueryable] LINQ method:
 
@@ -218,6 +218,7 @@ Please take a look at the [repository][Repository].
 [Guid]: https://docs.microsoft.com/en-us/dotnet/api/system.guid
 [Char]: https://docs.microsoft.com/en-us/dotnet/api/system.char
 [String]: https://docs.microsoft.com/en-us/dotnet/api/system.string
+[Enum]: https://docs.microsoft.com/en-us/dotnet/api/system.enum
 [BuyMeACoffee]: https://www.buymeacoffee.com/yv989c
 [BuyMeACoffeeButton]: https://raw.githubusercontent.com/yv989c/BlazarTech.QueryableValues/develop/docs/images/bmc-48.svg
 [Repository]: https://github.com/yv989c/BlazarTech.QueryableValues

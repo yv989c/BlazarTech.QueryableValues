@@ -133,6 +133,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public DateTime DateTimeValue { get; set; }
         public DateTimeOffset DateTimeOffsetValue { get; set; }
         public Guid GuidValue { get; set; }
+        public TestEnum EnumValue { get; set; }
         public ICollection<ChildEntity> ChildEntity { get; set; } = default!;
     }
 
@@ -140,6 +141,15 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     {
         public int Id { get; set; }
         public int TestDataEntityId { get; set; }
+    }
+
+    public enum TestEnum
+    {
+        None = 0,
+        Value1 = 1,
+        Value2 = 2,
+        Value3 = 3,
+        Value1000 = 1000
     }
 }
 #endif
