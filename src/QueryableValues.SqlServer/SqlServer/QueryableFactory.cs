@@ -390,7 +390,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             where TEnum : struct, Enum
         {
             var enumType = typeof(TEnum);
-            var normalizedType = EntityPropertyMapping.GetNormalizedType(Enum.GetUnderlyingType(enumType));
+            var normalizedType = EntityPropertyMapping.GetNormalizedType(enumType);
 
             return EntityPropertyMapping.GetTypeName(normalizedType) switch
             {
