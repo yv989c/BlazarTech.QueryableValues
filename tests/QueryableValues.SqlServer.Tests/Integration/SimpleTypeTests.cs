@@ -362,7 +362,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(expected, actual);
         }
 
-        enum MyByteEnum : byte
+        enum ByteEnum : byte
         {
             None,
             A,
@@ -370,7 +370,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             C
         }
 
-        enum MyInt16Enum : short
+        enum Int16Enum : short
         {
             None,
             A,
@@ -378,7 +378,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             C
         }
 
-        enum MyInt32Enum
+        enum Int32Enum
         {
             None,
             A,
@@ -386,7 +386,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             C
         }
 
-        enum MyInt64Enum : long
+        enum Int64Enum : long
         {
             None,
             A,
@@ -399,12 +399,12 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         {
             var expected = new[]
             {
-                MyByteEnum.None,
-                MyByteEnum.A,
-                MyByteEnum.A,
-                MyByteEnum.B,
-                MyByteEnum.C,
-                MyByteEnum.A
+                ByteEnum.None,
+                ByteEnum.A,
+                ByteEnum.A,
+                ByteEnum.B,
+                ByteEnum.C,
+                ByteEnum.A
             };
 
             var actual = await _db.AsQueryableValues(expected).ToListAsync();
@@ -417,12 +417,12 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         {
             var expected = new[]
             {
-                MyInt16Enum.None,
-                MyInt16Enum.A,
-                MyInt16Enum.A,
-                MyInt16Enum.B,
-                MyInt16Enum.C,
-                MyInt16Enum.A
+                Int16Enum.None,
+                Int16Enum.A,
+                Int16Enum.A,
+                Int16Enum.B,
+                Int16Enum.C,
+                Int16Enum.A
             };
 
             var actual = await _db.AsQueryableValues(expected).ToListAsync();
@@ -435,12 +435,12 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         {
             var expected = new[]
             {
-                MyInt32Enum.A,
-                MyInt32Enum.A,
-                MyInt32Enum.B,
-                MyInt32Enum.C,
-                MyInt32Enum.A,
-                MyInt32Enum.None
+                Int32Enum.A,
+                Int32Enum.A,
+                Int32Enum.B,
+                Int32Enum.C,
+                Int32Enum.A,
+                Int32Enum.None
             };
 
             var actual = await _db.AsQueryableValues(expected).ToListAsync();
@@ -453,12 +453,12 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         {
             var expected = new[]
             {
-                MyInt64Enum.A,
-                MyInt64Enum.A,
-                MyInt64Enum.B,
-                MyInt64Enum.C,
-                MyInt64Enum.A,
-                MyInt64Enum.None
+                Int64Enum.A,
+                Int64Enum.A,
+                Int64Enum.B,
+                Int64Enum.C,
+                Int64Enum.A,
+                Int64Enum.None
             };
 
             var actual = await _db.AsQueryableValues(expected).ToListAsync();
@@ -785,6 +785,16 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 .ToArrayAsync();
 
             Assert.Equal(expected, actual);
+
+            actual = await (
+                from i in _db.TestData
+                where _db.AsQueryableValues(values).Contains(i.EnumValue)
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
         }
 
 
@@ -824,10 +834,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         {
             var testCounter = 0;
 
-            await AssertEmpty<MyByteEnum>();
-            await AssertEmpty<MyInt16Enum>();
-            await AssertEmpty<MyInt32Enum>();
-            await AssertEmpty<MyInt64Enum>();
+            await AssertEmpty<ByteEnum>();
+            await AssertEmpty<Int16Enum>();
+            await AssertEmpty<Int32Enum>();
+            await AssertEmpty<Int64Enum>();
 
             // Coverage check.
             var expectedTestCount = 4;
@@ -884,10 +894,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             var testCounter = 0;
 
-            await AssertCount(i => (MyByteEnum)(i % 4));
-            await AssertCount(i => (MyInt16Enum)(i % 4));
-            await AssertCount(i => (MyInt32Enum)(i % 4));
-            await AssertCount(i => (MyInt64Enum)(i % 4));
+            await AssertCount(i => (ByteEnum)(i % 4));
+            await AssertCount(i => (Int16Enum)(i % 4));
+            await AssertCount(i => (Int32Enum)(i % 4));
+            await AssertCount(i => (Int64Enum)(i % 4));
 
             // Coverage check.
             var expectedTestCount = 4;
