@@ -785,6 +785,16 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 .ToArrayAsync();
 
             Assert.Equal(expected, actual);
+
+            actual = await (
+                from i in _db.TestData
+                where _db.AsQueryableValues(values).Contains(i.EnumValue)
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
         }
 
 
