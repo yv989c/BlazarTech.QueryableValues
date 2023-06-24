@@ -1,8 +1,8 @@
 ﻿<Project>
 	<PropertyGroup>
-		<VersionEFCore3>3.8.0</VersionEFCore3>
-		<VersionEFCore5>5.8.0</VersionEFCore5>
-		<VersionEFCore6>6.8.0</VersionEFCore6>
-		<VersionEFCore7>7.3.0</VersionEFCore7>
+		<VersionEFCore3>3.9.0</VersionEFCore3>
+		<VersionEFCore5>5.9.0</VersionEFCore5>
+		<VersionEFCore6>6.9.0</VersionEFCore6>
+		<VersionEFCore7>7.4.0</VersionEFCore7>
 	</PropertyGroup>
 </Project>

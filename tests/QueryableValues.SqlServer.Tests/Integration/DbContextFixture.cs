@@ -66,7 +66,8 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     StringUnicodeValue = "你好！",
                     DateTimeValue = dateTimeOffset.DateTime,
                     DateTimeOffsetValue = dateTimeOffset,
-                    GuidValue = Guid.Parse("df2c9bfe-9d83-4331-97ce-2876d5dc6576")
+                    GuidValue = Guid.Parse("df2c9bfe-9d83-4331-97ce-2876d5dc6576"),
+                    EnumValue = TestEnum.Value1000
                 },
                 new TestDataEntity
                 {
@@ -85,6 +86,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     DateTimeValue = DateTime.MaxValue,
                     DateTimeOffsetValue = DateTimeOffset.MaxValue,
                     GuidValue = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6"),
+                    EnumValue = TestEnum.Value3,
                     ChildEntity = new List<ChildEntity>
                     {
                         new ChildEntity()

@@ -4,5 +4,6 @@
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<IsPackable>false</IsPackable>
 		<Configurations>Debug;Release;Test</Configurations>
-	</PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
 </Project>

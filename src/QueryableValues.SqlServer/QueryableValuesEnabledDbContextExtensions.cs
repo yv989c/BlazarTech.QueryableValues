@@ -1,5 +1,4 @@
-﻿#if EFCORE
-using BlazarTech.QueryableValues.Builders;
+﻿using BlazarTech.QueryableValues.Builders;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -201,6 +200,21 @@ namespace BlazarTech.QueryableValues
         }
 
         /// <summary>
+        /// <inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues{TEnum}(DbContext, IEnumerable{TEnum})"/>
+        /// </summary>
+        /// <param name="dbContext"><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues{TEnum}(DbContext, IEnumerable{TEnum})" path="/param[@name='dbContext']"/></param>
+        /// <param name="values"><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues{TEnum}(DbContext, IEnumerable{TEnum})" path="/param[@name='values']"/></param>
+        /// <returns><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues{TEnum}(DbContext, IEnumerable{TEnum})"/></returns>
+        /// <remarks><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues{TEnum}(DbContext, IEnumerable{TEnum})"/></remarks>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<TEnum> AsQueryableValues<TEnum>(this IQueryableValuesEnabledDbContext dbContext, IEnumerable<TEnum> values)
+            where TEnum : struct, Enum
+        {
+            return GetDbContext(dbContext).AsQueryableValues(values);
+        }
+
+        /// <summary>
         /// <inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues{TSource}(DbContext, IEnumerable{TSource}, Action{EntityOptionsBuilder{TSource}}?)"/>
         /// </summary>
         /// <param name="dbContext"><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues{TSource}(DbContext, IEnumerable{TSource}, Action{EntityOptionsBuilder{TSource}}?)" path="/param[@name='dbContext']"/></param>
@@ -217,4 +231,3 @@ namespace BlazarTech.QueryableValues
         }
     }
 }
-#endif

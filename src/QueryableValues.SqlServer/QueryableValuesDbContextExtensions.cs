@@ -1,5 +1,4 @@
-﻿#if EFCORE
-using BlazarTech.QueryableValues.Builders;
+﻿using BlazarTech.QueryableValues.Builders;
 using BlazarTech.QueryableValues.SqlServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -228,6 +227,27 @@ namespace BlazarTech.QueryableValues
         }
 
         /// <summary>
+        /// Allows an <see cref="IEnumerable{Enum}">IEnumerable&lt;Enum&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <remarks>
+        /// The supported underlying types are: <see cref="byte"/>, <see cref="short"/>, <see cref="int"/>, and <see cref="long"/>.
+        /// <para>
+        /// More info: <see href="https://learn.microsoft.com/en-us/dotnet/api/system.enum#remarks"/>.
+        /// </para>
+        /// </remarks>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{Enum}">IQueryable&lt;Enum&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<TEnum> AsQueryableValues<TEnum>(this DbContext dbContext, IEnumerable<TEnum> values)
+            where TEnum : struct, Enum
+        {
+            ValidateParameters(dbContext, values);
+            return GetQueryableFactory(dbContext).Create(dbContext, values);
+        }
+
+        /// <summary>
         /// Allows an <see cref="IEnumerable{T}"/> to be composed in an Entity Framework query.
         /// </summary>
         /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
@@ -244,4 +264,3 @@ namespace BlazarTech.QueryableValues
         }
     }
 }
-#endif

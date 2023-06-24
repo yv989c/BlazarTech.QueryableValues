@@ -13,7 +13,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
     {
         protected readonly IMyDbContext _db;
 
-        public class TestType
+        class TestType
         {
             public bool BooleanValue { get; set; }
             public bool? BooleanNullableValue { get; set; }
@@ -37,6 +37,14 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             public DateTimeOffset? DateTimeOffsetNullableValue { get; set; }
             public Guid GuidValue { get; set; }
             public Guid? GuidNullableValue { get; set; }
+            public ByteEnum ByteEnumValue { get; set; }
+            public ByteEnum? ByteEnumNullableValue { get; set; }
+            public Int16Enum Int16EnumValue { get; set; }
+            public Int16Enum? Int16EnumNullableValue { get; set; }
+            public Int32Enum Int32EnumValue { get; set; }
+            public Int32Enum? Int32EnumNullableValue { get; set; }
+            public Int64Enum Int64EnumValue { get; set; }
+            public Int64Enum? Int64EnumNullableValue { get; set; }
             public char CharValue { get; set; }
             public char? CharNullableValue { get; set; }
             public char CharUnicodeValue { get; set; }
@@ -51,6 +59,38 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             public int? OtherId { get; set; }
             public int AnotherId { get; set; }
             public string Greeting { get; set; }
+        }
+
+        enum ByteEnum : byte
+        {
+            None,
+            A,
+            B,
+            C
+        }
+
+        enum Int16Enum : short
+        {
+            None,
+            A,
+            B,
+            C
+        }
+
+        enum Int32Enum
+        {
+            None,
+            A,
+            B,
+            C
+        }
+
+        enum Int64Enum : long
+        {
+            None,
+            A,
+            B,
+            C
         }
 
         public ComplexTypeTests(DbContextFixture contextFixture)
@@ -236,7 +276,15 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     CharValue = 'a',
                     CharUnicodeValue = '☢',
                     StringValue = "Lorem ipsum dolor sit amet",
-                    StringUnicodeValue = "😀👋"
+                    StringUnicodeValue = "😀👋",
+                    ByteEnumValue = ByteEnum.A,
+                    ByteEnumNullableValue = ByteEnum.B,
+                    Int16EnumValue = Int16Enum.A,
+                    Int16EnumNullableValue = Int16Enum.B,
+                    Int32EnumValue = Int32Enum.A,
+                    Int32EnumNullableValue =Int32Enum.B,
+                    Int64EnumValue = Int64Enum.A,
+                    Int64EnumNullableValue = Int64Enum.B
                 },
                 new TestType
                 {
@@ -258,13 +306,21 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     CharNullableValue = '1',
                     CharUnicodeValue = '☃',
                     CharUnicodeNullableValue = '☢',
-                    StringValue = ""
+                    StringValue = "",
+                    ByteEnumValue = ByteEnum.None,
+                    Int16EnumValue = Int16Enum.A,
+                    Int32EnumValue = Int32Enum.B,
+                    Int64EnumValue = Int64Enum.C
                 },
                 new TestType
                 {
                     DecimalValue = 0.00M,
                     CharValue = ' ',
-                    CharUnicodeValue = ' '
+                    CharUnicodeValue = ' ',
+                    ByteEnumNullableValue = ByteEnum.None,
+                    Int16EnumNullableValue = Int16Enum.A,
+                    Int32EnumNullableValue =Int32Enum.B,
+                    Int64EnumNullableValue = Int64Enum.C
                 }
             };
 
@@ -601,6 +657,28 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         }
 
         [Fact]
+        public async Task JoinWithEnumInt32()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = TestEnum.None },
+                new { Id = 3, Value = TestEnum.Value3 }
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.EnumValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public async Task JoinWithChar()
         {
             {
@@ -812,12 +890,12 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                 select td;
 
             var actual = await query.ToListAsync();
-            
+
             Assert.Equal(2, actual.Count);
 
             Assert.Equal(1, actual[0].Id);
             Assert.Equal(2, actual[0].ChildEntity.Count);
-            
+
             Assert.Equal(3, actual[1].Id);
             Assert.Equal(1, actual[1].ChildEntity.Count);
         }

@@ -1,5 +1,4 @@
-﻿#if EFCORE
-using BlazarTech.QueryableValues.Builders;
+﻿using BlazarTech.QueryableValues.Builders;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -21,8 +20,9 @@ namespace BlazarTech.QueryableValues
         IQueryable<char> Create(DbContext dbContext, IEnumerable<char> values, bool isUnicode);
         IQueryable<string> Create(DbContext dbContext, IEnumerable<string> values, bool isUnicode);
         IQueryable<Guid> Create(DbContext dbContext, IEnumerable<Guid> values);
+        public IQueryable<TEnum> Create<TEnum>(DbContext dbContext, IEnumerable<TEnum> values)
+            where TEnum : struct, Enum;
         IQueryable<TSource> Create<TSource>(DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure)
             where TSource : notnull;
     }
 }
-#endif
