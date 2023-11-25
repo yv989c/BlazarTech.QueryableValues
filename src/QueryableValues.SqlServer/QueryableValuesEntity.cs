@@ -1,10 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BlazarTech.QueryableValues
 {
     internal class QueryableValuesEntity
     {
+        private static readonly IReadOnlyList<string> DataPropertyNames;
+
         public const string IndexPropertyName = nameof(X);
+
+        static QueryableValuesEntity()
+        {
+            DataPropertyNames = GetDataPropertyNames();
+        }
 
         public int X { get; set; }
 
@@ -150,5 +159,38 @@ namespace BlazarTech.QueryableValues
         public char? C7 { get; set; }
         public char? C8 { get; set; }
         public char? C9 { get; set; }
+
+        private static List<string> GetDataPropertyNames()
+        {
+            var properties = typeof(QueryableValuesEntity).GetProperties();
+            var result = new List<string>(properties.Length);
+
+            foreach (var property in properties)
+            {
+                if (property.Name is IndexPropertyName)
+                {
+                    continue;
+                }
+
+                result.Add(property.Name);
+            }
+
+            return result;
+        }
+
+        internal static IEnumerable<string> GetUnmappedPropertyNames(IReadOnlyList<EntityPropertyMapping> mappings)
+        {
+            var targetProperties = new HashSet<string>(mappings.Select(i => i.Target.Name));
+
+            foreach (var propertyName in DataPropertyNames)
+            {
+                if (targetProperties.Contains(propertyName))
+                {
+                    continue;
+                }
+
+                yield return propertyName;
+            }
+        }
     }
 }

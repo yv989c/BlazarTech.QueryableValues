@@ -2,7 +2,7 @@
 	<Import Project="../SharedTestProjectProperties.xml" />
 
 	<PropertyGroup>
-		<TargetFrameworks>net6.0</TargetFrameworks>
+		<TargetFrameworks>net8.0</TargetFrameworks>
 		<AssemblyName>BlazarTech.QueryableValues.SqlServer.Tests.EFCore6</AssemblyName>
 		<DefineConstants>$(DefineConstants);TESTS;EFCORE6</DefineConstants>
 	</PropertyGroup>

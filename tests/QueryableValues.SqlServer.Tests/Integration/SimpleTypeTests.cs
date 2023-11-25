@@ -362,6 +362,27 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(expected, actual);
         }
 
+        [Fact]
+        public async Task JoinWithProjection()
+        {
+            var values = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on td.Id equals v
+                select td.Id;
+
+            var query2 =
+                from td in _db.TestData
+                join v in query on td.Id equals v
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query2.ToListAsync();
+
+            Assert.Equal(values, actual);
+        }
+
         enum ByteEnum : byte
         {
             None,
@@ -936,7 +957,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(2, actual[0].ChildEntity.Count);
 
             Assert.Equal(3, actual[1].Id);
-            Assert.Equal(1, actual[1].ChildEntity.Count);
+            Assert.Single(actual[1].ChildEntity);
         }
 
         [Fact]
@@ -959,7 +980,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Single(actual);
 
             Assert.Equal(3, actual[0].Id);
-            Assert.Equal(1, actual[0].ChildEntity.Count);
+            Assert.Single(actual[0].ChildEntity);
         }
 
         [Fact]

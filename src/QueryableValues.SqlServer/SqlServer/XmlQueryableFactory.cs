@@ -41,13 +41,12 @@ namespace BlazarTech.QueryableValues.SqlServer
                 sb
                     .Append("\tI.value('@")
                     .Append(QueryableValuesEntity.IndexPropertyName)
-                    .Append(" cast as xs:integer?', 'int') AS [")
+                    .Append(" cast as xs:integer?', 'int') [")
                     .Append(QueryableValuesEntity.IndexPropertyName)
                     .Append(']');
 
-                for (int i = 0; i < mappings.Count; i++)
+                foreach (var mapping in mappings)
                 {
-                    var mapping = mappings[i];
                     var propertyOptions = entityOptions.GetPropertyOptions(mapping.Source);
 
                     sb.Append(',').AppendLine();
@@ -118,8 +117,10 @@ namespace BlazarTech.QueryableValues.SqlServer
                             throw new NotImplementedException(mapping.TypeName.ToString());
                     }
 
-                    sb.Append(") AS [").Append(targetName).Append(']');
+                    sb.Append(") [").Append(targetName).Append(']');
                 }
+
+                AppendUnmappedProperties(sb, mappings);
 
                 sb.AppendLine();
                 sb.Append("FROM {0}.nodes('/R[1]/V') N(I)").AppendLine();
@@ -130,6 +131,26 @@ namespace BlazarTech.QueryableValues.SqlServer
             finally
             {
                 StringBuilderPool.Return(sb);
+            }
+
+            static void AppendUnmappedProperties(System.Text.StringBuilder sb, IReadOnlyList< EntityPropertyMapping> mappings)
+            {
+                var hasUnmappedProperty = false;
+
+                foreach (var unmappedPropertyName in QueryableValuesEntity.GetUnmappedPropertyNames(mappings))
+                {
+                    if (hasUnmappedProperty)
+                    {
+                        sb.Append(',');
+                    }
+                    else
+                    {
+                        hasUnmappedProperty = true;
+                        sb.Append(',').AppendLine().Append('\t');
+                    }
+
+                    sb.Append("NULL[").Append(unmappedPropertyName).Append(']');
+                }
             }
         }
     }
