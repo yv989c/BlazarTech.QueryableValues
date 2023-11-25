@@ -38,17 +38,16 @@ namespace BlazarTech.QueryableValues.SqlServer
 
                 sb.Append(" [").Append(QueryableValuesEntity.IndexPropertyName).Append(']');
 
-                for (var i = 0; i < mappings.Count; i++)
+                foreach (var mapping in mappings)
                 {
-                    sb.Append(", [").Append(mappings[i].Target.Name).Append(']');
+                    sb.Append(", [").Append(mapping.Target.Name).Append(']');
                 }
 
                 sb.AppendLine();
                 sb.Append("FROM OPENJSON({0}) WITH ([").Append(QueryableValuesEntity.IndexPropertyName).Append("] int");
 
-                for (var i = 0; i < mappings.Count; i++)
+                foreach (var mapping in mappings)
                 {
-                    var mapping = mappings[i];
                     var propertyOptions = entityOptions.GetPropertyOptions(mapping.Source);
 
                     sb.Append(", ");

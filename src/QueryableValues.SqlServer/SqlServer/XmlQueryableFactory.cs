@@ -45,9 +45,8 @@ namespace BlazarTech.QueryableValues.SqlServer
                     .Append(QueryableValuesEntity.IndexPropertyName)
                     .Append(']');
 
-                for (int i = 0; i < mappings.Count; i++)
+                foreach (var mapping in mappings)
                 {
-                    var mapping = mappings[i];
                     var propertyOptions = entityOptions.GetPropertyOptions(mapping.Source);
 
                     sb.Append(',').AppendLine();
