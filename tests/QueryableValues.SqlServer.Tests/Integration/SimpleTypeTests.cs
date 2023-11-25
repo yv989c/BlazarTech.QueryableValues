@@ -957,7 +957,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(2, actual[0].ChildEntity.Count);
 
             Assert.Equal(3, actual[1].Id);
-            Assert.Equal(1, actual[1].ChildEntity.Count);
+            Assert.Single(actual[1].ChildEntity);
         }
 
         [Fact]
@@ -980,7 +980,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Single(actual);
 
             Assert.Equal(3, actual[0].Id);
-            Assert.Equal(1, actual[0].ChildEntity.Count);
+            Assert.Single(actual[0].ChildEntity);
         }
 
         [Fact]
