@@ -897,7 +897,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(2, actual[0].ChildEntity.Count);
 
             Assert.Equal(3, actual[1].Id);
-            Assert.Equal(1, actual[1].ChildEntity.Count);
+            Assert.Single(actual[1].ChildEntity);
         }
 
         [Fact]
@@ -920,7 +920,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Single(actual);
 
             Assert.Equal(3, actual[0].Id);
-            Assert.Equal(1, actual[0].ChildEntity.Count);
+            Assert.Single(actual[0].ChildEntity);
         }
 
         [Fact]
@@ -944,6 +944,33 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             Assert.Equal(1, actual[0].Id);
             Assert.Equal(2, actual[0].ChildEntity.Count);
+        }
+
+        [Fact]
+        public async Task JoinWithProjection()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = Guid.Empty },
+                new { Id = 3, Value = Guid.Parse("f6379213-750f-42df-91b9-73756f28c4b6") }
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.GuidValue } equals new { v.Id, v.Value }
+                select td.Id;
+
+            var query2 =
+                from td in _db.TestData
+                join v in query on td.Id equals v
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query2.ToListAsync();
+
+            Assert.Equal(expected, actual);
         }
     }
 

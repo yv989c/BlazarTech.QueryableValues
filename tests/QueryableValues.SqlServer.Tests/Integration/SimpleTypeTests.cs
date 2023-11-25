@@ -362,6 +362,27 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(expected, actual);
         }
 
+        [Fact]
+        public async Task JoinWithProjection()
+        {
+            var values = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on td.Id equals v
+                select td.Id;
+
+            var query2 =
+                from td in _db.TestData
+                join v in query on td.Id equals v
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query2.ToListAsync();
+
+            Assert.Equal(values, actual);
+        }
+
         enum ByteEnum : byte
         {
             None,
