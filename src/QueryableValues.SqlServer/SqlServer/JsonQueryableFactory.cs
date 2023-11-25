@@ -43,6 +43,11 @@ namespace BlazarTech.QueryableValues.SqlServer
                     sb.Append(", [").Append(mapping.Target.Name).Append(']');
                 }
 
+                foreach (var unmappedPropertyName in QueryableValuesEntity.GetUnmappedPropertyNames(mappings))
+                {
+                    sb.Append(", NULL[").Append(unmappedPropertyName).Append(']');
+                }
+
                 sb.AppendLine();
                 sb.Append("FROM OPENJSON({0}) WITH ([").Append(QueryableValuesEntity.IndexPropertyName).Append("] int");
 
