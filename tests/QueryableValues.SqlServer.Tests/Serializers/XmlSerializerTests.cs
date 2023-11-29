@@ -116,7 +116,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Serializers
             };
 
             var values = new[] { testType };
-            var mappings = EntityPropertyMapping.GetMappings(testType.GetType());
+            var mappings = EntityPropertyMapping.GetMappings(testType.GetType(), typeof(ComplexQueryableValuesEntity));
             var actual = _serializer.Serialize(values, mappings);
 
             var expectedByte = $@"Y=""{byte.MinValue}"" Y1=""{byte.MaxValue}""";
@@ -145,7 +145,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Serializers
             };
 
             var values = new[] { testType };
-            var mappings = EntityPropertyMapping.GetMappings(testType.GetType());
+            var mappings = EntityPropertyMapping.GetMappings(testType.GetType(), typeof(ComplexQueryableValuesEntity));
             var xml = _serializer.Serialize(values.Take(0), mappings);
             Assert.Equal("<R />", xml);
         }

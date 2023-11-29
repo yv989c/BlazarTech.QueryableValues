@@ -21,7 +21,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             return new SqlParameter(null, SqlDbType.Xml);
         }
 
-        protected override string GetSqlForComplexTypes(IEntityOptionsBuilder entityOptions, bool useSelectTopOptimization, IReadOnlyList<EntityPropertyMapping> mappings)
+        protected override string GetSql<TEntity>(IEntityOptionsBuilder entityOptions, bool useSelectTopOptimization, IReadOnlyList<EntityPropertyMapping> mappings)
         {
             var sb = StringBuilderPool.Get();
 
@@ -120,7 +120,14 @@ namespace BlazarTech.QueryableValues.SqlServer
                     sb.Append(") [").Append(targetName).Append(']');
                 }
 
-                AppendUnmappedProperties(sb, mappings);
+                if (typeof(TEntity) == typeof(ComplexQueryableValuesEntity))
+                {
+                    // This is necessary because, in some cases, EF will render all the properties of TEntity
+                    // in the outer parts of the query, regardless of the number of properties that were actually projected.
+                    // This behavior was introduced in EF7+.
+                    // See JoinWithProjection test for an example.
+                    AppendUnmappedProperties(sb, mappings);
+                }
 
                 sb.AppendLine();
                 sb.Append("FROM {0}.nodes('/R[1]/V') N(I)").AppendLine();
@@ -137,7 +144,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             {
                 var hasUnmappedProperty = false;
 
-                foreach (var unmappedPropertyName in QueryableValuesEntity.GetUnmappedPropertyNames(mappings))
+                foreach (var unmappedPropertyName in ComplexQueryableValuesEntity.GetUnmappedPropertyNames(mappings))
                 {
                     if (hasUnmappedProperty)
                     {

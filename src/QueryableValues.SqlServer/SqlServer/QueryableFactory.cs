@@ -122,21 +122,23 @@ namespace BlazarTech.QueryableValues.SqlServer
             return sqlParameters;
         }
 
-        protected abstract string GetSqlForComplexTypes(
+        protected abstract string GetSql<TEntity>(
             IEntityOptionsBuilder entityOptions,
             bool useSelectTopOptimization,
             IReadOnlyList<EntityPropertyMapping> mappings
-            );
+            )
+            where TEntity : QueryableValuesEntity;
 
-        private IQueryable<TSource> CreateForComplexType<TSource>(DbContext dbContext, IDeferredValues deferredValues, Action<EntityOptionsBuilder<TSource>>? configure)
+        private IQueryable<TSource> CreateFor<TSource, TEntity>(DbContext dbContext, IDeferredValues deferredValues, Action<EntityOptionsBuilder<TSource>>? configure)
             where TSource : notnull
+            where TEntity : QueryableValuesEntity
         {
             var useSelectTopOptimization = UseSelectTopOptimization(deferredValues);
             var sql = getSql(deferredValues.Mappings, configure, useSelectTopOptimization);
             var sqlParameters = GetSqlParameters(deferredValues);
 
             var source = dbContext
-                .Set<QueryableValuesEntity>()
+                .Set<TEntity>()
                 .FromSqlRaw(sql, sqlParameters);
 
             var projected = projectQueryable(source, deferredValues.Mappings);
@@ -171,14 +173,14 @@ namespace BlazarTech.QueryableValues.SqlServer
                     return sqlFromCache;
                 }
 
-                var sql = GetSqlForComplexTypes(entityOptions, useSelectTopOptimization, mappings);
+                var sql = GetSql<TEntity>(entityOptions, useSelectTopOptimization, mappings);
 
                 SqlCache.TryAdd(cacheKey, sql);
 
                 return sql;
             }
 
-            static IQueryable<TSource> projectQueryable(IQueryable<QueryableValuesEntity> source, IReadOnlyList<EntityPropertyMapping> mappings)
+            static IQueryable<TSource> projectQueryable(IQueryable<TEntity> source, IReadOnlyList<EntityPropertyMapping> mappings)
             {
                 Type sourceType = typeof(TSource);
 
@@ -189,7 +191,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                 }
 
                 Expression body;
-                var parameterExpression = Expression.Parameter(typeof(QueryableValuesEntity), "i");
+                var parameterExpression = Expression.Parameter(typeof(TEntity), "i");
 
                 var useConstructor = !mappings.All(i => i.Source.CanWrite);
 
@@ -254,7 +256,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                     parameterExpression
                 };
 
-                var selector = Expression.Lambda<Func<QueryableValuesEntity, TSource>>(body, bodyParameteters);
+                var selector = Expression.Lambda<Func<TEntity, TSource>>(body, bodyParameteters);
 
                 SelectorExpressionCache.TryAdd(sourceType, selector);
 
@@ -278,11 +280,11 @@ namespace BlazarTech.QueryableValues.SqlServer
                     }
                 }
 
-                static IQueryable<TSource>? getFromCache(Type sourceType, IQueryable<QueryableValuesEntity> source)
+                static IQueryable<TSource>? getFromCache(Type sourceType, IQueryable<TEntity> source)
                 {
                     if (SelectorExpressionCache.TryGetValue(sourceType, out object? selectorFromCache))
                     {
-                        var selector = (Expression<Func<QueryableValuesEntity, TSource>>)selectorFromCache;
+                        var selector = (Expression<Func<TEntity, TSource>>)selectorFromCache;
                         var queryable = Queryable.Select(source, selector);
                         return queryable;
                     }
@@ -304,9 +306,9 @@ namespace BlazarTech.QueryableValues.SqlServer
                 values.Select(i => new SimpleTypeValue<TSource> { V = i })
                 );
 
-            var deferredValues = new DeferredValues<TSource, SimpleTypeValue<TSource>>(_serializer, wrappedValues);
+            var deferredValues = new DeferredValues<TSource, SimpleTypeValue<TSource>, SimpleQueryableValuesEntity<TSource>>(_serializer, wrappedValues);
 
-            return CreateForComplexType(
+            return CreateFor<SimpleTypeValue<TSource>, SimpleQueryableValuesEntity<TSource>>(
                 dbContext,
                 deferredValues,
                 configure: configure
@@ -412,9 +414,9 @@ namespace BlazarTech.QueryableValues.SqlServer
                 return simpleTypeQueryable;
             }
 
-            var deferredValues = new DeferredValues<TSource, TSource>(_serializer, new ValuesWrapper<TSource, TSource>(values, values));
+            var deferredValues = new DeferredValues<TSource, TSource, ComplexQueryableValuesEntity>(_serializer, new ValuesWrapper<TSource, TSource>(values, values));
 
-            return CreateForComplexType(
+            return CreateFor<TSource, ComplexQueryableValuesEntity>(
                 dbContext,
                 deferredValues,
                 configure

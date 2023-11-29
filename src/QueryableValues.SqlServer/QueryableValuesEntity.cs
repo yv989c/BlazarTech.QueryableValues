@@ -4,18 +4,26 @@ using System.Linq;
 
 namespace BlazarTech.QueryableValues
 {
-    internal class QueryableValuesEntity
+    internal abstract class QueryableValuesEntity
+    {
+        public const string IndexPropertyName = nameof(X);
+
+        public int X { get; set; }
+    }
+
+    internal class SimpleQueryableValuesEntity<T> : QueryableValuesEntity
+    {
+        public T? V { get; set; }
+    }
+
+    internal class ComplexQueryableValuesEntity : QueryableValuesEntity
     {
         private static readonly IReadOnlyList<string> DataPropertyNames;
 
-        public const string IndexPropertyName = nameof(X);
-
-        static QueryableValuesEntity()
+        static ComplexQueryableValuesEntity()
         {
             DataPropertyNames = GetDataPropertyNames();
         }
-
-        public int X { get; set; }
 
         public int? I { get; set; }
         public int? I1 { get; set; }
@@ -162,7 +170,7 @@ namespace BlazarTech.QueryableValues
 
         private static List<string> GetDataPropertyNames()
         {
-            var properties = typeof(QueryableValuesEntity).GetProperties();
+            var properties = typeof(ComplexQueryableValuesEntity).GetProperties();
             var result = new List<string>(properties.Length);
 
             foreach (var property in properties)

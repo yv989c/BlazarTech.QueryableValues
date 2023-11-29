@@ -10,8 +10,8 @@ namespace BlazarTech.QueryableValues
     {
         internal static readonly IReadOnlyDictionary<Type, EntityPropertyTypeName> SimpleTypes;
 
-        private static readonly PropertyInfo[] EntityProperties = typeof(QueryableValuesEntity).GetProperties().Where(i => i.Name != QueryableValuesEntity.IndexPropertyName).ToArray();
-        private static readonly ConcurrentDictionary<Type, IReadOnlyList<EntityPropertyMapping>> MappingCache = new ConcurrentDictionary<Type, IReadOnlyList<EntityPropertyMapping>>();
+        private static readonly ConcurrentDictionary<Type, IReadOnlyList<PropertyInfo>> TargetTypePropertyCache = new ConcurrentDictionary<Type, IReadOnlyList<PropertyInfo>>();
+        private static readonly ConcurrentDictionary<(Type, Type), IReadOnlyList<EntityPropertyMapping>> MappingCache = new ConcurrentDictionary<(Type, Type), IReadOnlyList<EntityPropertyMapping>>();
 
         public PropertyInfo Source { get; }
         public PropertyInfo Target { get; }
@@ -87,9 +87,33 @@ namespace BlazarTech.QueryableValues
             return SimpleTypes.ContainsKey(normalizedType);
         }
 
-        public static IReadOnlyList<EntityPropertyMapping> GetMappings(Type sourceType)
+        private static IReadOnlyList<PropertyInfo> GetTargetTypeProperties(Type targetType)
         {
-            if (MappingCache.TryGetValue(sourceType, out IReadOnlyList<EntityPropertyMapping>? mappingsFromCache))
+            if (TargetTypePropertyCache.TryGetValue(targetType, out IReadOnlyList<PropertyInfo>? properties))
+            {
+                return properties;
+            }
+
+            if (!typeof(QueryableValuesEntity).IsAssignableFrom(targetType))
+            {
+                throw new InvalidOperationException();
+            }
+
+            properties = targetType
+                .GetProperties()
+                .Where(i => i.Name != QueryableValuesEntity.IndexPropertyName)
+                .ToArray();
+
+            TargetTypePropertyCache.TryAdd(targetType, properties);
+
+            return properties;
+        }
+
+        public static IReadOnlyList<EntityPropertyMapping> GetMappings(Type sourceType, Type targetType)
+        {
+            var mappingCacheKey = (sourceType, targetType);
+
+            if (MappingCache.TryGetValue(mappingCacheKey, out IReadOnlyList<EntityPropertyMapping>? mappingsFromCache))
             {
                 return mappingsFromCache;
             }
@@ -104,7 +128,7 @@ namespace BlazarTech.QueryableValues
             var mappings = new List<EntityPropertyMapping>(sourceProperties.Length);
 
             var targetPropertiesByType = (
-                from i in EntityProperties
+                from i in GetTargetTypeProperties(targetType)
                 group i by GetNormalizedType(i.PropertyType) into g
                 select g
                 )
@@ -136,14 +160,15 @@ namespace BlazarTech.QueryableValues
                 }
             }
 
-            MappingCache.TryAdd(sourceType, mappings);
+            MappingCache.TryAdd(mappingCacheKey, mappings);
 
             return mappings;
         }
 
-        public static IReadOnlyList<EntityPropertyMapping> GetMappings<T>()
+        public static IReadOnlyList<EntityPropertyMapping> GetMappings<TSource, TTargetEntity>()
+            where TTargetEntity : QueryableValuesEntity
         {
-            return GetMappings(typeof(T));
+            return GetMappings(typeof(TSource), typeof(TTargetEntity));
         }
 
         public object? GetSourceNormalizedValue(object objectInstance)
