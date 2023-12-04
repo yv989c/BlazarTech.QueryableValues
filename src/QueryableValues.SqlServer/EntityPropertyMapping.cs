@@ -35,7 +35,11 @@ namespace BlazarTech.QueryableValues
                 { typeof(DateTimeOffset), EntityPropertyTypeName.DateTimeOffset },
                 { typeof(Guid), EntityPropertyTypeName.Guid },
                 { typeof(char), EntityPropertyTypeName.Char },
-                { typeof(string), EntityPropertyTypeName.String }
+                { typeof(string), EntityPropertyTypeName.String },
+#if EFCORE8
+                { typeof(DateOnly), EntityPropertyTypeName.DateOnly },
+                { typeof(TimeOnly), EntityPropertyTypeName.TimeOnly }
+#endif
             };
         }
 

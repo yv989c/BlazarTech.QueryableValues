@@ -73,6 +73,11 @@ namespace BlazarTech.QueryableValues
             SetupEntity<SimpleQueryableValuesEntity<char>>(modelBuilder);
             SetupEntity<SimpleQueryableValuesEntity<string>>(modelBuilder);
 
+#if EFCORE8
+            SetupEntity<SimpleQueryableValuesEntity<DateOnly>>(modelBuilder);
+            SetupEntity<SimpleQueryableValuesEntity<TimeOnly>>(modelBuilder);
+#endif
+
             _previousModelCustomizer.Customize(modelBuilder, context);
         }
     }

@@ -404,6 +404,18 @@ namespace BlazarTech.QueryableValues.SqlServer
             };
         }
 
+#if EFCORE8
+        public IQueryable<DateOnly> Create(DbContext dbContext, IEnumerable<DateOnly> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+
+        public IQueryable<TimeOnly> Create(DbContext dbContext, IEnumerable<TimeOnly> values)
+        {
+            return CreateForSimpleType(dbContext, values);
+        }
+#endif
+
         public IQueryable<TSource> Create<TSource>(DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure)
             where TSource : notnull
         {
@@ -474,6 +486,16 @@ namespace BlazarTech.QueryableValues.SqlServer
                     {
                         return (IQueryable<TSource>)Create(dbContext, stringValues);
                     }
+#if EFCORE8
+                    else if (values is IEnumerable<DateOnly> dateOnlyValues)
+                    {
+                        return (IQueryable<TSource>)Create(dbContext, dateOnlyValues);
+                    }
+                    else if (values is IEnumerable<TimeOnly> timeOnlyValues)
+                    {
+                        return (IQueryable<TSource>)Create(dbContext, timeOnlyValues);
+                    }
+#endif
                     else
                     {
                         throw new NotImplementedException(typeof(TSource).FullName);

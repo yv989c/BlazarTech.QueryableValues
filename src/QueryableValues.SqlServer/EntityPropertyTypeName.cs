@@ -15,6 +15,10 @@
         DateTimeOffset,
         Guid,
         Char,
-        String
+        String,
+#if EFCORE8
+        DateOnly,
+        TimeOnly
+#endif
     }
 }

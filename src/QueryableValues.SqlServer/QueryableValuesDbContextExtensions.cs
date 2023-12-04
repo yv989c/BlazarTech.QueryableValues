@@ -262,5 +262,35 @@ namespace BlazarTech.QueryableValues
             ValidateParameters(dbContext, values);
             return GetQueryableFactory(dbContext).Create(dbContext, values, configure);
         }
+
+#if EFCORE8
+        /// <summary>
+        /// Allows an <see cref="IEnumerable{DateOnly}">IEnumerable&lt;DateOnly&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{DateOnly}">IQueryable&lt;DateOnly&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<DateOnly> AsQueryableValues(this DbContext dbContext, IEnumerable<DateOnly> values)
+        {
+            ValidateParameters(dbContext, values);
+            return GetQueryableFactory(dbContext).Create(dbContext, values);
+        }
+
+        /// <summary>
+        /// Allows an <see cref="IEnumerable{TimeOnly}">IEnumerable&lt;TimeOnly&gt;</see> to be composed in an Entity Framework query.
+        /// </summary>
+        /// <param name="dbContext">The <see cref="DbContext"/> owning the query.</param>
+        /// <param name="values">The sequence of values to compose.</param>
+        /// <returns>An <see cref="IQueryable{TimeOnly}">IQueryable&lt;TimeOnly&gt;</see> that can be composed with other entities in the query.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<TimeOnly> AsQueryableValues(this DbContext dbContext, IEnumerable<TimeOnly> values)
+        {
+            ValidateParameters(dbContext, values);
+            return GetQueryableFactory(dbContext).Create(dbContext, values);
+        }
+#endif
     }
 }

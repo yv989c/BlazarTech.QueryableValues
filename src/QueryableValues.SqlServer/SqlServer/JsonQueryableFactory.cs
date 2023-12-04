@@ -126,6 +126,14 @@ namespace BlazarTech.QueryableValues.SqlServer
                                 sb.Append("varchar(max)");
                             }
                             break;
+#if EFCORE8
+                        case EntityPropertyTypeName.DateOnly:
+                            sb.Append("date");
+                            break;
+                        case EntityPropertyTypeName.TimeOnly:
+                            sb.Append("time");
+                            break;
+#endif
                         default:
                             throw new NotImplementedException(mapping.TypeName.ToString());
                     }

@@ -113,6 +113,14 @@ namespace BlazarTech.QueryableValues.SqlServer
                                 sb.Append("xs:string?', 'varchar(max)'");
                             }
                             break;
+#if EFCORE8
+                        case EntityPropertyTypeName.DateOnly:
+                            sb.Append("xs:date?', 'date'");
+                            break;
+                        case EntityPropertyTypeName.TimeOnly:
+                            sb.Append("xs:time?', 'time'");
+                            break;
+#endif
                         default:
                             throw new NotImplementedException(mapping.TypeName.ToString());
                     }
@@ -140,7 +148,7 @@ namespace BlazarTech.QueryableValues.SqlServer
                 StringBuilderPool.Return(sb);
             }
 
-            static void AppendUnmappedProperties(System.Text.StringBuilder sb, IReadOnlyList< EntityPropertyMapping> mappings)
+            static void AppendUnmappedProperties(System.Text.StringBuilder sb, IReadOnlyList<EntityPropertyMapping> mappings)
             {
                 var hasUnmappedProperty = false;
 

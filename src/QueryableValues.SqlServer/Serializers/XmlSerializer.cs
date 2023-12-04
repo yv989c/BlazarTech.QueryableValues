@@ -186,6 +186,10 @@ namespace BlazarTech.QueryableValues.Serializers
             private static readonly Action<XmlWriter, Guid> WriteGuid = (XmlWriter writer, Guid value) => writer.WriteValue(value.ToString());
             private static readonly Action<XmlWriter, char> WriteChar = (XmlWriter writer, char value) => XmlSerializer.WriteValue(writer, new[] { value }, 1);
             private static readonly Action<XmlWriter, string> WriteString = (XmlWriter writer, string value) => XmlSerializer.WriteValue(writer, value.ToCharArray(), value.Length);
+#if EFCORE8
+            private static readonly Action<XmlWriter, DateOnly> WriteDateOnly = (XmlWriter writer, DateOnly value) => writer.WriteValue(value.ToString("o"));
+            private static readonly Action<XmlWriter, TimeOnly> WriteTimeOnly = (XmlWriter writer, TimeOnly value) => writer.WriteValue(value.ToString("o"));
+#endif
 
             private readonly string _targetName;
             private readonly Action<XmlWriter, object?>? _writeValue;
@@ -213,6 +217,10 @@ namespace BlazarTech.QueryableValues.Serializers
                     EntityPropertyTypeName.Guid => (writer, value) => WriteAttribute(writer, (Guid?)value, WriteGuid),
                     EntityPropertyTypeName.Char => (writer, value) => WriteAttribute(writer, (char?)value, WriteChar),
                     EntityPropertyTypeName.String => (writer, value) => WriteStringAttribute(writer, (string?)value),
+#if EFCORE8
+                    EntityPropertyTypeName.DateOnly => (writer, value) => WriteAttribute(writer, (DateOnly?)value, WriteDateOnly),
+                    EntityPropertyTypeName.TimeOnly => (writer, value) => WriteAttribute(writer, (TimeOnly?)value, WriteTimeOnly),
+#endif
                     _ => throw new NotImplementedException(mapping.TypeName.ToString()),
                 };
             }

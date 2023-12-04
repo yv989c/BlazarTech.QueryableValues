@@ -24,5 +24,10 @@ namespace BlazarTech.QueryableValues
             where TEnum : struct, Enum;
         IQueryable<TSource> Create<TSource>(DbContext dbContext, IEnumerable<TSource> values, Action<EntityOptionsBuilder<TSource>>? configure)
             where TSource : notnull;
+
+#if EFCORE8
+        IQueryable<DateOnly> Create(DbContext dbContext, IEnumerable<DateOnly> values);
+        IQueryable<TimeOnly> Create(DbContext dbContext, IEnumerable<TimeOnly> values);
+#endif
     }
 }

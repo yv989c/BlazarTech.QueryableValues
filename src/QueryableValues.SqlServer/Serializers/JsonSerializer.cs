@@ -2,6 +2,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 
@@ -113,6 +114,24 @@ namespace BlazarTech.QueryableValues.Serializers
             private static readonly Action<Utf8JsonWriter, Guid> WriteGuid = (Utf8JsonWriter writer, Guid value) => writer.WriteStringValue(value);
             private static readonly Action<Utf8JsonWriter, char> WriteChar = (Utf8JsonWriter writer, char value) => writer.WriteStringValue(stackalloc[] { value });
 
+#if EFCORE8
+            private static readonly Action<Utf8JsonWriter, DateOnly> WriteDateOnly = (Utf8JsonWriter writer, DateOnly value) =>
+            {
+                Span<char> buffer = stackalloc char[10];
+                value.TryFormat(buffer, out var charsWritten, "o");
+                Debug.Assert(charsWritten == buffer.Length);
+                writer.WriteStringValue(buffer);
+            };
+
+            private static readonly Action<Utf8JsonWriter, TimeOnly> WriteTimeOnly = (Utf8JsonWriter writer, TimeOnly value) =>
+            {
+                Span<char> buffer = stackalloc char[16];
+                value.TryFormat(buffer, out var charsWritten, "o");
+                Debug.Assert(charsWritten == buffer.Length);
+                writer.WriteStringValue(buffer);
+            };
+#endif
+
             private readonly string _targetName;
             private readonly Action<Utf8JsonWriter, object?>? _writeValue;
 
@@ -139,6 +158,10 @@ namespace BlazarTech.QueryableValues.Serializers
                     EntityPropertyTypeName.Guid => (writer, value) => WriteAttribute(writer, (Guid?)value, WriteGuid),
                     EntityPropertyTypeName.Char => (writer, value) => WriteAttribute(writer, (char?)value, WriteChar),
                     EntityPropertyTypeName.String => (writer, value) => WriteStringAttribute(writer, (string?)value),
+#if EFCORE8
+                    EntityPropertyTypeName.DateOnly => (writer, value) => WriteAttribute(writer, (DateOnly?)value, WriteDateOnly),
+                    EntityPropertyTypeName.TimeOnly => (writer, value) => WriteAttribute(writer, (TimeOnly?)value, WriteTimeOnly),
+#endif
                     _ => throw new NotImplementedException(mapping.TypeName.ToString()),
                 };
             }
