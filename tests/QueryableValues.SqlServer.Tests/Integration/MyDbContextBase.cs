@@ -135,6 +135,10 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public Guid GuidValue { get; set; }
         public TestEnum EnumValue { get; set; }
         public ICollection<ChildEntity> ChildEntity { get; set; } = default!;
+#if EFCORE8
+        public DateOnly DateOnlyValue { get; set; }
+        public TimeOnly TimeOnlyValue { get; set; }
+#endif
     }
 
     public class ChildEntity
