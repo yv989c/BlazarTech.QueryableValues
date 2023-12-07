@@ -51,6 +51,12 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             public char? CharUnicodeNullableValue { get; set; }
             public string? StringValue { get; set; }
             public string? StringUnicodeValue { get; set; }
+#if EFCORE8
+            public DateOnly DateOnlyValue { get; set; }
+            public DateOnly? DateOnlyNullableValue { get; set; }
+            public TimeOnly TimeOnlyValue { get; set; }
+            public TimeOnly? TimeOnlyNullableValue { get; set; }
+#endif
         }
 
         public struct TestEntityStruct
@@ -214,7 +220,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     GuidNullableValue = Guid.Parse("46367e3b-77cd-4e4e-a931-cf8b69e84cf2"),
                     CharValue = 'A',
                     CharUnicodeValue = '1',
-                    StringValue = "Lorem ipsum dolor sit amet"
+                    StringValue = "Lorem ipsum dolor sit amet",
+#if EFCORE8
+                    DateOnlyValue = DateOnly.MaxValue,
+                    DateOnlyNullableValue = DateOnly.MaxValue,
+                    TimeOnlyValue = TimeOnly.MaxValue,
+                    TimeOnlyNullableValue = TimeOnly.MaxValue,
+#endif
                 },
                 new TestType
                 {
@@ -234,7 +246,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     GuidNullableValue = Guid.Empty,
                     CharValue = ' ',
                     CharUnicodeValue = ' ',
-                    StringValue = ""
+                    StringValue = "",
+#if EFCORE8
+                    DateOnlyValue = DateOnly.MinValue,
+                    DateOnlyNullableValue = DateOnly.MinValue,
+                    TimeOnlyValue = TimeOnly.MinValue,
+                    TimeOnlyNullableValue = TimeOnly.MinValue,
+#endif
                 },
                 new TestType
                 {
@@ -284,7 +302,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     Int32EnumValue = Int32Enum.A,
                     Int32EnumNullableValue =Int32Enum.B,
                     Int64EnumValue = Int64Enum.A,
-                    Int64EnumNullableValue = Int64Enum.B
+                    Int64EnumNullableValue = Int64Enum.B,
+#if EFCORE8
+                    DateOnlyValue = DateOnly.MaxValue,
+                    DateOnlyNullableValue = DateOnly.MaxValue,
+                    TimeOnlyValue = TimeOnly.MaxValue,
+                    TimeOnlyNullableValue = TimeOnly.MaxValue,
+#endif
                 },
                 new TestType
                 {
@@ -310,7 +334,13 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     ByteEnumValue = ByteEnum.None,
                     Int16EnumValue = Int16Enum.A,
                     Int32EnumValue = Int32Enum.B,
-                    Int64EnumValue = Int64Enum.C
+                    Int64EnumValue = Int64Enum.C,
+#if EFCORE8
+                    DateOnlyValue = DateOnly.MinValue,
+                    DateOnlyNullableValue = DateOnly.MinValue,
+                    TimeOnlyValue = TimeOnly.MinValue,
+                    TimeOnlyNullableValue = TimeOnly.MinValue,
+#endif
                 },
                 new TestType
                 {
@@ -319,7 +349,7 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     CharUnicodeValue = ' ',
                     ByteEnumNullableValue = ByteEnum.None,
                     Int16EnumNullableValue = Int16Enum.A,
-                    Int32EnumNullableValue =Int32Enum.B,
+                    Int32EnumNullableValue = Int32Enum.B,
                     Int64EnumNullableValue = Int64Enum.C
                 }
             };
@@ -972,6 +1002,52 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
 
             Assert.Equal(expected, actual);
         }
+
+#if EFCORE8
+        [Fact]
+        public async Task JoinWithDateOnly()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = DateOnly.MinValue },
+                new { Id = 3, Value = DateOnly.MaxValue }
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.DateOnlyValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task JoinWithTimeOnly()
+        {
+            var values = new[]
+            {
+                new { Id = 1, Value = TimeOnly.MinValue },
+                new { Id = 3, Value = TimeOnly.MaxValue }
+            };
+
+            var expected = new[] { 1, 3 };
+
+            var query =
+                from td in _db.TestData
+                join v in _db.AsQueryableValues(values) on new { td.Id, Value = td.TimeOnlyValue } equals new { v.Id, v.Value }
+                orderby td.Id
+                select td.Id;
+
+            var actual = await query.ToListAsync();
+
+            Assert.Equal(expected, actual);
+        }
+#endif
     }
 
     [Collection("DbContext")]

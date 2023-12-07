@@ -837,6 +837,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             await AssertEmpty<char>();
             await AssertEmpty<string>();
 
+#if EFCORE8
+            await AssertEmpty<DateOnly>();
+            await AssertEmpty<TimeOnly>();
+#endif
+
             // Coverage check.
             var expectedTestCount = EntityPropertyMapping.SimpleTypes.Count - 1;
             Assert.Equal(expectedTestCount, testCounter);
@@ -893,6 +898,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             await AssertCount<Guid>(i => new Guid(i, 0, 0, helperBytes));
             await AssertCount<char>(i => 'A');
             await AssertCount<string>(i => $"Test {i}");
+
+#if EFCORE8
+            await AssertCount(i => DateOnly.MinValue.AddDays(i));
+            await AssertCount(i => TimeOnly.MinValue.Add(TimeSpan.FromSeconds(i)));
+#endif
 
             // Coverage check.
             var expectedTestCount = EntityPropertyMapping.SimpleTypes.Count - 1;
@@ -1005,6 +1015,91 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
             Assert.Equal(1, actual[0].Id);
             Assert.Equal(2, actual[0].ChildEntity.Count);
         }
+
+#if EFCORE8
+        [Fact]
+        public async Task MustMatchSequenceOfDateOnly()
+        {
+            var now = DateTime.Now;
+
+            var values = new[] {
+                DateOnly.FromDateTime(now),
+                DateOnly.FromDateTime(now.AddHours(1)),
+                DateOnly.FromDateTime(now.AddDays(1)),
+                DateOnly.FromDateTime(now.AddMonths(1)),
+                DateOnly.FromDateTime(now.AddYears(1))
+            };
+
+            var actual = await _db.AsQueryableValues(values).ToListAsync();
+
+            Assert.Equal(values, actual);
+        }
+
+        [Fact]
+        public async Task MustMatchSequenceOfTimeOnly()
+        {
+            var now = DateTime.Now;
+
+            var values = new[] {
+                TimeOnly.FromDateTime(now),
+                TimeOnly.FromDateTime(now.AddHours(1)),
+                TimeOnly.FromDateTime(now.AddMinutes(1)),
+                TimeOnly.FromDateTime(now.AddSeconds(1)),
+                TimeOnly.FromDateTime(now.AddMilliseconds(1)),
+                TimeOnly.FromDateTime(now.AddMicroseconds(1))
+            };
+
+            var actual = await _db.AsQueryableValues(values).ToListAsync();
+
+            Assert.Equal(values, actual);
+        }
+
+        [Fact]
+        public async Task QueryEntityDateOnly()
+        {
+            var date = new DateOnly(1999, 12, 31);
+
+            var values = new[] {
+                DateOnly.MinValue,
+                date
+            };
+
+            var expected = new[] { 1, 2 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.DateOnlyValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public async Task QueryEntityTimeOnly()
+        {
+            var time = new TimeOnly(23, 59, 59);
+
+            var values = new[] {
+                TimeOnly.MinValue,
+                time
+            };
+
+            var expected = new[] { 1, 2 };
+
+            var actual = await (
+                from i in _db.TestData
+                join v in _db.AsQueryableValues(values) on i.TimeOnlyValue equals v
+                orderby i.Id
+                select i.Id
+                )
+                .ToArrayAsync();
+
+            Assert.Equal(expected, actual);
+        }
+#endif
     }
 
     [Collection("DbContext")]

@@ -1,16 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<Import Project="../SharedProjectProperties.xml" />
-	<Import Project="../../Version.xml" />
+  <Import Project="../SharedProjectProperties.xml" />
+  <Import Project="../../Version.xml" />
 
-	<PropertyGroup>
-		<VersionPrefix>$(VersionEFCore3)</VersionPrefix>
-		<TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
-		<LangVersion>9.0</LangVersion>
-		<Configurations>Debug;Release;Test</Configurations>
-		<DefineConstants>$(DefineConstants);EFCORE;EFCORE3</DefineConstants>
-	</PropertyGroup>
-	
-	<ItemGroup>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="[3.1.14,5.0)" />
-	</ItemGroup>
+  <PropertyGroup>
+    <VersionPrefix>$(VersionEFCore3)</VersionPrefix>
+    <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+    <LangVersion>9.0</LangVersion>
+    <Configurations>Debug;Release;Test</Configurations>
+    <DefineConstants>$(DefineConstants);EFCORE;EFCORE3</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
+    <PackageReference Include="System.Text.Json" Version="4.7.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="6.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="[3.1.14,5.0)" />
+  </ItemGroup>
 </Project>

@@ -53,7 +53,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     {
                         new ChildEntity(),
                         new ChildEntity()
-                    }
+                    },
+#if EFCORE8
+                    DateOnlyValue = DateOnly.MinValue,
+                    TimeOnlyValue = TimeOnly.MinValue,
+#endif
                 },
                 new TestDataEntity
                 {
@@ -67,7 +71,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     DateTimeValue = dateTimeOffset.DateTime,
                     DateTimeOffsetValue = dateTimeOffset,
                     GuidValue = Guid.Parse("df2c9bfe-9d83-4331-97ce-2876d5dc6576"),
-                    EnumValue = TestEnum.Value1000
+                    EnumValue = TestEnum.Value1000,
+#if EFCORE8
+                    DateOnlyValue = DateOnly.FromDateTime(dateTimeOffset.DateTime),
+                    TimeOnlyValue = TimeOnly.FromDateTime(dateTimeOffset.DateTime),
+#endif
                 },
                 new TestDataEntity
                 {
@@ -90,7 +98,11 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
                     ChildEntity = new List<ChildEntity>
                     {
                         new ChildEntity()
-                    }
+                    },
+#if EFCORE8
+                    DateOnlyValue = DateOnly.MaxValue,
+                    TimeOnlyValue = TimeOnly.MaxValue,
+#endif
                 }
             };
 

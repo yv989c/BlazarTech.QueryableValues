@@ -229,5 +229,35 @@ namespace BlazarTech.QueryableValues
         {
             return GetDbContext(dbContext).AsQueryableValues(values, configure);
         }
+
+#if EFCORE8
+        /// <summary>
+        /// <inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{DateOnly})"/>
+        /// </summary>
+        /// <param name="dbContext"><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{DateOnly})" path="/param[@name='dbContext']"/></param>
+        /// <param name="values"><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{DateOnly})" path="/param[@name='values']"/></param>
+        /// <returns><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{DateOnly})"/></returns>
+        /// <remarks><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{DateOnly})"/></remarks>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<DateOnly> AsQueryableValues(this IQueryableValuesEnabledDbContext dbContext, IEnumerable<DateOnly> values)
+        {
+            return GetDbContext(dbContext).AsQueryableValues(values);
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{TimeOnly})"/>
+        /// </summary>
+        /// <param name="dbContext"><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{TimeOnly})" path="/param[@name='dbContext']"/></param>
+        /// <param name="values"><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{TimeOnly})" path="/param[@name='values']"/></param>
+        /// <returns><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{TimeOnly})"/></returns>
+        /// <remarks><inheritdoc cref="QueryableValuesDbContextExtensions.AsQueryableValues(DbContext, IEnumerable{TimeOnly})"/></remarks>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IQueryable<TimeOnly> AsQueryableValues(this IQueryableValuesEnabledDbContext dbContext, IEnumerable<TimeOnly> values)
+        {
+            return GetDbContext(dbContext).AsQueryableValues(values);
+        }
+#endif
     }
 }

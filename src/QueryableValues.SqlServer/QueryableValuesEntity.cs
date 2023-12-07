@@ -4,18 +4,26 @@ using System.Linq;
 
 namespace BlazarTech.QueryableValues
 {
-    internal class QueryableValuesEntity
+    internal abstract class QueryableValuesEntity
+    {
+        public const string IndexPropertyName = nameof(X);
+
+        public int X { get; set; }
+    }
+
+    internal class SimpleQueryableValuesEntity<T> : QueryableValuesEntity
+    {
+        public T? V { get; set; }
+    }
+
+    internal class ComplexQueryableValuesEntity : QueryableValuesEntity
     {
         private static readonly IReadOnlyList<string> DataPropertyNames;
 
-        public const string IndexPropertyName = nameof(X);
-
-        static QueryableValuesEntity()
+        static ComplexQueryableValuesEntity()
         {
             DataPropertyNames = GetDataPropertyNames();
         }
-
-        public int X { get; set; }
 
         public int? I { get; set; }
         public int? I1 { get; set; }
@@ -160,9 +168,33 @@ namespace BlazarTech.QueryableValues
         public char? C8 { get; set; }
         public char? C9 { get; set; }
 
+#if EFCORE8
+        public DateOnly? J { get; set; }
+        public DateOnly? J1 { get; set; }
+        public DateOnly? J2 { get; set; }
+        public DateOnly? J3 { get; set; }
+        public DateOnly? J4 { get; set; }
+        public DateOnly? J5 { get; set; }
+        public DateOnly? J6 { get; set; }
+        public DateOnly? J7 { get; set; }
+        public DateOnly? J8 { get; set; }
+        public DateOnly? J9 { get; set; }
+
+        public TimeOnly? T { get; set; }
+        public TimeOnly? T1 { get; set; }
+        public TimeOnly? T2 { get; set; }
+        public TimeOnly? T3 { get; set; }
+        public TimeOnly? T4 { get; set; }
+        public TimeOnly? T5 { get; set; }
+        public TimeOnly? T6 { get; set; }
+        public TimeOnly? T7 { get; set; }
+        public TimeOnly? T8 { get; set; }
+        public TimeOnly? T9 { get; set; }
+#endif
+
         private static List<string> GetDataPropertyNames()
         {
-            var properties = typeof(QueryableValuesEntity).GetProperties();
+            var properties = typeof(ComplexQueryableValuesEntity).GetProperties();
             var result = new List<string>(properties.Length);
 
             foreach (var property in properties)

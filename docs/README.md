@@ -18,9 +18,6 @@ For a detailed explanation of the problem solved by QueryableValues, please cont
 
 > 💡 Still on Entity Framework 6 (non-core)? Then [QueryableValues `EF6 Edition`](https://github.com/yv989c/BlazarTech.QueryableValues.EF6) is what you need.
 
-## When Should You Use It?
-The `AsQueryableValues` extension method is intended for queries that are dependent upon a *non-constant* sequence of external values. It provides a solution to the following [EF Core issue](https://github.com/dotnet/efcore/issues/13617) and enables other currently unsupported scenarios; like the ability to efficiently create joins with in-memory data.
-
 ## Your Support is Appreciated!
 If you feel that this solution has provided you some value, please consider [buying me a ☕][BuyMeACoffee].
 
@@ -88,7 +85,7 @@ Below are a few examples composing a query using the values provided by an [IEnu
 
 ### Simple Type Examples
 
-> 💡 Supports [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [Guid], [Char], [String], and [Enum].
+> 💡 Supports [Byte], [Int16], [Int32], [Int64], [Decimal], [Single], [Double], [DateTime], [DateTimeOffset], [DateOnly], [TimeOnly], [Guid], [Char], [String], and [Enum].
 
 Using the [Contains][ContainsQueryable] LINQ method:
 
@@ -215,6 +212,8 @@ Please take a look at the [repository][Repository].
 [Double]: https://docs.microsoft.com/en-us/dotnet/api/system.double
 [DateTime]: https://docs.microsoft.com/en-us/dotnet/api/system.datetime
 [DateTimeOffset]: https://docs.microsoft.com/en-us/dotnet/api/system.datetimeoffset
+[DateOnly]: https://docs.microsoft.com/en-us/dotnet/api/system.dateonly
+[TimeOnly]: https://docs.microsoft.com/en-us/dotnet/api/system.timeonly
 [Guid]: https://docs.microsoft.com/en-us/dotnet/api/system.guid
 [Char]: https://docs.microsoft.com/en-us/dotnet/api/system.char
 [String]: https://docs.microsoft.com/en-us/dotnet/api/system.string

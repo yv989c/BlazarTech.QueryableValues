@@ -4,9 +4,10 @@ using System.Collections.Generic;
 
 namespace BlazarTech.QueryableValues
 {
-    internal sealed class DeferredValues<T, T2> : IDeferredValues
+    internal sealed class DeferredValues<T, T2, TEntity> : IDeferredValues
         where T : notnull
         where T2 : notnull
+        where TEntity : QueryableValuesEntity
     {
         private readonly ISerializer _serializer;
         private readonly ValuesWrapper<T, T2> _valuesWrapper;
@@ -25,7 +26,7 @@ namespace BlazarTech.QueryableValues
         {
             _serializer = serializer;
             _valuesWrapper = valuesWrapper;
-            Mappings = EntityPropertyMapping.GetMappings<T2>();
+            Mappings = EntityPropertyMapping.GetMappings<T2, TEntity>();
         }
 
         public string ToString(IFormatProvider? provider) => _serializer.Serialize(_valuesWrapper.ProjectedValues, Mappings);

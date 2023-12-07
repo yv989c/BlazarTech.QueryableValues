@@ -8,6 +8,7 @@ using System.Text;
 
 namespace QueryableValues.SqlServer.Benchmarks;
 
+//[SimpleJob(RunStrategy.Monitoring, warmupCount: 1, iterationCount: 1, invocationCount: 6)]
 [SimpleJob(RunStrategy.Monitoring, warmupCount: 1, iterationCount: 25, invocationCount: 200)]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [GcServer(true), MemoryDiagnoser]

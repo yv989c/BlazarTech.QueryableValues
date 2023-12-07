@@ -21,7 +21,7 @@ namespace BlazarTech.QueryableValues.SqlServer
             return new SqlParameter(null, SqlDbType.NVarChar, -1);
         }
 
-        protected override string GetSqlForComplexTypes(IEntityOptionsBuilder entityOptions, bool useSelectTopOptimization, IReadOnlyList<EntityPropertyMapping> mappings)
+        protected override string GetSql<TEntity>(IEntityOptionsBuilder entityOptions, bool useSelectTopOptimization, IReadOnlyList<EntityPropertyMapping> mappings)
         {
             var sb = StringBuilderPool.Get();
 
@@ -43,9 +43,16 @@ namespace BlazarTech.QueryableValues.SqlServer
                     sb.Append(", [").Append(mapping.Target.Name).Append(']');
                 }
 
-                foreach (var unmappedPropertyName in QueryableValuesEntity.GetUnmappedPropertyNames(mappings))
+                if (typeof(TEntity) == typeof(ComplexQueryableValuesEntity))
                 {
-                    sb.Append(", NULL[").Append(unmappedPropertyName).Append(']');
+                    // This is necessary because, in some cases, EF will render all the properties of TEntity
+                    // in the outer parts of the query, regardless of the number of properties that were actually projected.
+                    // This behavior was introduced in EF7+.
+                    // See JoinWithProjection test for an example.
+                    foreach (var unmappedPropertyName in ComplexQueryableValuesEntity.GetUnmappedPropertyNames(mappings))
+                    {
+                        sb.Append(", NULL[").Append(unmappedPropertyName).Append(']');
+                    }
                 }
 
                 sb.AppendLine();
@@ -119,6 +126,14 @@ namespace BlazarTech.QueryableValues.SqlServer
                                 sb.Append("varchar(max)");
                             }
                             break;
+#if EFCORE8
+                        case EntityPropertyTypeName.DateOnly:
+                            sb.Append("date");
+                            break;
+                        case EntityPropertyTypeName.TimeOnly:
+                            sb.Append("time");
+                            break;
+#endif
                         default:
                             throw new NotImplementedException(mapping.TypeName.ToString());
                     }
