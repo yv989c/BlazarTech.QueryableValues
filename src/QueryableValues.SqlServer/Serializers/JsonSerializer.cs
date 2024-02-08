@@ -37,7 +37,7 @@ namespace BlazarTech.QueryableValues.Serializers
 
             static string GetJson(IEnumerable<T> values, Action<Utf8JsonWriter, T> writeValue, Func<T, bool>? mustSkipValue = null)
             {
-                using var stream = (RecyclableMemoryStream)MemoryStreamManager.GetStream();
+                using var stream = new RecyclableMemoryStream(MemoryStreamManager);
 
                 using (var jsonWriter = new Utf8JsonWriter((IBufferWriter<byte>)stream))
                 {
