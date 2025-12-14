@@ -6,7 +6,7 @@
     <VersionPrefix>$(VersionEFCore9)</VersionPrefix>
     <TargetFramework>net8.0</TargetFramework>
     <Configurations>Debug;Release;Test</Configurations>
-    <DefineConstants>$(DefineConstants);EFCORE;EFCORE9</DefineConstants>
+    <DefineConstants>$(DefineConstants);EFCORE;EFCORE8;EFCORE9</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
