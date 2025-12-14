@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31912.275
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11304.174 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryableValues.SqlServer.EFCore6", "src\QueryableValues.SqlServer.EFCore6\QueryableValues.SqlServer.EFCore6.csproj", "{BD913E54-FD19-468D-A9D3-1E9608F12D46}"
 EndProject
@@ -21,6 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryableValues.SqlServer.T
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5A74EE6E-4DBD-4176-A5E0-12C87C813658}"
 	ProjectSection(SolutionItems) = preProject
+		.github\workflows\ci-workflow.yml = .github\workflows\ci-workflow.yml
 		src\SharedProjectProperties.xml = src\SharedProjectProperties.xml
 		tests\SharedTestProjectProperties.xml = tests\SharedTestProjectProperties.xml
 		Version.xml = Version.xml
@@ -35,6 +36,14 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryableValues.SqlServer.EFCore8", "src\QueryableValues.SqlServer.EFCore8\QueryableValues.SqlServer.EFCore8.csproj", "{03A17C43-5E66-4A8F-B650-7F611E73BD0B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryableValues.SqlServer.Tests.EFCore8", "tests\QueryableValues.SqlServer.Tests.EFCore8\QueryableValues.SqlServer.Tests.EFCore8.csproj", "{9387545B-CABC-4C63-A163-4F64C65A370F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.EFCore9", "src\QueryableValues.SqlServer.EFCore9\QueryableValues.SqlServer.EFCore9.csproj", "{6FB261E0-4137-44D5-A2E9-E7AFFB16F745}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.EFCore10", "src\QueryableValues.SqlServer.EFCore10\QueryableValues.SqlServer.EFCore10.csproj", "{C15498D8-E387-451A-8C2F-E52F3DDBC48F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.Tests.EFCore9", "tests\QueryableValues.SqlServer.Tests.EFCore9\QueryableValues.SqlServer.Tests.EFCore9.csproj", "{07C70A98-52DF-41E6-90A0-A7DB803228D2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.Tests.EFCore10", "tests\QueryableValues.SqlServer.Tests.EFCore10\QueryableValues.SqlServer.Tests.EFCore10.csproj", "{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -138,6 +147,38 @@ Global
 		{9387545B-CABC-4C63-A163-4F64C65A370F}.Test_All|Any CPU.Build.0 = Test_All|Any CPU
 		{9387545B-CABC-4C63-A163-4F64C65A370F}.Test|Any CPU.ActiveCfg = Test|Any CPU
 		{9387545B-CABC-4C63-A163-4F64C65A370F}.Test|Any CPU.Build.0 = Test|Any CPU
+		{6FB261E0-4137-44D5-A2E9-E7AFFB16F745}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FB261E0-4137-44D5-A2E9-E7AFFB16F745}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FB261E0-4137-44D5-A2E9-E7AFFB16F745}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FB261E0-4137-44D5-A2E9-E7AFFB16F745}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FB261E0-4137-44D5-A2E9-E7AFFB16F745}.Test_All|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FB261E0-4137-44D5-A2E9-E7AFFB16F745}.Test_All|Any CPU.Build.0 = Debug|Any CPU
+		{6FB261E0-4137-44D5-A2E9-E7AFFB16F745}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{6FB261E0-4137-44D5-A2E9-E7AFFB16F745}.Test|Any CPU.Build.0 = Test|Any CPU
+		{C15498D8-E387-451A-8C2F-E52F3DDBC48F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C15498D8-E387-451A-8C2F-E52F3DDBC48F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C15498D8-E387-451A-8C2F-E52F3DDBC48F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C15498D8-E387-451A-8C2F-E52F3DDBC48F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C15498D8-E387-451A-8C2F-E52F3DDBC48F}.Test_All|Any CPU.ActiveCfg = Debug|Any CPU
+		{C15498D8-E387-451A-8C2F-E52F3DDBC48F}.Test_All|Any CPU.Build.0 = Debug|Any CPU
+		{C15498D8-E387-451A-8C2F-E52F3DDBC48F}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{C15498D8-E387-451A-8C2F-E52F3DDBC48F}.Test|Any CPU.Build.0 = Test|Any CPU
+		{07C70A98-52DF-41E6-90A0-A7DB803228D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07C70A98-52DF-41E6-90A0-A7DB803228D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07C70A98-52DF-41E6-90A0-A7DB803228D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07C70A98-52DF-41E6-90A0-A7DB803228D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07C70A98-52DF-41E6-90A0-A7DB803228D2}.Test_All|Any CPU.ActiveCfg = Test_All|Any CPU
+		{07C70A98-52DF-41E6-90A0-A7DB803228D2}.Test_All|Any CPU.Build.0 = Test_All|Any CPU
+		{07C70A98-52DF-41E6-90A0-A7DB803228D2}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{07C70A98-52DF-41E6-90A0-A7DB803228D2}.Test|Any CPU.Build.0 = Test|Any CPU
+		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Test_All|Any CPU.ActiveCfg = Test_All|Any CPU
+		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Test_All|Any CPU.Build.0 = Test_All|Any CPU
+		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Test|Any CPU.Build.0 = Test|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
+using System.Linq;
 
 namespace BlazarTech.QueryableValues
 {
@@ -39,8 +40,22 @@ namespace BlazarTech.QueryableValues
                     // By mapping to a fake view, we stop EF from including these entities during
                     // SQL generation in migrations and by the Create and Drop apis in DbContext.Database.
                     entity
-                        .ToView(Guid.NewGuid().ToString())
+                        .ToView(GetViewName(typeof(TEntity)))
                         .HasKey(i => i.X);
+
+                    static string GetViewName(Type type)
+                    {
+                        if (type.IsGenericType)
+                        {
+                            var typeName = type.FullName?.Substring(0, type.FullName.IndexOf('`')) ?? FallbackName(type);
+                            var args = string.Join(".", type.GetGenericArguments().Select(t => t.Name));
+                            return $"{typeName}.{args}";
+                        }
+
+                        return type.FullName ?? FallbackName(type);
+
+                        static string FallbackName(Type type) => $"BlazarTech.QueryableValues.{type.Name}";
+                    }
                 });
         }
 

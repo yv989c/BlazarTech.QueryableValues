@@ -1,9 +1,11 @@
 ﻿<Project>
 	<PropertyGroup>
-		<VersionEFCore3>3.9.3</VersionEFCore3>
-		<VersionEFCore5>5.9.3</VersionEFCore5>
-		<VersionEFCore6>6.9.3</VersionEFCore6>
-		<VersionEFCore7>7.4.3</VersionEFCore7>
-		<VersionEFCore8>8.1.1</VersionEFCore8>
+		<VersionEFCore3>3.9.4</VersionEFCore3>
+		<VersionEFCore5>5.9.4</VersionEFCore5>
+		<VersionEFCore6>6.9.4</VersionEFCore6>
+		<VersionEFCore7>7.4.4</VersionEFCore7>
+		<VersionEFCore8>8.1.2</VersionEFCore8>
+		<VersionEFCore9>9.0.0</VersionEFCore9>
+		<VersionEFCore10>10.0.0</VersionEFCore10>
 	</PropertyGroup>
 </Project>
