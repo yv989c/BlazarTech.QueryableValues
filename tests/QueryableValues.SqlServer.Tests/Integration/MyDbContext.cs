@@ -18,6 +18,8 @@ namespace BlazarTech.QueryableValues.SqlServer.Tests.Integration
         public const string Name = "QueryableValuesTestsEFCore9";
 #elif EFCORE10
         public const string Name = "QueryableValuesTestsEFCore10";
+#elif EFCORE11
+        public const string Name = "QueryableValuesTestsEFCore11";
 #elif EFCORE8
         public const string Name = "QueryableValuesTestsEFCore8";
 #endif

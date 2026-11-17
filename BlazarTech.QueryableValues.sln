@@ -45,6 +45,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.Tests.EFCore10", "tests\QueryableValues.SqlServer.Tests.EFCore10\QueryableValues.SqlServer.Tests.EFCore10.csproj", "{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.EFCore11", "src\QueryableValues.SqlServer.EFCore11\QueryableValues.SqlServer.EFCore11.csproj", "{04B939B8-8FF3-43D3-B731-44C33C78ED6C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.Tests.EFCore11", "tests\QueryableValues.SqlServer.Tests.EFCore11\QueryableValues.SqlServer.Tests.EFCore11.csproj", "{71801CF5-F682-4D88-BD78-DB48966A2339}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -179,6 +183,22 @@ Global
 		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Test_All|Any CPU.Build.0 = Test_All|Any CPU
 		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Test|Any CPU.ActiveCfg = Test|Any CPU
 		{D38DC9DE-C57A-46AE-BFE1-B198EF1D5A20}.Test|Any CPU.Build.0 = Test|Any CPU
+		{04B939B8-8FF3-43D3-B731-44C33C78ED6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04B939B8-8FF3-43D3-B731-44C33C78ED6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04B939B8-8FF3-43D3-B731-44C33C78ED6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04B939B8-8FF3-43D3-B731-44C33C78ED6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04B939B8-8FF3-43D3-B731-44C33C78ED6C}.Test_All|Any CPU.ActiveCfg = Debug|Any CPU
+		{04B939B8-8FF3-43D3-B731-44C33C78ED6C}.Test_All|Any CPU.Build.0 = Debug|Any CPU
+		{04B939B8-8FF3-43D3-B731-44C33C78ED6C}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{04B939B8-8FF3-43D3-B731-44C33C78ED6C}.Test|Any CPU.Build.0 = Test|Any CPU
+		{71801CF5-F682-4D88-BD78-DB48966A2339}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71801CF5-F682-4D88-BD78-DB48966A2339}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71801CF5-F682-4D88-BD78-DB48966A2339}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71801CF5-F682-4D88-BD78-DB48966A2339}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71801CF5-F682-4D88-BD78-DB48966A2339}.Test_All|Any CPU.ActiveCfg = Test_All|Any CPU
+		{71801CF5-F682-4D88-BD78-DB48966A2339}.Test_All|Any CPU.Build.0 = Test_All|Any CPU
+		{71801CF5-F682-4D88-BD78-DB48966A2339}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{71801CF5-F682-4D88-BD78-DB48966A2339}.Test|Any CPU.Build.0 = Test|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
