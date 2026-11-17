@@ -7,5 +7,6 @@
 		<VersionEFCore8>8.1.2</VersionEFCore8>
 		<VersionEFCore9>9.0.0</VersionEFCore9>
 		<VersionEFCore10>10.0.0</VersionEFCore10>
+		<VersionEFCore11>11.0.0</VersionEFCore11>
 	</PropertyGroup>
 </Project>

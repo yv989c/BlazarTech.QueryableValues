@@ -61,5 +61,6 @@
     <InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore8" />
     <InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore9" />
     <InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore10" />
+    <InternalsVisibleTo Include="BlazarTech.QueryableValues.SqlServer.Tests.EFCore11" />
   </ItemGroup>
 </Project>

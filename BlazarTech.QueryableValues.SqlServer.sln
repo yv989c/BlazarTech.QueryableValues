@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.EFCore10", "src\QueryableValues.SqlServer.EFCore10\QueryableValues.SqlServer.EFCore10.csproj", "{6636695F-C700-DD8B-DAB3-F07FAB201A72}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryableValues.SqlServer.EFCore11", "src\QueryableValues.SqlServer.EFCore11\QueryableValues.SqlServer.EFCore11.csproj", "{2119FB3C-C12D-47BE-AA15-045092962732}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,6 +82,12 @@ Global
 		{6636695F-C700-DD8B-DAB3-F07FAB201A72}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6636695F-C700-DD8B-DAB3-F07FAB201A72}.Test|Any CPU.ActiveCfg = Test|Any CPU
 		{6636695F-C700-DD8B-DAB3-F07FAB201A72}.Test|Any CPU.Build.0 = Test|Any CPU
+		{2119FB3C-C12D-47BE-AA15-045092962732}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2119FB3C-C12D-47BE-AA15-045092962732}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2119FB3C-C12D-47BE-AA15-045092962732}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2119FB3C-C12D-47BE-AA15-045092962732}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2119FB3C-C12D-47BE-AA15-045092962732}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{2119FB3C-C12D-47BE-AA15-045092962732}.Test|Any CPU.Build.0 = Test|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
